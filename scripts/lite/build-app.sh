@@ -42,7 +42,7 @@ python3 - <<'PY'
 import os, pathlib, plistlib
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='SteamAC Lite',
-         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.1',
+         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.2',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=True, SteamacLiteBuild=True,
          SteamacPreferencesDomain='local.ryuu.steamac-lite')
 pathlib.Path(os.environ['PLIST']).write_bytes(plistlib.dumps(p))
@@ -78,7 +78,16 @@ install -m755 guest/layer/usr/lib/steamac/low-memory-swap "$LAYER/usr/lib/steama
 install -m644 guest/layer/usr/lib/systemd/system/steamac-low-memory-swap.service "$LAYER/usr/lib/systemd/system/"
 mkdir -p "$LAYER/usr/lib/systemd/system/multi-user.target.wants"
 ln -s ../steamac-low-memory-swap.service "$LAYER/usr/lib/systemd/system/multi-user.target.wants/steamac-low-memory-swap.service"
-echo 'steamac-lite experimental-8gb-v1' >> "$LAYER/usr/lib/steamac/layer-release"
+for script in keyboard-setup keyboard-session ibus-launch ibus-x11-display nested-desktop; do
+    install -m755 "guest/layer/usr/lib/steamac/$script" "$LAYER/usr/lib/steamac/$script"
+done
+for unit in steamac-keyboard-setup.service steamac-keyboard-session.service 'steamac-ibus-x11@.service' \
+    gamescope-session.service.d/60-steamac-keyboard.conf ibus-gamescope.service.d/60-steamac-keyboard.conf \
+    steam.service.d/60-steamac-keyboard.conf steamac-nested-desktop.service.d/60-steamac-keyboard.conf; do
+    mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
+    install -m644 "guest/layer/usr/lib/systemd/user/$unit" "$LAYER/usr/lib/systemd/user/$unit"
+done
+echo 'steamac-lite experimental-8gb-v2 Japanese-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"
@@ -99,6 +108,7 @@ codesign --force --sign - --entitlements host/launcher/steamac-vm.entitlements "
 codesign --force --sign - --entitlements host/launcher/steamac-vm.entitlements "$APP"
 codesign --verify --deep --strict "$APP"
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-low-memory
+STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-keyboard
 DEST=$OUT/SteamAC\ Lite.app
 if [[ -e "$DEST" ]]; then mv "$DEST" "$OUT/SteamAC Lite.previous.$(date +%Y%m%d%H%M%S).app"; fi
 mv "$APP" "$DEST"

@@ -36,6 +36,12 @@ if options.selftestLowMemory {
     print(failures.isEmpty ? "low-memory: PASS" : "low-memory: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
+if options.selftestKeyboard {
+    let failures = KeyboardLayout.selfCheck()
+    print("keyboard: detected \(KeyboardLayout.detected.rawValue)")
+    print(failures.isEmpty ? "keyboard: PASS" : "keyboard: FAIL: " + failures.joined(separator: "; "))
+    exit(failures.isEmpty ? 0 : 1)
+}
 // Before CrashReporting's GPU tags, the window or either Vulkan driver can initialise Metal.
 MetalCompilerCache.prepare()
 
@@ -441,7 +447,8 @@ do {
     let renderer = Renderer()
     let presenter = Presenter(display: display, renderer: renderer)
     let wc = WindowController(title: windowTitle, width: options.displayWidth, height: options.displayHeight,
-                              pixelScale: options.pixelScale * options.renderScale, renderer: renderer, inputs: inputs, mouseMode: options.mouseMode)
+                              pixelScale: options.pixelScale * options.renderScale, renderer: renderer, inputs: inputs,
+                              mouseMode: options.mouseMode, keyboardLayout: options.effectiveKeyboardLayout)
     if let f = Supervisor.windowFrame, !f.isEmpty { wc.window.setFrame(NSRectFromString(f), display: false) }
     presenter.view = wc.view
     PerfStats.instance.attach(view: wc.view)

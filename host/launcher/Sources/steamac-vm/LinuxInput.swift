@@ -83,6 +83,7 @@ enum KEY {
     static let KP4: UInt16 = 75, KP5: UInt16 = 76, KP6: UInt16 = 77, KPPLUS: UInt16 = 78
     static let KP1: UInt16 = 79, KP2: UInt16 = 80, KP3: UInt16 = 81, KP0: UInt16 = 82, KPDOT: UInt16 = 83
     static let _102ND: UInt16 = 86, F11: UInt16 = 87, F12: UInt16 = 88, RO: UInt16 = 89
+    static let HIRAGANA: UInt16 = 91, MUHENKAN: UInt16 = 94
     static let KPJPCOMMA: UInt16 = 95
     static let KPENTER: UInt16 = 96, RIGHTCTRL: UInt16 = 97, KPSLASH: UInt16 = 98, SYSRQ: UInt16 = 99
     static let RIGHTALT: UInt16 = 100

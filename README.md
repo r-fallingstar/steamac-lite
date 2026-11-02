@@ -1,6 +1,20 @@
 # SteamAC Lite — experimental 8 GB profile
 
-This fork adds an opt-in 3 GiB VM / 4 GiB guest disk-swap profile for 8 GB Apple Silicon Macs. VRChat compatibility and performance are not guaranteed. See [8 GB profile, build and limitations](docs/8gb-profile.md). Upstream documentation follows.
+**English** · [日本語のREADME](README.ja.md)
+
+This fork adds a 3 GiB VM / 4 GiB guest disk-swap profile for 8 GB Apple Silicon Macs, a 60 Hz display default, physical US/JIS keyboard detection, and Japanese input through SteamOS's existing IBus/Anthy. Game frame rates and compatibility are not guaranteed. See [8 GB profile, build and limitations](docs/8gb-profile.md) and [keyboard / Japanese input](docs/japanese-input.md).
+
+## 日本語
+
+Apple Silicon・RAM 8 GB向けの実験版です。VMのRAMを3 GiBに抑え、ゲスト用ディスクスワップ4 GiBを追加します。初期描画は960×600・60 Hzで、DXMTを優先します。60 Hzは表示更新頻度であり、ゲームの60 fps動作を保証するものではありません。
+
+Mac側の物理キーボード情報からUS/JISを起動時に判別し、Steamとゲームの配列へ反映します。日本語入力は既存のIBus・Anthyを使います。最初は英数入力で、**Control＋Space**で日本語入力へ切り替え、Spaceで変換、Enterで確定します。JISの「かな」「英数」キーにも対応します。
+
+詳細は[日本語README](README.ja.md)、[導入・ビルドと制限](docs/8gb-profile.md)、[日本語入力と配列](docs/japanese-input.md)を参照してください。8 GBのM1 MacでVRChatが動いたというユーザー報告があります。FPS、重いワールド、長時間の安定性は測定していません。
+
+---
+
+The original upstream documentation follows. Its 16 GB minimum and performance figures describe the upstream build, not validation of this experimental 8 GB profile.
 
 # steamac with genuine-EAC games and a DXMT graphics path
 

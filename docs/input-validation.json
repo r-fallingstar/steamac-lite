@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-02",
+  "host": "Apple M1 / 8 GiB / macOS 27.2",
+  "physical_keyboard_detected": "jis",
+  "us_test": "explicit guest layout override; not a separate physical US keyboard",
+  "tests": [
+    {
+      "layout": "jis",
+      "test_passed": true,
+      "exit_code": 0,
+      "shutdown_forced": false,
+      "elapsed_seconds": 18.2,
+      "vrchat_launched": false,
+      "refresh_hz": 60,
+      "checks": {
+        "engine": {
+          "kana_conversion": "日本語",
+          "ctrl_space_conversion": "日本語",
+          "eisu_direct": true
+        },
+        "xwaylands": [
+          {
+            "display": ":0",
+            "layout": "jp",
+            "xim_registered": true
+          },
+          {
+            "display": ":1",
+            "layout": "jp",
+            "xim_registered": true
+          }
+        ],
+        "guest_refresh_hz": [
+          59.96
+        ]
+      }
+    },
+    {
+      "layout": "us",
+      "test_passed": true,
+      "exit_code": 0,
+      "shutdown_forced": false,
+      "elapsed_seconds": 19.7,
+      "vrchat_launched": false,
+      "refresh_hz": 60,
+      "checks": {
+        "engine": {
+          "kana_conversion": "日本語",
+          "ctrl_space_conversion": "日本語",
+          "eisu_direct": true
+        },
+        "xwaylands": [
+          {
+            "display": ":0",
+            "layout": "us",
+            "xim_registered": true
+          },
+          {
+            "display": ":1",
+            "layout": "us",
+            "xim_registered": true
+          }
+        ],
+        "guest_refresh_hz": [
+          59.96
+        ]
+      }
+    }
+  ],
+  "vrchat_input_tested": false,
+  "desktop_wayland_tested": false
+}

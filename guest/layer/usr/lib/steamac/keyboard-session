@@ -1,0 +1,35 @@
+#!/usr/bin/python3
+"""Apply the physical layout to every gamescope Xwayland after it becomes ready."""
+import os
+from pathlib import Path
+import re
+import subprocess
+
+
+def main():
+    layout = os.environ.get('XKB_DEFAULT_LAYOUT')
+    displays = {os.environ.get('DISPLAY', '')}
+    # Games and the Steam UI use separate Xwaylands. Match only Unix X sockets.
+    for socket in Path('/tmp/.X11-unix').glob('X*'):
+        if re.fullmatch('X[0-9]+', socket.name):
+            displays.add(':'+socket.name[1:])
+    if layout in ('us', 'jp'):
+        for display in sorted(displays - {''}):
+            subprocess.run(['setxkbmap', '-display', display, '-model', 'pc105', '-layout', layout,
+                            '-variant', '', '-option', ''], check=True, timeout=10)
+            print(f'keyboard-session: {display} layout={layout}', flush=True)
+    activate = Path(os.environ['XDG_RUNTIME_DIR'])/'steamac/activate-anthy'
+    if activate.exists():
+        subprocess.run(['ibus', 'engine', 'anthy'], check=True, timeout=10)
+        activate.unlink()
+    if os.environ.get('XMODIFIERS') == '@im=ibus':
+        primary = os.environ.get('DISPLAY', ':0')
+        for display in sorted(displays - {'', primary}):
+            subprocess.run(['systemctl', '--user', 'start', 'steamac-ibus-x11@'+display[1:]+'.service'],
+                           check=True, timeout=10)
+            print(f'keyboard-session: XIM enabled on {display}', flush=True)
+    print('keyboard-session: ready', flush=True)
+
+
+if __name__ == '__main__':
+    main()

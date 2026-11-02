@@ -1,0 +1,13 @@
+[Unit]
+Description=SteamAC keyboard layout on Steam and game Xwaylands
+Wants=ibus-gamescope.service
+After=gamescope-session.service ibus-gamescope.service
+Before=steam.service steamac-nested-desktop.service
+PartOf=gamescope-session.target plasma-session.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-%t/steamac/input.env
+ExecStart=/usr/lib/steamac/keyboard-session
+RemainAfterExit=yes
+TimeoutStartSec=30

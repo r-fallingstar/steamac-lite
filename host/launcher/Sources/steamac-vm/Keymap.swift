@@ -5,9 +5,8 @@ import Carbon.HIToolbox
 enum Keymap {
     /// ISO keyboards report the key left of "1" as kVK_ISO_Section and the extra key next to
     /// left shift as kVK_ANSI_Grave; PC/evdev has them as KEY_GRAVE and KEY_102ND.
-    static let isISO: Bool = KBGetLayoutType(Int16(LMGetKbdType())) == kKeyboardISO
-
-    static func linuxKey(_ keyCode: UInt16) -> UInt16? {
+    static func linuxKey(_ keyCode: UInt16, layout: KeyboardLayout = .detected) -> UInt16? {
+        let isISO = layout == .iso
         switch Int(keyCode) {
         case kVK_ISO_Section: return isISO ? KEY.GRAVE : KEY._102ND
         case kVK_ANSI_Grave: return isISO ? KEY._102ND : KEY.GRAVE
@@ -61,7 +60,7 @@ enum Keymap {
             (kVK_ANSI_KeypadClear, KEY.NUMLOCK),
             (kVK_VolumeUp, KEY.VOLUMEUP), (kVK_VolumeDown, KEY.VOLUMEDOWN), (kVK_Mute, KEY.MUTE),
             (kVK_JIS_Yen, KEY.YEN), (kVK_JIS_Underscore, KEY.RO), (kVK_JIS_KeypadComma, KEY.KPJPCOMMA),
-            (kVK_JIS_Eisu, KEY.HANJA), (kVK_JIS_Kana, KEY.HANGEUL),
+            (kVK_JIS_Eisu, KEY.MUHENKAN), (kVK_JIS_Kana, KEY.HIRAGANA),
             (kVK_ContextualMenu, KEY.COMPOSE),
         ]
         var t: [UInt16: UInt16] = [:]

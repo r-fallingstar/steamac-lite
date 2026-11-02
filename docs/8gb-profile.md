@@ -9,11 +9,11 @@ Apple Silicon・RAM 8 GB向けの試作です。**VRChatが快適に動作する
 | VM RAM | 4 GiB | 3 GiB |
 | GPUの報告予算 | 1 GiB | 2 GiB |
 | macOS・ドライバの予算 | 3 GiB | 3 GiB |
-| 初期描画 | 1280×800、60 Hz | 960×600、30 Hz、Retinaなし |
+| 初期描画 | 1280×800、60 Hz | 960×600、60 Hz、Retinaなし |
 | 追加ディスクスワップ | なし | ゲストのext4 `/home` に4 GiB |
 | 描画経路 | 設定による | DXMTを優先、利用できなければVulkan |
 
-GPU予算は報告値で、物理RAMを予約・保証する機構ではありません。解像度の値は初期ウインドウ時の値です。ウインドウサイズを変えると描画サイズも変わります。30 Hzは表示更新頻度であり、ゲームが30 fpsを出すという意味ではありません。
+GPU予算は報告値で、物理RAMを予約・保証する機構ではありません。解像度の値は初期ウインドウ時の値です。ウインドウサイズを変えると描画サイズも変わります。60 Hzは表示更新頻度であり、ゲームが60 fpsを出すという意味ではありません。Lite.1の30 HzからLite.2で60 Hzへ変更しました。[日本語入力とUS/JIS判別](japanese-input.md)もLite.2で追加しています。
 
 ゲストの匿名メモリをSSDへ退避することで、RAM不足による終了を減らせる可能性があります。ディスクスワップは物理RAMやGPUメモリの代わりにはならず、頻繁なページ入れ替えでは大きく遅くなります。macOSのスワップ設定や上限は変更しません。既存のzram・スワップも置き換えません。
 
@@ -33,12 +33,13 @@ Steam UIのソフトウェア描画と、起動150秒後のページキャッシ
 
 基点は`StonkGuy/steamac`の`v1.9.4-eac.1`、commit `c5437da7a4fdef5bd0b79546eab4a2a8a6689546`です。
 
-このMac用の開発ビルドでは、元の署名付きアプリから未変更のカーネル・DXMT・Mesa・libkrun等を再利用し、変更したSwiftランチャーをコンパイルして、ゲストレイヤーへスワップサービスを追加します。全コンポーネントをソースから再ビルドする上流のリリース手順とは異なります。元のライセンスとnoticeを保持し、変更したレイヤーには別のprovenanceを保存します。
+このMac用の開発ビルドでは、元の署名付きアプリから未変更のカーネル・DXMT・Mesa・libkrun等を再利用し、変更したSwiftランチャーをコンパイルして、ゲストレイヤーへスワップ・配列設定・日本語入力のサービスを追加します。全コンポーネントをソースから再ビルドする上流のリリース手順とは異なります。元のライセンスとnoticeを保持し、変更したレイヤーには別のprovenanceを保存します。
 
 必要なもの: macOS用Swift 6、SDK、Git、Python 3、erofs-utils（`fsck.erofs`と`mkfs.erofs`）、導入済みのFX Steam Launcher 1.9.4-eac.1。初回はSwiftPM依存関係とlibkrunヘッダー用ソースをダウンロードします。
 
 ```sh
 python3 scripts/test/low-memory-swap.py
+python3 scripts/test/keyboard-setup.py
 bash scripts/lite/build-app.sh
 ```
 
@@ -50,7 +51,7 @@ bash scripts/lite/build-app.sh
 
 2026-11-02にApple M1・RAM 8 GiB・macOS 27.2で、コピーした既存のSteamOSディスクを使って確認しました。`scripts/lite/smoke-test.py`によるheadless起動で、VM 3 GiB、GPU報告予算2 GiB、追加ディスクスワップ4 GiBの有効化、`Steam is ready`、正常シャットダウンを確認済みです。音声・SSH・VRはこのテストでは無効です。テストは既存のスワップファイルを再利用する実経路も通っています。初回のファイル割り当て・`mkswap`は、情報表示オプションの互換性エラーを修正する前の試行で完了していました。
 
-**Steam起動とVRChatのゲーム内動作確認は別です。** VRChatは他PCでの利用を継続するユーザーの意向に合わせて起動していません。EAC成功・ワールド入室・メモリ圧迫・フレーム時間・長時間安定性は未確認です。音声とGUI操作も、この軽量版の実機テスト対象には含めていません。
+**Steam起動とVRChatのゲーム内動作確認は別です。** 初回の自動テストではVRChatを起動していません。その後、ユーザーからこの8 GB MacでVRChatが動作したとの報告があり、SteamのGUI表示も確認しました。FPS、ワールド・アバター別の互換性、メモリ圧迫、フレーム時間、長時間安定性は測定していません。
 
 ```sh
 python3 scripts/lite/smoke-test.py --disk /path/to/stopped-test-copy.img

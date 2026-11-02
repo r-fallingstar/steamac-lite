@@ -18,6 +18,12 @@ set -euo pipefail
 # for the gaming session; Plasma brings its own portals.
 unset LD_PRELOAD XDG_DESKTOP_PORTAL_DIR
 export XDG_CONFIG_DIRS=/usr/lib/steamac/desktop-xdg:${XDG_CONFIG_DIRS:-/etc/xdg}
+if [[ " $(cat /proc/cmdline) " == *' steamac.japanese_ime=1 '* ]]; then
+    # The nested desktop has a separate D-Bus/runtime directory. Qt/GTK still use
+    # the outer session's existing IBus instead of starting another daemon.
+    export IBUS_ADDRESS=$(ibus address)
+    export GTK_IM_MODULE=ibus QT_IM_MODULE=ibus
+fi
 
 # The display's mode: the connected virtio-gpu connector's preferred mode, which
 # gamescope also uses for its output. Fallback: the launcher's default size.

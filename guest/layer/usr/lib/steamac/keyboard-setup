@@ -1,0 +1,129 @@
+#!/usr/bin/python3
+"""Configure the host's physical layout and existing Anthy once, before the session."""
+import configparser
+import io
+import json
+import os
+from pathlib import Path
+import tempfile
+
+
+def boot_options(cmdline):
+    words = dict(word.split('=', 1) for word in cmdline.split() if '=' in word)
+    layout = words.get('steamac.keyboard')
+    return (layout if layout in ('us', 'jis', 'iso') else None,
+            words.get('steamac.japanese_ime') == '1')
+
+
+def environment(layout, japanese):
+    values = {}
+    if layout:
+        values.update(XKB_DEFAULT_LAYOUT='jp' if layout == 'jis' else 'us',
+                      XKB_DEFAULT_MODEL='pc105', XKB_DEFAULT_VARIANT='', XKB_DEFAULT_OPTIONS='')
+    if japanese:
+        values.update(XMODIFIERS='@im=ibus', GTK_IM_MODULE='xim', QT_IM_MODULE='xim',
+                      SDL_IM_MODULE='ibus', GLFW_IM_MODULE='ibus')
+    return values
+
+
+def anthy_shortcuts(current):
+    result = {k: list(v) for k, v in current.items()}
+    # Keep Anthy active in direct/Latin mode for gameplay. Switching mode happens inside
+    # Anthy, so JIS Kana/Eisu select a mode rather than cycling unrelated engines.
+    result['on_off'] = list(dict.fromkeys([*result.get('on_off', []), 'Ctrl+space']))
+    result['latin_mode'] = ['Muhenkan']
+    result['hiragana_mode'] = ['Hiragana']
+    result['convert_to_char_type_forward'] = [k for k in result.get('convert_to_char_type_forward', [])
+                                             if k != 'Muhenkan']
+    return result
+
+
+def desktop_layout(text, layout, previous=None):
+    """KWin's nested Wayland seat has its own layout; keep an observed user override."""
+    config = configparser.ConfigParser(interpolation=None, strict=False)
+    config.optionxform = str
+    config.read_string(text)
+    current = dict(config['Layout']) if config.has_section('Layout') else {}
+    if previous is not None and any(current.get(k) != v for k, v in previous.items()):
+        return text, None
+    want = {'Use': 'true', 'Model': 'pc105', 'LayoutList': 'jp' if layout == 'jis' else 'us',
+            'VariantList': '', 'Options': '', 'ResetOldOptions': 'true'}
+    if not config.has_section('Layout'):
+        config.add_section('Layout')
+    config['Layout'].update(want)
+    out = io.StringIO()
+    config.write(out, space_around_delimiters=False)
+    return out.getvalue(), want
+
+
+def atomic_write(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=path.name+'.', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(text)
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
+def main():
+    layout, japanese = boot_options(Path('/proc/cmdline').read_text())
+    runtime = Path(os.environ['XDG_RUNTIME_DIR'])/'steamac'
+    values = environment(layout, japanese)
+    atomic_write(runtime/'input.env', ''.join(f'{k}={v}\n' for k, v in values.items()))
+    if layout:
+        state_path = Path.home()/'.config/steamac/keyboard-layout-v1.json'
+        state = json.loads(state_path.read_text()) if state_path.exists() else {}
+        desktop = Path.home()/'.config/kxkbrc'
+        if not state.get('user_override'):
+            text = desktop.read_text() if desktop.exists() else ''
+            updated, managed = desktop_layout(text, layout, state.get('managed'))
+            if managed is not None:
+                atomic_write(desktop, updated)
+                state = {'managed': managed}
+            else:
+                state['user_override'] = True
+            atomic_write(state_path, json.dumps(state, indent=2)+'\n')
+    if not japanese:
+        return
+    if not Path('/usr/share/ibus/component/anthy.xml').is_file():
+        raise RuntimeError('This SteamOS image does not include ibus-anthy; Japanese IME unavailable')
+    marker = Path.home()/'.config/steamac/japanese-input-v1.json'
+    if not marker.exists():
+        import gi
+        gi.require_version('Gio', '2.0')
+        from gi.repository import Gio, GLib
+        general = Gio.Settings.new('org.freedesktop.ibus.general')
+        hotkey = Gio.Settings.new('org.freedesktop.ibus.general.hotkey')
+        common = Gio.Settings.new('org.freedesktop.ibus.engine.anthy.common')
+        shortcut = Gio.Settings.new('org.freedesktop.ibus.engine.anthy.shortcut')
+        base = 'xkb:jp::jpn' if layout == 'jis' else 'xkb:us::eng'
+        engines = list(dict.fromkeys(['anthy', base, *general.get_strv('preload-engines')]))
+        previous = {}
+        for settings, key, value in [
+            (general, 'preload-engines', GLib.Variant('as', engines)),
+            (general, 'engines-order', GLib.Variant('as', engines)),
+            (general, 'use-system-keyboard-layout', GLib.Variant('b', True)),
+            (hotkey, 'triggers', GLib.Variant('as', [])),
+            (common, 'input-mode', GLib.Variant('i', 3)),  # direct Latin, not Hiragana
+            (common, 'typing-method', GLib.Variant('i', 0)),  # romaji
+            (common, 'shortcut-type', GLib.Variant('s', 'default')),
+            (shortcut, 'default', GLib.Variant('a{sv}', {
+                k: GLib.Variant('as', v) for k, v in anthy_shortcuts(shortcut.get_value('default').unpack()).items()
+            })),
+        ]:
+            previous[settings.props.schema_id+'/'+key] = settings.get_value(key).print_(True)
+            if not settings.set_value(key, value):
+                raise RuntimeError('Could not save '+key)
+        Gio.Settings.sync()
+        # A new setup activates Anthy after its D-Bus service is ready. Later starts retain
+        # user edits, including shortcuts and other engines selected in IBus settings.
+        atomic_write(marker, json.dumps({'version': 1, 'previous': previous}, indent=2)+'\n')
+        atomic_write(runtime/'activate-anthy', '1\n')
+    print(f'keyboard-setup: physical={layout or "unchanged"} Japanese=Anthy (direct Latin at first start)')
+
+
+if __name__ == '__main__':
+    main()

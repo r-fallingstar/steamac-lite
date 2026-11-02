@@ -20,6 +20,7 @@ final class WindowController: NSObject, NSWindowDelegate {
     let view: VMView
     private let inputs: VMInputs?
     private let mouseMode: MouseMode
+    private let keyboardLayout: KeyboardLayout
     private let baseTitle: String
     var onCloseRequest: (() -> Void)?
     /// Ctrl+Cmd+S while the VM window has the keyboard (the menu's Suspend).
@@ -108,9 +109,10 @@ final class WindowController: NSObject, NSWindowDelegate {
 
     /// `width` x `height`: initial content size in points; the guest display is that times `pixelScale`.
     init(title: String, width: Int, height: Int, pixelScale: Double = 1, renderer: Renderer, inputs: VMInputs?,
-         mouseMode: MouseMode) {
+         mouseMode: MouseMode, keyboardLayout: KeyboardLayout = .detected) {
         self.inputs = inputs
         self.mouseMode = mouseMode
+        self.keyboardLayout = keyboardLayout
         self.baseTitle = title
         self.pixelScale = pixelScale
         self.renderScaled = pixelScale < 1
@@ -685,12 +687,12 @@ final class WindowController: NSObject, NSWindowDelegate {
                 wakeGuest("key")
                 return true
             }
-            guard let code = Keymap.linuxKey(e.keyCode) else { return true }
+            guard let code = Keymap.linuxKey(e.keyCode, layout: keyboardLayout) else { return true }
             if pressedKeys.insert(code).inserted { sendKey(code, true) }
             return true
         case .keyUp:
             if swallowedKeys.remove(e.keyCode) != nil || guestAsleep { return true }
-            guard let code = Keymap.linuxKey(e.keyCode) else { return true }
+            guard let code = Keymap.linuxKey(e.keyCode, layout: keyboardLayout) else { return true }
             if pressedKeys.remove(code) != nil { sendKey(code, false) }
             return true
         default: // flagsChanged

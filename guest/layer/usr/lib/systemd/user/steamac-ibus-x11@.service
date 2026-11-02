@@ -1,0 +1,12 @@
+[Unit]
+Description=SteamAC Japanese XIM on Xwayland %i
+After=ibus-gamescope.service gamescope-session.service
+PartOf=gamescope-session.target plasma-session.target
+
+[Service]
+Type=simple
+EnvironmentFile=-%t/steamac/input.env
+ExecStart=/usr/lib/steamac/ibus-x11-display %i
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=3

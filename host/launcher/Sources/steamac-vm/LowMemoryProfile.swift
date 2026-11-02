@@ -17,7 +17,7 @@ enum LowMemoryProfile {
         defaults.applyLowMemoryProfile(overrides: &overrides, host: host)
         if defaults.memMiB != vmMiB { failures.append("VM budget") }
         if VMSizing.gpuBudgetMiB(memMiB: defaults.memMiB, host: host) != 2048 { failures.append("GPU headroom") }
-        if defaults.guestSize != (960, 600) || defaults.refreshRate != 30 { failures.append("display budget") }
+        if defaults.guestSize != (960, 600) || defaults.refreshRate != 60 { failures.append("display budget") }
         if defaults.memSource != .profile { failures.append("settings source") }
         if overrides[.retinaResolution] == nil { failures.append("Retina override not shown") }
         do {
@@ -68,7 +68,7 @@ extension Options {
             overrides[.renderScale] = why
         }
         if !explicit.contains("--refresh") {
-            refreshRate = 30
+            refreshRate = 60
             overrides[.refreshRate] = why
         }
         if !explicit.contains("--wmtr-lib") && !explicit.contains("--no-wmtr") && !explicit.contains("--graphics-path") {

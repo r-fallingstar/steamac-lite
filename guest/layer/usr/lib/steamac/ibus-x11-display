@@ -1,0 +1,8 @@
+#!/bin/bash
+# One XIM server per gamescope Xwayland; all share the same IBus/Anthy instance.
+set -euo pipefail
+[[ ${1:-} =~ ^[0-9]+$ ]] || exit 2
+export IBUS_ADDRESS
+IBUS_ADDRESS=$(ibus address)
+export DISPLAY=:$1
+exec /usr/lib/ibus/ibus-x11

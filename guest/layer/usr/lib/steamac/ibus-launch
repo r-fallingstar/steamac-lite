@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+args=(-r --emoji-extension=disable)
+if [[ " $(cat /proc/cmdline) " == *' steamac.japanese_ime=1 '* ]]; then
+    # Stock SteamOS disables the panel and XIM server. Physical X11/Proton text fields
+    # need XIM, and the GTK panel presents Anthy's conversion candidates.
+    args+=(--xim --panel=/usr/lib/ibus/ibus-ui-gtk3)
+else
+    args+=(--panel=disable)
+fi
+exec /usr/bin/ibus-daemon "${args[@]}"

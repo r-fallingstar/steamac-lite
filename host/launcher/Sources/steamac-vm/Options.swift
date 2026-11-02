@@ -21,6 +21,10 @@ enum MouseMode: String {
 struct Options {
     var lowMemory = Bundle.main.object(forInfoDictionaryKey: "SteamacLowMemoryDefaults") as? Bool ?? false
     var selftestLowMemory = false
+    var selftestKeyboard = false
+    /// nil follows the Mac's physical keyboard at each boot, not its input-source language.
+    var keyboardLayout: KeyboardLayout?
+    var effectiveKeyboardLayout: KeyboardLayout { keyboardLayout ?? .detected }
     var kernel: String = ""
     var initrd: String?
     /// virtio_snd.msg_timeout_ms: the CoreAudio backend starts a capture stream synchronously on the
@@ -211,10 +215,12 @@ struct Options {
                            cores, 2..8)
       --mem MiB            guest RAM (default: Settings > Advanced, automatic = half this Mac's RAM,
                            4096..16384; the GPU's memory comes from the same RAM)
-      --low-memory         experimental 8 GB profile: 3 GiB VM, non-Retina 960x600 at 30 Hz,
+      --low-memory         experimental 8 GB profile: 3 GiB VM, non-Retina 960x600 at 60 Hz,
                            DXMT when available, plus 4 GiB guest disk swap (8 GiB free required)
       --no-low-memory      disable this profile for this boot (the Lite app enables it by default)
       --selftest-low-memory  check profile precedence and memory budgets without starting a VM
+      --keyboard-layout K  physical layout: auto (default), us, jis or iso; applies at next boot
+      --selftest-keyboard   check physical-layout detection and JIS key mappings without a VM
       --display WxH        initial window size in points (default 1280x800); the guest display follows
                            the window: content size in points = guest pixels, x the screen's backing
                            scale with Settings > Display > Retina resolution (even, min 800x500, max
@@ -404,6 +410,13 @@ struct Options {
             case "--low-memory": o.lowMemory = true
             case "--no-low-memory": o.lowMemory = false
             case "--selftest-low-memory": o.selftestLowMemory = true
+            case "--selftest-keyboard": o.selftestKeyboard = true
+            case "--keyboard-layout":
+                let v = try value(a)
+                guard v == "auto" || KeyboardLayout(rawValue: v) != nil else {
+                    throw OptionError("--keyboard-layout: expected auto, us, jis or iso")
+                }
+                o.keyboardLayout = KeyboardLayout(rawValue: v)
             case "--kernel": o.kernel = try value(a)
             case "--initrd": o.initrd = try value(a)
             case "--cmdline": o.cmdline = try value(a)
@@ -592,7 +605,7 @@ struct Options {
         selftestDisplay || selftestOverlay || selftestStall || selftestPill || selftestSettings || selftestProvision || selftestRemotePlay
             || selftestMetalCache || selftestPointer || selftestGameLayers || selftestVR || selftestL10n || createDisk != nil
             || growDisk != nil
-            || showSSHPassword != nil || selftestLowMemory
+            || showSSHPassword != nil || selftestLowMemory || selftestKeyboard
     }
 
     /// Command line + saved settings (+ app bundle resources): what this boot runs with, and which
@@ -629,6 +642,8 @@ struct Options {
             add("steamac.gfx", o.wmtrLibrary == nil ? "vulkan" : "dxmt")
             add("steamac.gpu_mib", String(VMSizing.gpuBudgetMiB(memMiB: o.memMiB)))
             if o.lowMemory { add("steamac.low_memory", "1") }
+            add("steamac.keyboard", o.effectiveKeyboardLayout.rawValue)
+            add("steamac.japanese_ime", "1")
             // only written when on; absent is the default (off), so an explicit =0 needs no key
             if let a = Options.frameLatencyArg(o.frameLatency) { add(a.key, a.value) }
             if let a = Options.vrArg(o.vr && VRHost.unavailableReason(o) == nil) { add(a.key, a.value) }
