@@ -4,9 +4,9 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.4-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.4/SteamAC-Lite-1.9.4-lite.4-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.5/SteamAC-Lite-1.9.4-lite.5-macos-arm64.dmg)**
 
-DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.4)
+DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.5)
 
 macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 
@@ -28,7 +28,7 @@ macOSの仮想メモリ設定は変更しません。スワップはRAM不足に
 
 [Mac別の自動設定表と設定方法](docs/performance-profiles.md)
 
-初回に「日本語」を選ぶと、ランチャーの設定画面やメニューを日本語で表示します。あとから **設定… > 一般 > 表示言語** で変更でき、アプリの再起動で反映されます。SteamOS・Steam・ゲーム自体の表示言語は、それぞれの設定を使います。
+初回に「日本語」を選ぶと、ランチャーの設定画面やメニューを日本語で表示します。Lite.5以降は、新しいSteamOSディスクのSteamも初回から日本語で表示します。既存ディスクのSteamの言語は変更しません。ランチャーは **設定… > 一般 > 表示言語** で変更し、アプリの再起動で反映します。Steamとゲームの言語はそれぞれの設定で変更します。
 
 ## 日本語の入力
 
@@ -59,5 +59,7 @@ bash scripts/lite/build-app.sh
 ## 動作確認の範囲
 
 Apple M1・RAM 8 GiB・macOS 27.2で、Steamの画面表示と正常終了、3 GiBのVM RAM、4 GiBのゲスト用スワップを確認しました。ユーザーからVRChatが動作したとの報告もあります。FPSや長時間の安定性、すべてのワールド・アバターの互換性は未確認です。
+
+Lite.5では、新しいSteamOSディスクの作成から、FEX・Proton・EACのダウンロード、VRChat向け設定の完了まで確認しました。Steamへのログインとインストール確認は手動です。別の未起動SteamOSディスクで、Steamの初回ログイン画面が日本語になることも確認しています。[検証結果と制限](docs/validation-lite.5.md)を参照してください。
 
 配列・日本語入力の確認方法は[日本語入力と配列](docs/japanese-input.md)を参照してください。上流版の最低RAM要件は16 GBで、この8 GBプロファイルは独自の実験です。Valve、VRChat、Epic Games、FX GAMES等の公式製品ではありません。元のライセンス・noticeは保持しています。

@@ -1,0 +1,45 @@
+#!/usr/bin/python3
+"""Seed Steam's UI language before its first start; preserve existing installs.
+
+Runs before the other Steam pre-start hooks create their config.vdf defaults.
+Only HKCU/Software/Valve/Steam/language is written, never login preferences.
+"""
+import json
+import os
+from pathlib import Path
+import runpy
+
+HERE = Path(__file__).resolve().parent
+VDF = runpy.run_path(str(HERE/"steam-title-defaults"))
+REGISTRY_LANGUAGE_PATH = ("Registry", "HKCU", "Software", "Valve", "Steam", "language")
+LANGUAGES = {"ja":"japanese", "en":"english", "ru":"russian", "zh-Hans":"schinese"}
+
+
+def seed(home, cmdline):
+    selected = None
+    for word in cmdline.split():
+        if word.startswith("steamac.setup_language="):
+            selected = LANGUAGES.get(word.split("=", 1)[1])
+    if not selected:
+        return "no-supported-language"
+    state = home/".config/steamac/steam-language.json"
+    if state.exists():
+        return "already-initialized"
+    steam = home/".local/share/Steam"
+    registry = home/".steam/registry.vdf"
+    text = registry.read_text() if registry.exists() else '"Registry"\n{\n}\n'
+    values = VDF["vdf_entries"](text)[0]
+    previous = values.get(tuple(k.lower() for k in REGISTRY_LANGUAGE_PATH), (None,))[0]
+    existing = (steam/"config/config.vdf").exists() or (steam/"config/loginusers.vdf").exists()
+    if previous or existing:
+        outcome = "existing-settings-preserved"
+    else:
+        VDF["atomic_write"](registry, VDF["vdf_set"](text, REGISTRY_LANGUAGE_PATH, selected))
+        outcome = "initial-language-seeded"
+    VDF["atomic_write"](state, json.dumps({"version":1, "outcome":outcome, "requested_language":selected, "initial_language":selected if outcome == "initial-language-seeded" else previous})+"\n")
+    print("steam-language: "+outcome+" ("+selected+")", flush=True)
+    return outcome
+
+
+if __name__ == "__main__":
+    seed(Path.home(), Path(os.environ.get("STEAMAC_CMDLINE", "/proc/cmdline")).read_text())

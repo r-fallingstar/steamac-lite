@@ -2,11 +2,11 @@
 
 ## ダウンロードとインストール
 
-1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.4)から **SteamAC-Lite-1.9.4-lite.4-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
+1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.5)から **SteamAC-Lite-1.9.4-lite.5-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
 2. DMGを開き、**SteamAC Lite.app** を **Applications** フォルダへコピーします。
 3. アプリケーションフォルダからSteamAC Liteを開きます。ビルドやコマンド入力は不要です。
 
-初回は表示言語の選択画面が出ます。**日本語**を選んで「続ける」を押すと、以降のランチャー画面を日本語で表示します。あとから **設定… > 一般 > 表示言語** で変更できます。表示言語の変更後はアプリを再起動してください。SteamOS・Steam・ゲームの表示言語は別途それぞれで設定します。
+初回は表示言語の選択画面が出ます。**日本語**を選んで「続ける」を押すと、以降のランチャー画面を日本語で表示します。Lite.5以降は、新しいSteamOSディスクのSteamも初回から日本語になります。既存ディスクのSteamの言語は変更しません。ランチャーは **設定… > 一般 > 表示言語** で変更し、アプリの再起動で反映します。Steamとゲームの言語はそれぞれの設定で変更してください。
 
 Apple Silicon（M1以降）・RAM 8 GB以上・macOS 15.5以降向けです。実機での確認環境はM1・8 GB・macOS 27.2です。Intel Macには対応していません。SteamOS・Steam・ゲームをダウンロードするためのインターネット接続と、十分なディスク空き容量が必要です。初期作成・キャッシュのため20 GB程度に加え、ゲームの容量を見込んでください。8 GB向けスワップの初回作成には、Mac・ゲスト双方で8 GiB以上の空きが必要です。
 

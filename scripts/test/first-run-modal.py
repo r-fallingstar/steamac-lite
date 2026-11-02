@@ -32,7 +32,16 @@ enum FirstRunScheduling {
         subprocess.run(["swiftc", "-swift-version", "5", "-parse-as-library", str(implementation),
                         str(ROOT/"scripts/test/first-run-modal.swift"), "-o", str(executable)],
                        env=environment, check=True)
-        result = subprocess.run([str(executable)], capture_output=True, text=True, timeout=12)
+        try:
+            result = subprocess.run([str(executable)], capture_output=True, text=True, timeout=12)
+        except subprocess.TimeoutExpired:
+            # A nested modal can also stall its run-loop timer in the broken
+            # implementation. The parent process still bounds that deadlock.
+            if name != "previous":
+                raise
+            results.append({"implementation": name, "timed_out": True,
+                            "output": "first-run-modal: FAIL (negative control blocked)"})
+            continue
         results.append({"implementation": name, "exit_code": result.returncode, "output": result.stdout.strip()})
         assert result.returncode == expected, results[-1]
     print(json.dumps(results, ensure_ascii=False))

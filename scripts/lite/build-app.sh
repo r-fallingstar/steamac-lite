@@ -43,9 +43,9 @@ import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='SteamAC Lite',
-         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.4',
+         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.5',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194004',
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194005',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
          LSMinimumSystemVersion='15.5')
 p.pop('SteamacBuildOut', None)
@@ -92,10 +92,10 @@ install -m755 guest/layer/usr/lib/steamac/low-memory-swap "$LAYER/usr/lib/steama
 install -m644 guest/layer/usr/lib/systemd/system/steamac-low-memory-swap.service "$LAYER/usr/lib/systemd/system/"
 mkdir -p "$LAYER/usr/lib/systemd/system/multi-user.target.wants"
 ln -s ../steamac-low-memory-swap.service "$LAYER/usr/lib/systemd/system/multi-user.target.wants/steamac-low-memory-swap.service"
-for script in keyboard-setup keyboard-session ibus-launch ibus-x11-display nested-desktop; do
+for script in keyboard-setup keyboard-session ibus-launch ibus-x11-display nested-desktop steam-language; do
     install -m755 "guest/layer/usr/lib/steamac/$script" "$LAYER/usr/lib/steamac/$script"
 done
-for unit in steamac-keyboard-setup.service steamac-keyboard-session.service 'steamac-ibus-x11@.service' \
+for unit in steam.service.d/40-steamac-language.conf steamac-keyboard-setup.service steamac-keyboard-session.service 'steamac-ibus-x11@.service' \
     gamescope-session.service.d/60-steamac-keyboard.conf ibus-gamescope.service.d/60-steamac-keyboard.conf \
     steam.service.d/60-steamac-keyboard.conf steamac-nested-desktop.service.d/60-steamac-keyboard.conf; do
     mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
@@ -111,7 +111,7 @@ for unit in steamac-vrchat-setup.service steam.service.d/70-steamac-vrchat-setup
     mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
     install -m644 "guest/layer/usr/lib/systemd/user/$unit" "$LAYER/usr/lib/systemd/user/$unit"
 done
-echo 'steamac-lite v1.9.4-lite.4 adaptive-performance Japanese-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
+echo 'steamac-lite v1.9.4-lite.5 adaptive-performance Japanese-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"
