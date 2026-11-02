@@ -6,9 +6,11 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.4-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.5/SteamAC-Lite-1.9.4-lite.5-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.6/SteamAC-Lite-1.9.4-lite.6-macos-arm64.dmg)**
 
-DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.5)
+Lite.6でSteamOSのマイク入力が無音になる問題を修正しました。[原因と確認内容](docs/microphone-fix.md)。
+
+DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.6)
 
 macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 

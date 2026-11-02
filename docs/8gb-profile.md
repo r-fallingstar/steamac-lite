@@ -33,14 +33,15 @@ Lite.3からは[Mac別の自動設定](performance-profiles.md)が既定にな�
 
 基点は`StonkGuy/steamac`の`v1.9.4-eac.1`、commit `c5437da7a4fdef5bd0b79546eab4a2a8a6689546`です。
 
-このMac用の開発ビルドでは、元の署名付きアプリから未変更のカーネル・DXMT・Mesa・libkrun等を再利用し、変更したSwiftランチャーをコンパイルして、ゲストレイヤーへスワップ・配列設定・日本語入力のサービスを追加します。全コンポーネントをソースから再ビルドする上流のリリース手順とは異なります。元のライセンスとnoticeを保持し、変更したレイヤーには別のprovenanceを保存します。
+このMac用の開発ビルドでは、元の署名付きアプリからカーネル・DXMT・Mesa等を再利用し、変更したSwiftランチャーをコンパイルして、ゲストレイヤーへスワップ・配列設定・日本語入力のサービスを追加します。全コンポーネントをソースから再ビルドする上流のリリース手順とは異なります。元のライセンスとnoticeを保持し、変更したレイヤーには別のprovenanceを保存します。
 
-必要なもの: macOS用Swift 6、SDK、Git、Python 3、erofs-utils（`fsck.erofs`と`mkfs.erofs`）、導入済みのFX Steam Launcher 1.9.4-eac.1。初回はSwiftPM依存関係とlibkrunヘッダー用ソースをダウンロードします。
+必要なもの: macOS用Swift 6、SDK、Rust 1.90.0、Git、Python 3、erofs-utils（`fsck.erofs`と`mkfs.erofs`）、導入済みのFX Steam Launcher 1.9.4-eac.1。初回はSwiftPM依存関係とlibkrunヘッダー用ソースをダウンロードします。
 
 ```sh
 python3 scripts/test/low-memory-swap.py
 python3 scripts/test/keyboard-setup.py
-bash scripts/lite/build-app.sh
+BASE_APP="/Applications/FX Steam Launcher.app" bash scripts/lite/build-audio-library.sh
+LIBKRUN_OVERRIDE="$PWD/work/out/host/lib/libkrun.1.dylib" bash scripts/lite/build-app.sh
 ```
 
 `BASE_APP`、`DEVELOPER_DIR`、`SDK`、`JOBS`、`FSCK_EROFS`、`MKFS_EROFS`を指定できます。標準のCommand Line Tools SDK 26.5があれば使用します。新しいSDKでSwiftUIマクロのプラグインが必要な場合は、対応するXcode一式が必要です。

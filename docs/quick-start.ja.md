@@ -4,7 +4,7 @@
 
 ## ダウンロードとインストール
 
-1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.5)から **SteamAC-Lite-1.9.4-lite.5-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
+1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.6)から **SteamAC-Lite-1.9.4-lite.6-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
 2. DMGを開き、**SteamAC Lite.app** を **Applications** フォルダへコピーします。
 3. アプリケーションフォルダからSteamAC Liteを開きます。ビルドやコマンド入力は不要です。
 

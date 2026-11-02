@@ -4,7 +4,9 @@
 
 **[写真付きの導入ガイド / Illustrated setup guide (Japanese)](https://r-fallingstar.github.io/steamac-lite/)**
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.5/SteamAC-Lite-1.9.4-lite.5-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.5) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.6/SteamAC-Lite-1.9.4-lite.6-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.6) · [はじめての導入手順](docs/quick-start.ja.md)
+
+Lite.6 fixes silent microphone input in SteamOS. [Cause, fix and validation](docs/microphone-fix.md).
 
 Open the DMG and copy **SteamAC Lite.app** into **Applications**. No build tools are needed. This is an experimental, ad-hoc signed and unnotarized build; SteamOS and games are downloaded separately. The optional **VRChat setup** bundles the patched FEX and prepares Proton/EAC and launch options after Steam sign-in. Steam download confirmations remain user actions; no game is started. See [the setup flow](docs/vrchat-setup.ja.md).
 

@@ -18,6 +18,11 @@ head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, env=env, 
 assert receipt['source_commit'] == head and not receipt['working_tree_modified'], 'Build from a clean source commit first'
 assert 'SteamacBuildOut' not in info
 assert info['SteamacGitCommit'] == head[:10]
+audio = json.loads((APP/'Contents/Resources/steamac-audio-fix.json').read_text())
+with (APP/'Contents/Frameworks/libkrun.1.dylib').open('rb') as stream:
+    library_sha = hashlib.file_digest(stream, 'sha256').hexdigest()
+assert library_sha == receipt['libkrun_sha256'] == audio['patched_library_sha256']
+assert audio['builder_paths_removed'] and audio['audio_regression_tests_passed'] >= 32
 subprocess.run(['codesign', '--verify', '--deep', '--strict', str(APP)], check=True)
 out = ROOT/'work/dist'
 out.mkdir(exist_ok=True)
@@ -58,5 +63,7 @@ record = {'version': version, 'source_commit': head, 'dmg': image.name, 'sha256'
           'dmg_integrity_verified': True, 'copied_out_signature_verified': True,
           'copied_out_profile_selftest_passed': True, 'copied_out_keyboard_selftest_passed': True}
 record.update(copied_out_language_selftest_passed=True, copied_out_localization_selftest_passed=True)
+record.update(libkrun_sha256=library_sha, audio_patch_sha256=audio['patch_sha256'],
+              audio_regression_tests_passed=audio['audio_regression_tests_passed'], builder_paths_removed=True)
 (out/'distribution-validation.json').write_text(json.dumps(record, indent=2)+'\n')
 print(json.dumps(record, indent=2))

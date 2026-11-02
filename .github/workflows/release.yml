@@ -18,7 +18,8 @@ name: Release DMG
 
 on:
   push:
-    tags: ['v*']
+    # Lite tags use the verified Lite packaging scripts, not the upstream FX build.
+    tags: ['v*', '!v*-lite.*']
   workflow_dispatch:
     inputs:
       ref:
