@@ -145,33 +145,38 @@ enum FirstRun {
         log("first run: no usable disk image (\(settings.diskImage.isEmpty ? "none found" : settings.diskImage)); asking the user")
         app.setActivationPolicy(.regular)
         MainMenu.installMinimal()
-        app.activate()
-        let alert = makeAlert(settings: settings)
-        while true {
-            let choice = alert.runModal()
-            var chosen: String?
-            if choice == .alertFirstButtonReturn {
-                chosen = CreateDiskWindowController.runModal(settings: settings)
-            } else if choice == .alertSecondButtonReturn {
-                let panel = NSOpenPanel()
-                AppBundle.configureDiskPanel(panel)
-                panel.message = String(localized: "Raw GPT disk image (e.g. steamos.img). It stays where it is.")
-                if panel.runModal() == .OK, let url = panel.url, AppBundle.isDiskImage(url.path) {
-                    chosen = url.path
+        // Complete AppKit startup before a modal first-run window, including its AX service.
+        DispatchQueue.main.async {
+            app.activate()
+            let alert = makeAlert(settings: settings)
+            while true {
+                let choice = alert.runModal()
+                var chosen: String?
+                if choice == .alertFirstButtonReturn {
+                    chosen = CreateDiskWindowController.runModal(settings: settings)
+                } else if choice == .alertSecondButtonReturn {
+                    let panel = NSOpenPanel()
+                    AppBundle.configureDiskPanel(panel)
+                    panel.message = String(localized: "Raw GPT disk image (e.g. steamos.img). It stays where it is.")
+                    if panel.runModal() == .OK, let url = panel.url, AppBundle.isDiskImage(url.path) {
+                        chosen = url.path
+                    }
+                } else {
+                    log("first run: no disk chosen; quitting")
+                    exit(0)
                 }
-            } else {
-                log("first run: no disk chosen; quitting")
+                guard let path = chosen else { continue }
+                settings.diskImage = path
+                log("first run: disk image \(path)")
+                // Tell the supervisor to start the VM now (same marker as a guest reboot).
+                if let dir = Supervisor.runDir {
+                    FileManager.default.createFile(atPath: Supervisor.rebootMarker(dir), contents: Data(Supervisor.firstRunMarker.utf8))
+                }
                 exit(0)
             }
-            guard let path = chosen else { continue }
-            settings.diskImage = path
-            log("first run: disk image \(path)")
-            // Tell the supervisor to start the VM now (same marker as a guest reboot).
-            if let dir = Supervisor.runDir {
-                FileManager.default.createFile(atPath: Supervisor.rebootMarker(dir), contents: Data(Supervisor.firstRunMarker.utf8))
-            }
-            exit(0)
         }
+        app.run()
+        exit(0)
     }
 
     /// The first-run alert (also captured by --selftest-settings).

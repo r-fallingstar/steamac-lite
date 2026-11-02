@@ -12,6 +12,8 @@ signal(SIGPIPE, SIG_IGN)
 // Finder / `open` launch of the .app: console + launcher log go to ~/Library/Logs/es.fxgam.steamac.
 if !Supervisor.isChild { AppBundle.redirectOutputIfLaunchedFromFinder() }
 
+MainActor.assumeIsolated { ApplicationLanguage.chooseOnFirstLaunch(CommandLine.arguments) }
+
 let settings = LauncherSettings.shared
 var options: Options
 var settingsOverrides: [LauncherSettings.Key: String]
@@ -32,7 +34,7 @@ if options.selftestL10n { L10nSelfTest.run() }
 if options.selftestGraphicsPath { GraphicsPathSelfTest.run(options) }
 if options.selftestVR { VRSelfTest.run(options) }
 if options.selftestLowMemory {
-    let failures = LowMemoryProfile.selfCheck()
+    let failures = PerformanceProfile.selfCheck()
     print(failures.isEmpty ? "low-memory: PASS" : "low-memory: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
@@ -40,6 +42,11 @@ if options.selftestKeyboard {
     let failures = KeyboardLayout.selfCheck()
     print("keyboard: detected \(KeyboardLayout.detected.rawValue)")
     print(failures.isEmpty ? "keyboard: PASS" : "keyboard: FAIL: " + failures.joined(separator: "; "))
+    exit(failures.isEmpty ? 0 : 1)
+}
+if options.selftestLanguage {
+    let failures = ApplicationLanguage.selfCheck()
+    print(failures.isEmpty ? "language: PASS" : "language: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
 // Before CrashReporting's GPU tags, the window or either Vulkan driver can initialise Metal.
@@ -110,7 +117,7 @@ if let f = Supervisor.windowFrame, !f.isEmpty, !options.headless {
 
 // MARK: VM process (one boot)
 
-let windowTitle = "FX Steam Launcher"
+let windowTitle = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "FX Steam Launcher"
 
 /// Graceful shutdown policy shared by window close, menu, signals and the console escape; window
 /// close / menu Suspend / Dock click / Quit while suspended (SuspendController).

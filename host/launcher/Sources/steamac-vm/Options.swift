@@ -19,9 +19,13 @@ enum MouseMode: String {
 }
 
 struct Options {
-    var lowMemory = Bundle.main.object(forInfoDictionaryKey: "SteamacLowMemoryDefaults") as? Bool ?? false
+    var performanceMode = PerformanceMode.defaultMode
+    var savedPerformanceKeys: Set<LauncherSettings.Key> = []
+    /// Effective disk-swap policy of this boot (resolved from the profile).
+    var lowMemory = false
     var selftestLowMemory = false
     var selftestKeyboard = false
+    var selftestLanguage = false
     /// nil follows the Mac's physical keyboard at each boot, not its input-source language.
     var keyboardLayout: KeyboardLayout?
     var effectiveKeyboardLayout: KeyboardLayout { keyboardLayout ?? .detected }
@@ -215,12 +219,14 @@ struct Options {
                            cores, 2..8)
       --mem MiB            guest RAM (default: Settings > Advanced, automatic = half this Mac's RAM,
                            4096..16384; the GPU's memory comes from the same RAM)
+      --profile MODE       auto (Mac RAM/cores/screen), low-memory, manual; Lite defaults to auto
       --low-memory         experimental 8 GB profile: 3 GiB VM, non-Retina 960x600 at 60 Hz,
                            DXMT when available, plus 4 GiB guest disk swap (8 GiB free required)
-      --no-low-memory      disable this profile for this boot (the Lite app enables it by default)
+      --no-low-memory      legacy alias for --profile manual (no automatic guest disk swap)
       --selftest-low-memory  check profile precedence and memory budgets without starting a VM
       --keyboard-layout K  physical layout: auto (default), us, jis or iso; applies at next boot
       --selftest-keyboard   check physical-layout detection and JIS key mappings without a VM
+      --selftest-language   check language preferences and Japanese resources without a VM
       --display WxH        initial window size in points (default 1280x800); the guest display follows
                            the window: content size in points = guest pixels, x the screen's backing
                            scale with Settings > Display > Retina resolution (even, min 800x500, max
@@ -407,10 +413,16 @@ struct Options {
             if a == "-AppleLanguages" || a == "-AppleLocale" { i += 2; continue }
             o.explicit.insert(a)
             switch a {
-            case "--low-memory": o.lowMemory = true
-            case "--no-low-memory": o.lowMemory = false
+            case "--low-memory": o.performanceMode = .lowMemory
+            case "--no-low-memory": o.performanceMode = .manual
+            case "--profile":
+                guard let mode = PerformanceMode(rawValue: try value(a)) else {
+                    throw OptionError("--profile: expected auto, low-memory or manual")
+                }
+                o.performanceMode = mode
             case "--selftest-low-memory": o.selftestLowMemory = true
             case "--selftest-keyboard": o.selftestKeyboard = true
+            case "--selftest-language": o.selftestLanguage = true
             case "--keyboard-layout":
                 let v = try value(a)
                 guard v == "auto" || KeyboardLayout(rawValue: v) != nil else {
@@ -605,7 +617,7 @@ struct Options {
         selftestDisplay || selftestOverlay || selftestStall || selftestPill || selftestSettings || selftestProvision || selftestRemotePlay
             || selftestMetalCache || selftestPointer || selftestGameLayers || selftestVR || selftestL10n || createDisk != nil
             || growDisk != nil
-            || showSSHPassword != nil || selftestLowMemory || selftestKeyboard
+            || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage
     }
 
     /// Command line + saved settings (+ app bundle resources): what this boot runs with, and which
@@ -613,7 +625,8 @@ struct Options {
     static func resolve(_ argv: [String], settings: LauncherSettings) throws -> (Options, [LauncherSettings.Key: String]) {
         var o = try parse(argv)
         var overrides = o.applySettings(settings)
-        o.applyLowMemoryProfile(overrides: &overrides)
+        o.applyPerformanceProfile(overrides: &overrides,
+                                  available: o.headless || o.isSelftest || !Supervisor.isChild ? nil : LauncherSettings.fitToScreenSize())
         if !o.isSelftest, let reason = o.vulkanDriver.unavailableReason {
             guard !o.explicit.contains("--vulkan-driver") else {
                 throw OptionError("--vulkan-driver \(o.vulkanDriver.rawValue): \(o.vulkanDriver.name) \(reason)")
@@ -664,6 +677,10 @@ struct Options {
     mutating func applySettings(_ s: LauncherSettings) -> [LauncherSettings.Key: String] {
         var ov: [LauncherSettings.Key: String] = [:]
         func given(_ flag: String) -> Bool { explicit.contains(flag) }
+        savedPerformanceKeys = Set(PerformanceProfile.customKeys.filter { s.defaults.object(forKey: $0.rawValue) != nil })
+        if given("--profile") || given("--low-memory") || given("--no-low-memory") {
+            ov[.performanceMode] = "--profile \(performanceMode.rawValue)"
+        } else { performanceMode = s.performanceMode }
         if given("--cpus") {
             ov[.cpus] = "--cpus \(cpus)"
             cpusSource = .flag
@@ -732,12 +749,12 @@ struct Options {
             ov[.windowSizePreset] = ov[.windowWidth]
         } else {
             // "Fit to screen" is re-evaluated at every start (the screen may have changed).
-            let (w, h) = s.windowSizePreset == LauncherSettings.fitPreset && !headless
+            let (w, h) = s.windowSizePreset == LauncherSettings.fitPreset && !headless && (Supervisor.isChild || isSelftest)
                 ? LauncherSettings.fitToScreenSize() : (s.windowWidth, s.windowHeight)
             displayWidth = min(VM.maxDisplaySide & ~1, max(Int(WindowController.minGuestSize.width), w & ~1))
             displayHeight = min(VM.maxDisplaySide & ~1, max(Int(WindowController.minGuestSize.height), h & ~1))
         }
-        if s.retinaResolution && !headless {
+        if s.retinaResolution && !headless && (Supervisor.isChild || isSelftest) {
             pixelScale = max(1, WindowController.targetScreen()?.backingScaleFactor ?? 1)
         }
         if given("--render-scale") { ov[.renderScale] = "--render-scale \(renderScale)" }

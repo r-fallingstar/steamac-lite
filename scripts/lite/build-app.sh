@@ -40,14 +40,23 @@ ln -sfn libkrun.1.dylib "$HOST/lib/libkrun.dylib"
 bash host/launcher/fetch-zstd.sh
 python3 - <<'PY'
 import os, pathlib, plistlib
+import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='SteamAC Lite',
-         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.2',
-         SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite')
+         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.3',
+         SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194003',
+         SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
+         LSMinimumSystemVersion='15.5')
+p.pop('SteamacBuildOut', None)
+p['CFBundleLocalizations'] = ['en', 'ja', 'ru', 'zh-Hans']
 pathlib.Path(os.environ['PLIST']).write_bytes(plistlib.dumps(p))
 PY
+mkdir -p "$WORK/lite-stringsdata"
 FLAGS=(--package-path host/launcher --build-system native --sdk "$SDK" -c release -j "${JOBS:-2}"
+    -Xswiftc -emit-localized-strings -Xswiftc -emit-localized-strings-path -Xswiftc "$WORK/lite-stringsdata"
+    -Xswiftc -debug-prefix-map -Xswiftc "$ROOT=/src/steamac-lite"
+    -Xswiftc -file-prefix-map -Xswiftc "$ROOT=/src/steamac-lite"
     -Xcc "-I$HOST/include" -Xcc "-I$ROOT/host/vrhost/include"
     -Xlinker "-L$HOST/lib" -Xlinker -rpath -Xlinker "$HOST/lib"
     -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker "$PLIST")
@@ -65,7 +74,12 @@ APP=$STAGE/SteamAC\ Lite.app
 cp -a "$BASE_APP" "$APP"
 cp "$BIN" "$APP/Contents/MacOS/steamac-vm"
 cp "$PLIST" "$APP/Contents/Info.plist"
+python3 host/launcher/l10n.py check --strict --stringsdata "$WORK/lite-stringsdata"
+python3 host/launcher/l10n.py compile "$STAGE/localizations"
+cp -a "$STAGE/localizations/." "$APP/Contents/Resources/"
 EXE=$APP/Contents/MacOS/steamac-vm
+# Remove linker debug records containing this builder's object-file paths before signing.
+strip -S "$EXE"
 install_name_tool -delete_rpath "$HOST/lib" "$EXE"
 install_name_tool -add_rpath @executable_path/../Frameworks "$EXE"
 if otool -L "$EXE" | tail -n +2 | awk '{print $1}' | grep -Ev '^(@rpath/|/usr/lib/|/System/)' ; then
@@ -87,7 +101,7 @@ for unit in steamac-keyboard-setup.service steamac-keyboard-session.service 'ste
     mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
     install -m644 "guest/layer/usr/lib/systemd/user/$unit" "$LAYER/usr/lib/systemd/user/$unit"
 done
-echo 'steamac-lite experimental-8gb-v2 Japanese-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
+echo 'steamac-lite v1.9.4-lite.3 adaptive-performance Japanese-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"
@@ -109,6 +123,7 @@ codesign --force --sign - --entitlements host/launcher/steamac-vm.entitlements "
 codesign --verify --deep --strict "$APP"
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-low-memory
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-keyboard
+STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-language
 DEST=$OUT/SteamAC\ Lite.app
 if [[ -e "$DEST" ]]; then mv "$DEST" "$OUT/SteamAC Lite.previous.$(date +%Y%m%d%H%M%S).app"; fi
 mv "$APP" "$DEST"

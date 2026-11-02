@@ -20,10 +20,10 @@ final class LauncherSettings: ObservableObject {
     /// Preference keys. `nextStart` keys are read once per boot (see Options.applySettings).
     enum Key: String, CaseIterable {
         // General
-        case showOverlay, showStallIndicator, openFullscreen, perfStats, sendCrashReports, muteInBackground, pauseInBackground,
+        case applicationLanguage, showOverlay, showStallIndicator, openFullscreen, perfStats, sendCrashReports, muteInBackground, pauseInBackground,
              closeAction, checkForUpdates, followMacTime, shareClipboard, shareConcealedClipboard, shareGameStats
         // Display
-        case dpiSource, fixedDPI, fixedWidthMM, fixedHeightMM, refreshRate, followWindowSize, windowWidth, windowHeight,
+        case performanceMode, dpiSource, fixedDPI, fixedWidthMM, fixedHeightMM, refreshRate, followWindowSize, windowWidth, windowHeight,
              windowSizePreset, retinaResolution, metalHUD, superResolution, renderScale, upscaleLowerResolutions
         // Mouse
         case autoCaptureGames, gameNames
@@ -40,7 +40,7 @@ final class LauncherSettings: ObservableObject {
 
         var nextStart: Bool {
             switch self {
-            case .openFullscreen, .dpiSource, .fixedDPI, .fixedWidthMM, .fixedHeightMM, .refreshRate,
+            case .applicationLanguage, .performanceMode, .openFullscreen, .dpiSource, .fixedDPI, .fixedWidthMM, .fixedHeightMM, .refreshRate,
                  .windowWidth, .windowHeight, .windowSizePreset, .retinaResolution, .renderScale, .soundEnabled, .cpus, .memMiB, .sshEnabled,
                  .sshPort, .network, .lanRemotePlay,
                  .diskImage, .steamClient, .followMacTime, .vulkanDriver, .graphicsPath, .wmtr, .wmtrLibrary, .frameLatency, .vrEnabled,
@@ -319,6 +319,7 @@ final class LauncherSettings: ObservableObject {
     static let sizePresets: [SizePreset] = [
         .init(width: 1280, height: 800, label: String(localized: "Steam Deck, 16:10")), .init(width: 1280, height: 720, label: "16:9"),
         .init(width: 1440, height: 900, label: "16:10"), .init(width: 1600, height: 900, label: "16:9"),
+        .init(width: 1600, height: 1000, label: "16:10"),
         .init(width: 1680, height: 1050, label: "16:10"), .init(width: 1920, height: 1080, label: String(localized: "Full HD, 16:9")),
         .init(width: 1920, height: 1200, label: "16:10"), .init(width: 2560, height: 1440, label: "QHD, 16:9"),
         .init(width: 2560, height: 1600, label: "16:10"), .init(width: 3440, height: 1440, label: "21:9"),
@@ -362,6 +363,9 @@ final class LauncherSettings: ObservableObject {
     var bootedDXMT: Bool?
 
     // General
+    @Published var applicationLanguage = ApplicationLanguage.system {
+        didSet { if !loading { applicationLanguage.save(into: defaults) } }
+    }
     @Published var showOverlay = true { didSet { save(.showOverlay, showOverlay) } }
     @Published var showStallIndicator = true { didSet { save(.showStallIndicator, showStallIndicator) } }
     @Published var openFullscreen = false { didSet { save(.openFullscreen, openFullscreen) } }
@@ -385,6 +389,12 @@ final class LauncherSettings: ObservableObject {
     /// until each is changed inside SteamOS; next start.
     @Published var followMacTime = true { didSet { save(.followMacTime, followMacTime) } }
     // Display
+    @Published var performanceMode = PerformanceMode.defaultMode {
+        didSet {
+            save(.performanceMode, performanceMode.rawValue)
+            refreshPerformanceDefaults()
+        }
+    }
     @Published var dpiSource = DPISource.auto { didSet { save(.dpiSource, dpiSource.rawValue) } }
     @Published var fixedDPI = 110 { didSet { save(.fixedDPI, fixedDPI) } }
     @Published var fixedWidthMM = 300 { didSet { save(.fixedWidthMM, fixedWidthMM) } }
@@ -540,6 +550,12 @@ final class LauncherSettings: ObservableObject {
         load()
     }
 
+    /// Isolated preferences for policy/persistence tests; no production domain migration.
+    init(defaults: UserDefaults) {
+        self.defaults = defaults
+        load()
+    }
+
     private static func migrateLegacy(into defaults: UserDefaults) {
         guard defaults.persistentDomain(forName: defaultDomain)?.isEmpty ?? true,
               let old = defaults.persistentDomain(forName: legacyDomain), !old.isEmpty else { return }
@@ -554,6 +570,9 @@ final class LauncherSettings: ObservableObject {
         func bool(_ k: Key, _ v: inout Bool) { if let b = d.object(forKey: k.rawValue) as? Bool { v = b } }
         func int(_ k: Key, _ v: inout Int) { if let n = d.object(forKey: k.rawValue) as? Int { v = n } }
         func string(_ k: Key, _ v: inout String) { if let s = d.string(forKey: k.rawValue) { v = s } }
+        if let language = d.string(forKey: Key.applicationLanguage.rawValue).flatMap(ApplicationLanguage.init(rawValue:)) {
+            applicationLanguage = language
+        }
         bool(.showOverlay, &showOverlay)
         bool(.showStallIndicator, &showStallIndicator)
         bool(.openFullscreen, &openFullscreen)
@@ -567,6 +586,7 @@ final class LauncherSettings: ObservableObject {
         bool(.checkForUpdates, &checkForUpdates)
         bool(.shareGameStats, &shareGameStats)
         bool(.followMacTime, &followMacTime)
+        if let mode = d.string(forKey: Key.performanceMode.rawValue).flatMap(PerformanceMode.init(rawValue:)) { performanceMode = mode }
         if let s = d.string(forKey: Key.dpiSource.rawValue).flatMap(DPISource.init(rawValue:)) { dpiSource = s }
         int(.fixedDPI, &fixedDPI)
         int(.fixedWidthMM, &fixedWidthMM)
@@ -637,7 +657,43 @@ final class LauncherSettings: ObservableObject {
         if let v = d.object(forKey: Key.vrKeyframeInterval.rawValue) as? Double, (0...60).contains(v) { vrKeyframeInterval = v }
         bool(.vrTCPOnly, &vrTCPOnly)
         bool(.vrShowStats, &vrShowStats)
+        refreshPerformanceDefaults()
         reloadGames()
+    }
+
+    var recommendedPerformance: PerformanceProfile.Plan? {
+        PerformanceProfile.plan(host: .current, mode: performanceMode)?.fitting(LauncherSettings.fitToScreenSize())
+    }
+    var automaticMemoryMiB: Int { recommendedPerformance?.vmMiB ?? VMSizing.autoMemMiB(.current) }
+    var automaticCPUs: Int { recommendedPerformance?.cpus ?? VMSizing.autoCPUs(.current) }
+
+    /// Show the actual automatic values without saving them as user choices. Consequently a
+    /// preferences file copied to a different Mac still follows that Mac until the user edits it.
+    private func refreshPerformanceDefaults() {
+        let wasLoading = loading
+        loading = true
+        defer { loading = wasLoading }
+        // This also runs in the non-GUI supervisor. Querying NSScreen/NSEvent here would
+        // register that process as a GUI app even though it never services the AppKit loop.
+        let plan = PerformanceProfile.plan(host: .current, mode: performanceMode)
+        func missing(_ key: Key) -> Bool { defaults.object(forKey: key.rawValue) == nil }
+        if [.windowWidth, .windowHeight, .windowSizePreset].allSatisfy(missing) {
+            windowWidth = plan?.width ?? 1280; windowHeight = plan?.height ?? 800
+            let id = "\(windowWidth)x\(windowHeight)"
+            windowSizePreset = Self.sizePresets.contains { $0.id == id } ? id : Self.customPreset
+        }
+        if missing(.renderScale) { renderScale = plan?.renderScale ?? 1 }
+        if missing(.refreshRate) { refreshRate = 60 }
+        if missing(.retinaResolution) { retinaResolution = false }
+        if [.wmtr, .wmtrLibrary, .graphicsPath].allSatisfy(missing) { wmtr = plan != nil }
+    }
+
+    func useRecommendedPerformance() {
+        for key in PerformanceProfile.customKeys { defaults.removeObject(forKey: key.rawValue) }
+        cpus = 0; memMiB = 0; wmtrLibrary = ""
+        // wmtrLibrary's setter saved the blank value; automatic must remain genuinely unset.
+        defaults.removeObject(forKey: Key.wmtrLibrary.rawValue)
+        performanceMode = .automatic
     }
 
     private func save(_ key: Key, _ value: Any) {
@@ -659,6 +715,8 @@ final class LauncherSettings: ObservableObject {
             : ["0", "false", "off", "no"].contains(text.lowercased()) ? false : nil
         let i = Int(text), d = Double(text)
         switch key {
+        case .applicationLanguage: guard let language = ApplicationLanguage(rawValue: text) else { return false }; applicationLanguage = language
+        case .performanceMode: guard let mode = PerformanceMode(rawValue: text) else { return false }; performanceMode = mode
         case .showOverlay: guard let b else { return false }; showOverlay = b
         case .showStallIndicator: guard let b else { return false }; showStallIndicator = b
         case .openFullscreen: guard let b else { return false }; openFullscreen = b
@@ -739,18 +797,21 @@ final class LauncherSettings: ObservableObject {
 
     /// Restore every preference to its default (per-game entries included).
     func resetAll() {
+        defaults.removeObject(forKey: "AppleLanguages")
         for k in defaults.dictionaryRepresentation().keys
         where Key(rawValue: k) != nil || k.hasPrefix("autoCapture.") || k.hasPrefix("profile.") {
             defaults.removeObject(forKey: k)
         }
         let fresh = LauncherSettings(blank: ())
         loading = true
+        applicationLanguage = fresh.applicationLanguage
         showOverlay = fresh.showOverlay; showStallIndicator = fresh.showStallIndicator
         openFullscreen = fresh.openFullscreen; perfStats = fresh.perfStats; sendCrashReports = fresh.sendCrashReports
         muteInBackground = fresh.muteInBackground; pauseInBackground = fresh.pauseInBackground
         shareClipboard = fresh.shareClipboard; shareConcealedClipboard = fresh.shareConcealedClipboard
         closeAction = fresh.closeAction; checkForUpdates = fresh.checkForUpdates; shareGameStats = fresh.shareGameStats
         followMacTime = fresh.followMacTime
+        performanceMode = fresh.performanceMode
         dpiSource = fresh.dpiSource; fixedDPI = fresh.fixedDPI; fixedWidthMM = fresh.fixedWidthMM
         fixedHeightMM = fresh.fixedHeightMM; refreshRate = fresh.refreshRate; followWindowSize = fresh.followWindowSize
         windowWidth = fresh.windowWidth; windowHeight = fresh.windowHeight; windowSizePreset = fresh.windowSizePreset
@@ -775,6 +836,7 @@ final class LauncherSettings: ObservableObject {
         vrForceSRGB = fresh.vrForceSRGB; vrKeyframeInterval = fresh.vrKeyframeInterval
         vrTCPOnly = fresh.vrTCPOnly; vrShowStats = fresh.vrShowStats
         loading = false
+        refreshPerformanceDefaults()
         reloadGames()
         log("settings: reset to defaults")
     }
@@ -799,11 +861,14 @@ final class LauncherSettings: ObservableObject {
     /// Effective next-start values (keys the command line overrides do not count).
     private func nextStartSnapshot() -> [Key: String] {
         let values: [Key: Any] = [
+            .applicationLanguage: applicationLanguage.rawValue,
+            .performanceMode: performanceMode.rawValue,
             .openFullscreen: openFullscreen, .dpiSource: dpiSource.rawValue,
             .fixedDPI: dpiSource == .dpi ? fixedDPI : 0,
             .fixedWidthMM: dpiSource == .mm ? fixedWidthMM : 0, .fixedHeightMM: dpiSource == .mm ? fixedHeightMM : 0,
             .refreshRate: refreshRate, .windowWidth: windowWidth, .windowHeight: windowHeight,
             .windowSizePreset: windowSizePreset, .retinaResolution: retinaResolution,
+            .renderScale: renderScale,
             .soundEnabled: soundEnabled, .cpus: cpus, .memMiB: memMiB, .sshEnabled: sshEnabled, .sshPort: sshPort,
             .network: network, .lanRemotePlay: lanRemotePlay,
             .diskImage: diskImage, .steamClient: steamClient.rawValue, .followMacTime: followMacTime,

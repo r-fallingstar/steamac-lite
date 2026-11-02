@@ -295,6 +295,14 @@ private struct GeneralTab: View {
     var body: some View {
         Form {
             Section {
+                Picker(selection: $settings.applicationLanguage) {
+                    ForEach(ApplicationLanguage.allCases) { Text(verbatim: $0.title).tag($0) }
+                } label: {
+                    Label2(title: "Display language", detail: String(localized: "Restart the app to apply the display language."),
+                           now: false, key: .applicationLanguage)
+                }
+            }
+            Section {
                 Toggle(isOn: $settings.showOverlay) {
                     Label2(title: "Show boot and shutdown overlay",
                            detail: String(localized: "Full-window FX progress while SteamOS starts, restarts and shuts down. Off, or after a click: a small progress pill."), now: true)
@@ -419,6 +427,18 @@ private struct DisplayTab: View {
 
     var body: some View {
         Form {
+            Section {
+                Picker(selection: $settings.performanceMode) {
+                    ForEach(PerformanceMode.allCases) { Text(verbatim: $0.title).tag($0) }
+                } label: {
+                    Label2(title: "Performance profile", now: false, key: .performanceMode)
+                }
+                if let plan = settings.recommendedPerformance {
+                    Text(String(localized: "Recommended for this \(VMSizing.Host.current.memGiB) GB Mac: \(plan.description). Custom settings below take priority."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Button("Use recommended settings") { settings.useRecommendedPerformance() }
+            }
             Section {
                 Picker(selection: $settings.dpiSource) {
                     Text("Auto (from the screen)").tag(LauncherSettings.DPISource.auto)
@@ -912,8 +932,8 @@ private struct AdvancedTab: View {
     static let maxCPUs = ProcessInfo.processInfo.activeProcessorCount
     static let maxGiB = max(4, Int(ProcessInfo.processInfo.physicalMemory >> 30) - 4)
     static let host = VMSizing.Host.current
-    static let autoCPUs = VMSizing.autoCPUs(host)
-    static let autoGiB = VMSizing.autoMemMiB(host) / 1024
+    private var autoCPUs: Int { settings.automaticCPUs }
+    private var autoGiB: Int { settings.automaticMemoryMiB / 1024 }
 
     /// The disk the next start boots (its generated SSH password is shown): Settings value, else
     /// the running VM's disk, else the default location.
@@ -945,8 +965,8 @@ private struct AdvancedTab: View {
         Form {
             Section {
                 Picker(selection: Binding(get: { settings.cpus == 0 },
-                                          set: { settings.cpus = $0 ? 0 : min(AdvancedTab.maxCPUs, AdvancedTab.autoCPUs) })) {
-                    Text("Automatic (\(AdvancedTab.autoCPUs) for this Mac)").tag(true)
+                                          set: { settings.cpus = $0 ? 0 : min(AdvancedTab.maxCPUs, autoCPUs) })) {
+                    Text("Automatic (\(autoCPUs) for this Mac)").tag(true)
                     Text("Custom").tag(false)
                 } label: {
                     Label2(title: "Virtual CPUs", detail: String(localized: "Automatic: one per performance core of this Mac (2 to 8)."),
@@ -965,14 +985,14 @@ private struct AdvancedTab: View {
                     }
                 }
                 Picker(selection: Binding(get: { settings.memMiB == 0 },
-                                          set: { settings.memMiB = $0 ? 0 : min(AdvancedTab.maxGiB, AdvancedTab.autoGiB) * 1024 })) {
-                    Text("Automatic (\(AdvancedTab.autoGiB) GB for this Mac)").tag(true)
+                                          set: { settings.memMiB = $0 ? 0 : min(AdvancedTab.maxGiB, autoGiB) * 1024 })) {
+                    Text("Automatic (\(autoGiB) GB for this Mac)").tag(true)
                     Text("Custom").tag(false)
                 } label: {
-                    Label2(title: "Memory", detail: String(localized: "Automatic: half of this Mac's RAM (4 to 16 GB). The Mac's GPU memory comes from the same RAM, so the rest stays with macOS and the games' graphics."),
+                    Label2(title: "Memory", detail: String(localized: "Automatic follows the selected performance profile; Manual uses half the Mac's RAM. The remaining memory is shared by macOS and graphics."),
                            now: false, key: .memMiB)
                 }
-                Text("GPU budget: \(VMSizing.gpuBudgetMiB(memMiB: settings.memMiB > 0 ? settings.memMiB : AdvancedTab.autoGiB * 1024, host: AdvancedTab.host)) MiB. macOS and driver reserve: \(VMSizing.hostReserveMiB(AdvancedTab.host)) MiB.")
+                Text("GPU budget: \(VMSizing.gpuBudgetMiB(memMiB: settings.memMiB > 0 ? settings.memMiB : autoGiB * 1024, host: AdvancedTab.host)) MiB. macOS and driver reserve: \(VMSizing.hostReserveMiB(AdvancedTab.host)) MiB.")
                     .font(.caption).foregroundStyle(.secondary)
                 if settings.memMiB > 0 {
                     Stepper(value: Binding(get: { settings.memMiB / 1024 },

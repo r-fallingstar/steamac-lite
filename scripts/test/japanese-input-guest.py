@@ -43,6 +43,10 @@ def test_engine():
     print('input-test: Anthy context ready', flush=True)
 
     def key(name, flags=0):
+        # Steam creates/focuses its own input contexts while its UI starts. Reassert this
+        # dedicated test context so boot-time focus changes cannot drop part of the reading.
+        context.focus_in()
+        pump(0.03)
         value = IBus.keyval_from_name(name) if len(name) > 1 else ord(name)
         context.process_key_event(value, 0, flags)
         context.process_key_event(value, 0, flags | int(IBus.ModifierType.RELEASE_MASK))

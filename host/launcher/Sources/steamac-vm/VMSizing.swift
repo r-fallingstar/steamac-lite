@@ -28,7 +28,7 @@ enum VMSizing {
 
     /// Where a boot's size came from.
     enum Source: String {
-        case auto = "automatic", settings = "Settings", flag = "command line", profile = "low-memory profile"
+        case auto = "automatic", settings = "Settings", flag = "command line", profile = "performance profile"
     }
 
     static let minAutoMemMiB = 4096, maxAutoMemMiB = 16384

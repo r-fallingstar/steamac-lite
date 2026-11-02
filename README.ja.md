@@ -4,19 +4,31 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.4-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.3/SteamAC-Lite-1.9.4-lite.3-macos-arm64.dmg)**
+
+DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.3)
+
+macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードし、VRChat用のFEX・Proton設定は現時点で手動です。
+
 ## このForkの変更
 
 | 項目 | Liteの既定値・動作 |
 |---|---|
-| VMのRAM | 3 GiB |
-| ゲスト用ディスクスワップ | `/home`のext4上に4 GiB。既存のzramは維持 |
-| 初期描画 | 960×600、Retinaなし、60 Hz |
+| VMのRAM | Macに応じて3〜16 GiB。8 GBでは3 GiB |
+| ゲスト用ディスクスワップ | 8 GB向け設定では`/home`のext4上に4 GiB。既存のzramは維持 |
+| 初期描画 | MacのRAMと画面に合わせて960×600〜1920×1200。Retinaなし、60 Hz |
+| 手動設定 | 設定画面で自動・軽量・手動を選択。個別に選んだ値を優先 |
+| 表示言語 | 初回起動で選択。日本語の設定・メニュー・初期設定案内に対応 |
 | 描画経路 | DXMTを優先。利用できなければVulkan |
 | キーボード | Macの物理配列から起動時にUS/JISを自動判別 |
 | 日本語入力 | SteamOS付属のIBus・Anthy。追加ダウンロード不要 |
 | アプリ・設定 | `SteamAC Lite.app`として通常版と別に保存 |
 
 macOSの仮想メモリ設定は変更しません。スワップはRAM不足による終了を減らすための補助で、物理RAMやGPUメモリを増やすものではありません。頻繁なスワップは遅くなります。**60 Hzは画面更新の設定であり、ゲーム内60 fpsの保証ではありません。**
+
+[Mac別の自動設定表と設定方法](docs/performance-profiles.md)
+
+初回に「日本語」を選ぶと、ランチャーの設定画面やメニューを日本語で表示します。あとから **設定… > 一般 > 表示言語** で変更でき、アプリの再起動で反映されます。SteamOS・Steam・ゲーム自体の表示言語は、それぞれの設定を使います。
 
 ## 日本語の入力
 

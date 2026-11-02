@@ -1,12 +1,16 @@
-# SteamAC Lite — experimental 8 GB profile
+# SteamAC Lite — adaptive Mac profiles
 
 **English** · [日本語のREADME](README.ja.md)
 
-This fork adds a 3 GiB VM / 4 GiB guest disk-swap profile for 8 GB Apple Silicon Macs, a 60 Hz display default, physical US/JIS keyboard detection, and Japanese input through SteamOS's existing IBus/Anthy. Game frame rates and compatibility are not guaranteed. See [8 GB profile, build and limitations](docs/8gb-profile.md) and [keyboard / Japanese input](docs/japanese-input.md).
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.3/SteamAC-Lite-1.9.4-lite.3-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.3) · [はじめての導入手順](docs/quick-start.ja.md)
+
+Open the DMG and copy **SteamAC Lite.app** into **Applications**. No build tools are needed. This is an experimental, ad-hoc signed and unnotarized build; SteamOS and games are downloaded separately. VRChat still requires the FEX/Proton setup in [SETUP.md](SETUP.md#easy-anti-cheat).
+
+This fork chooses VM RAM, vCPUs and initial resolution for the Mac, keeps a 3 GiB VM / 4 GiB guest disk-swap profile on 8 GB Macs, defaults to 60 Hz, detects physical US/JIS keyboards, and enables Japanese input through SteamOS's existing IBus/Anthy. Manual settings take priority. Game frame rates and compatibility are not guaranteed. See [automatic profiles](docs/performance-profiles.md), [8 GB limitations](docs/8gb-profile.md), and [keyboard / Japanese input](docs/japanese-input.md).
 
 ## 日本語
 
-Apple Silicon・RAM 8 GB向けの実験版です。VMのRAMを3 GiBに抑え、ゲスト用ディスクスワップ4 GiBを追加します。初期描画は960×600・60 Hzで、DXMTを優先します。60 Hzは表示更新頻度であり、ゲームの60 fps動作を保証するものではありません。
+Apple Silicon向けの実験版です。8 GBではVMのRAMを3 GiBに抑え、ゲスト用ディスクスワップ4 GiB、初期描画960×600を使います。16・18 GBでは1440×900、24 GBでは1600×1000、32 GB以上では1920×1200を目安に、画面に収まる大きさへ調整します。既定は60 Hz、DXMT優先です。自分で選んだ設定は保持します。60 Hzは表示更新頻度であり、ゲームの60 fps動作を保証するものではありません。
 
 Mac側の物理キーボード情報からUS/JISを起動時に判別し、Steamとゲームの配列へ反映します。日本語入力は既存のIBus・Anthyを使います。最初は英数入力で、**Control＋Space**で日本語入力へ切り替え、Spaceで変換、Enterで確定します。JISの「かな」「英数」キーにも対応します。
 
