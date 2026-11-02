@@ -61,6 +61,8 @@ Switching between Steam client builds downloads up to about 1 GB; progress shows
 
 ## Installing VRChat
 
+Lite.4: enable **VRChat setup** in the first-run disk chooser or Settings > General. After Steam sign-in, confirm any tool downloads. FEX, the per-VRChat Proton choice and launch options are then prepared automatically; Steam restarts once, with no game launch. See [the setup guide](docs/vrchat-setup.ja.md). The following steps are for manual setup or recovery.
+
 1. In Steam, install **VRChat**.
 2. Set VRChat's compatibility tool to **Proton Experimental** (Properties > Compatibility). On ARM64 Steam, VRChat installs
    its Android build by default, which cannot run here; Proton Experimental selects the Windows build. This is the only
@@ -133,7 +135,7 @@ on an external APFS, Mac OS Extended or exFAT volume (FAT32 is rejected). exFAT 
   ```
 
   A Steam update of the FEX tool overwrites the patched build with Valve's; run `sh install-fex-tool.sh` again.
-  Providing this step automatically is planned. It is not yet.
+  Lite.4 automates this with its bundled runtime when **VRChat setup** is enabled.
 - **VRChat launch options (required today).** In Steam, VRChat > Properties > Launch Options:
 
   ```
@@ -185,7 +187,7 @@ on an external APFS, Mac OS Extended or exFAT volume (FAT32 is rejected). exFAT 
 - The DXMT setting applies to every game; there is no per-game opt-out.
 - On the DXMT path the game's Metal layer covers the whole VM view (a windowed game or alt-tab shows the game layer), and a 16:9 game in a 16:10 window is letterboxed; pick a 16:10 resolution.
 - Asynchronous pipeline compilation exists in the build but is off and not recommended (measured worse).
-- The patched FEX and VRChat's launch options are installed by hand today.
+- Lite.4 includes optional automated VRChat setup; Steam sign-in and download confirmations are still user actions.
 - Direct3D 12 on the Vulkan path: feature level 12_0 on KosmicKrisp, 11_0 on MoltenVK.
 - The microphone is advertised to SteamOS but has had little testing.
 - A rebuilt or re-signed app asks again for microphone permission and keychain access.

@@ -43,9 +43,9 @@ import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='SteamAC Lite',
-         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.3',
+         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.4',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194003',
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194004',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
          LSMinimumSystemVersion='15.5')
 p.pop('SteamacBuildOut', None)
@@ -101,7 +101,17 @@ for unit in steamac-keyboard-setup.service steamac-keyboard-session.service 'ste
     mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
     install -m644 "guest/layer/usr/lib/systemd/user/$unit" "$LAYER/usr/lib/systemd/user/$unit"
 done
-echo 'steamac-lite v1.9.4-lite.3 adaptive-performance Japanese-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
+# Pinned, hashed FEX runtime: no build toolchain or third-party download on first run.
+python3 scripts/lite/verify-fex-runtime.py
+install -m755 guest/layer/usr/lib/steamac/vrchat-setup "$LAYER/usr/lib/steamac/vrchat-setup"
+cp -a fex-eac/runtime "$LAYER/usr/lib/steamac/fex-eac-runtime"
+mkdir -p "$APP/Contents/Resources/licenses/FEX-EAC"
+cp -a fex-eac/runtime/licenses/. "$APP/Contents/Resources/licenses/FEX-EAC/"
+for unit in steamac-vrchat-setup.service steam.service.d/70-steamac-vrchat-setup.conf; do
+    mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
+    install -m644 "guest/layer/usr/lib/systemd/user/$unit" "$LAYER/usr/lib/systemd/user/$unit"
+done
+echo 'steamac-lite v1.9.4-lite.4 adaptive-performance Japanese-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"

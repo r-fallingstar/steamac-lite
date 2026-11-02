@@ -703,7 +703,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この%lld MiBのVM RAM、%lld MiBのGPU予算、%lld MiBのmacOS予約領域を、%lld GBのMacで共有します。GPU用メモリが不足するため、VMメモリか描画設定を下げてください。スワップやメモリ不足、VMの強制終了を避けるための目安です。"
+            "value": "この%4$lld GBのMacでは、VM RAM %1$lld MiB、GPU用メモリ%2$lld MiB、macOS用の予約領域%3$lld MiBを割り当てます。GPU用メモリが不足するため、スワップやメモリ不足によるVMの強制終了を避けるには、VMメモリまたは描画設定を下げてください。"
           }
         }
       }
@@ -1100,7 +1100,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOSでの表示"
+            "value": "SteamOSでの認識名"
           }
         }
       }
@@ -3685,7 +3685,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcherを起動できません"
+            "value": "SteamAC Liteを起動できません"
           }
         }
       }
@@ -3707,7 +3707,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam LauncherにはSteamOSディスクイメージが必要です（steamos.img、約87 GBのスパース形式）。\n\n"
+            "value": "SteamAC LiteにはSteamOSディスクイメージが必要です（steamos.img、約87 GBのスパース形式）。\n\n"
           }
         }
       }
@@ -3729,7 +3729,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcherが予期せず終了しました"
+            "value": "SteamAC Liteが予期せず終了しました"
           }
         }
       }
@@ -3751,7 +3751,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher: SteamOSユーザー steamos（ディスク %@）"
+            "value": "SteamAC Lite: SteamOSユーザー steamos（ディスク %@）"
           }
         }
       }
@@ -6367,7 +6367,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ヘッドセットが未接続か、この更新頻度に対応していません。"
+            "value": "ヘッドセットが未接続か、このリフレッシュレートに対応していません。"
           }
         }
       }
@@ -7534,7 +7534,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcherを終了"
+            "value": "SteamAC Liteを終了"
           }
         }
       }
@@ -7754,7 +7754,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "画面更新頻度"
+            "value": "リフレッシュレート"
           }
         }
       }
@@ -8129,7 +8129,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcherのすべての設定を初期値へ戻しますか？"
+            "value": "SteamAC Liteのすべての設定を初期値へ戻しますか？"
           }
         }
       }
@@ -8289,7 +8289,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@を使って%@を再起動しますか？"
+            "value": "%2$@向けに、%1$@を使ってVMを再起動しますか？"
           }
         }
       }
@@ -9173,7 +9173,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "送信内容を確認"
+            "value": "送信する情報を確認"
           }
         }
       }
@@ -10436,7 +10436,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOS一時停止中 — FX Steam Launcher"
+            "value": "SteamOS一時停止中 — SteamAC Lite"
           }
         }
       }
@@ -10701,7 +10701,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOSとゲームをまとめて停止し、メモリ上へ保持します。Dockのアイコンかメニューバーの「再開」で元の状態へ戻ります。保持できるのはFX Steam Launcherの実行中だけです。アプリの終了やMacの再起動でSteamOSも終了します。"
+            "value": "「一時停止」を選ぶと、SteamOSとゲームをまとめて停止し、メモリ上へ保持します。Dockのアイコンかメニューバーの「再開」で元の状態へ戻ります。保持できるのはSteamAC Liteの実行中だけです。アプリの終了やMacの再起動でSteamOSも終了します。"
           }
         }
       }
@@ -10723,7 +10723,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "一時停止の状態はFX Steam Launcherの実行中だけ保持されます。"
+            "value": "一時停止の状態はSteamAC Liteの実行中だけ保持されます。"
           }
         }
       }
@@ -11295,7 +11295,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "更新頻度はHzで指定してください。"
+            "value": "リフレッシュレートはHzで指定してください。"
           }
         }
       }
@@ -12778,7 +12778,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "送信内容…"
+            "value": "送信する情報…"
           }
         }
       }
@@ -13020,7 +13020,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ヘッドセット接続中はゲーム音声をヘッドセットで再生し、そのマイクをゲストの入力に使います。ゲームが録音している間だけマイクを開きます。OFFではMacの音声を使います。"
+            "value": "ヘッドセット接続中はゲーム音声をヘッドセットで再生し、そのマイクをゲストの入力に使います。ゲームが録音している間だけマイクを開きます。OFFの場合、音声はMacから出力されます。"
           }
         }
       }
@@ -14007,7 +14007,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ダウンロードキャッシュの空き容量が不足しています。%@ GBが必要な保存先%@に、%@ GBの空きしかありません。"
+            "value": "ダウンロードキャッシュの空き容量が不足しています。保存先「%2$@」には%1$@ GB必要ですが、空き容量は%3$@ GBです。"
           }
         }
       }
@@ -14063,7 +14063,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "空き容量が不足しています。%@ GBが必要な%@のボリュームに、%@ GBの空きしかありません。"
+            "value": "空き容量が不足しています。「%2$@」のボリュームには%1$@ GB必要ですが、空き容量は%3$@ GBです。"
           }
         }
       }
@@ -14306,7 +14306,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOSディスク%@を別のFX Steam Launcherまたはsteamac-vmが使用中です。先に終了してください。同じディスクへの同時書き込みはファイルシステムを破損します。"
+            "value": "SteamOSディスク%@を別のSteamAC Liteまたはsteamac-vmが使用中です。先に終了してください。同じディスクへの同時書き込みはファイルシステムを破損します。"
           }
         }
       }
@@ -14510,7 +14510,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@」は未登録ですが、ペアリング要求の受付はOFFです。"
+            "value": "「%@」から接続要求がありましたが、未登録で、ペアリングの受付もOFFになっています。"
           }
         }
       }
@@ -14705,7 +14705,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "VM %lld GiB、%lld vCPU、%@ × %@、60 Hz"
+            "value": "VM %lld GiB、%lld vCPU、%@ × %@、画面更新60 Hz"
           }
         },
         "ru": {
@@ -14787,6 +14787,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "自动模式遵循性能配置；手动模式使用 Mac 内存的一半。剩余内存由 macOS 和图形共享。"
+          }
+        }
+      }
+    },
+    "VRChat setup": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VRChat向け設定"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Настройка для VRChat"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VRChat 专用设置"
+          }
+        }
+      }
+    },
+    "Install bundled FEX and prepare Proton, EAC and launch options after Steam sign-in. Confirm downloads in Steam if prompted. Steam restarts once; VRChat is not started.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Steamへのログイン後、同梱のFEXを導入し、Proton・EACランタイム・起動オプションを設定します。Steamに確認画面が出た場合は、内容を確認してインストールしてください。設定時にSteamを一度再起動します。VRChatは自動では起動しません。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "После входа в Steam устанавливается встроенный FEX и настраиваются Proton, EAC и параметры запуска. Подтвердите загрузку в Steam, если появится запрос. Steam перезапустится один раз; VRChat не запускается."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录 Steam 后安装随附的 FEX，并配置 Proton、EAC 和启动选项。如 Steam 提示确认下载，请确认。设置时 Steam 将重启一次；不会自动启动 VRChat。"
           }
         }
       }

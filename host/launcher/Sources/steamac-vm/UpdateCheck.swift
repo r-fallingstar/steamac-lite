@@ -19,8 +19,9 @@ import SwiftUI
 final class UpdateChecker {
     static let shared = UpdateChecker()
 
+    static let isLite = Bundle.main.object(forInfoDictionaryKey: "SteamacLiteBuild") as? Bool ?? false
     static let latestURL = URL(string: "https://api.github.com/repos/fxgl/steamac/releases/latest")!
-    static let releasesPage = URL(string: "https://github.com/fxgl/steamac/releases")!
+    static let releasesPage = URL(string: isLite ? "https://github.com/r-fallingstar/steamac-lite/releases" : "https://github.com/fxgl/steamac/releases")!
     static let urlEnv = "STEAMAC_UPDATE_URL", fakeVersionEnv = "STEAMAC_FAKE_VERSION"
     static let interval: TimeInterval = 6 * 3600
     static let timeout: TimeInterval = 10
@@ -165,6 +166,7 @@ final class UpdateChecker {
 
     /// The startup check: setting, build kind, 6 h limit and Skip This Version apply; errors only logged.
     func automaticCheck() {
+        guard !UpdateChecker.isLite else { return }
         guard LauncherSettings.shared.checkForUpdates else { log("update: startup check off (Settings > General)"); return }
         let testURL = ProcessInfo.processInfo.environment[UpdateChecker.urlEnv].map { !$0.isEmpty } ?? false
         guard CrashReporting.buildKind != .development || testURL else {
@@ -203,6 +205,10 @@ final class UpdateChecker {
     /// App menu "Check for Updates…" (or "Update Available…"): the found release, else a check
     /// now that ignores the 6 h limit and skipped versions and reports the result.
     func menuAction() {
+        if UpdateChecker.isLite {
+            NSWorkspace.shared.open(UpdateChecker.releasesPage)
+            return
+        }
         if let r = available {
             show(.available(r, current: UpdateChecker.currentVersion), activate: true)
             return

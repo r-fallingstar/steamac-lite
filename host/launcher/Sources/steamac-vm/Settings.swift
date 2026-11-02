@@ -20,7 +20,7 @@ final class LauncherSettings: ObservableObject {
     /// Preference keys. `nextStart` keys are read once per boot (see Options.applySettings).
     enum Key: String, CaseIterable {
         // General
-        case applicationLanguage, showOverlay, showStallIndicator, openFullscreen, perfStats, sendCrashReports, muteInBackground, pauseInBackground,
+        case applicationLanguage, vrchatSetup, showOverlay, showStallIndicator, openFullscreen, perfStats, sendCrashReports, muteInBackground, pauseInBackground,
              closeAction, checkForUpdates, followMacTime, shareClipboard, shareConcealedClipboard, shareGameStats
         // Display
         case performanceMode, dpiSource, fixedDPI, fixedWidthMM, fixedHeightMM, refreshRate, followWindowSize, windowWidth, windowHeight,
@@ -40,7 +40,7 @@ final class LauncherSettings: ObservableObject {
 
         var nextStart: Bool {
             switch self {
-            case .applicationLanguage, .performanceMode, .openFullscreen, .dpiSource, .fixedDPI, .fixedWidthMM, .fixedHeightMM, .refreshRate,
+            case .applicationLanguage, .vrchatSetup, .performanceMode, .openFullscreen, .dpiSource, .fixedDPI, .fixedWidthMM, .fixedHeightMM, .refreshRate,
                  .windowWidth, .windowHeight, .windowSizePreset, .retinaResolution, .renderScale, .soundEnabled, .cpus, .memMiB, .sshEnabled,
                  .sshPort, .network, .lanRemotePlay,
                  .diskImage, .steamClient, .followMacTime, .vulkanDriver, .graphicsPath, .wmtr, .wmtrLibrary, .frameLatency, .vrEnabled,
@@ -363,6 +363,7 @@ final class LauncherSettings: ObservableObject {
     var bootedDXMT: Bool?
 
     // General
+    @Published var vrchatSetup = (Bundle.main.object(forInfoDictionaryKey: "SteamacLiteBuild") as? Bool ?? false) { didSet { save(.vrchatSetup, vrchatSetup) } }
     @Published var applicationLanguage = ApplicationLanguage.system {
         didSet { if !loading { applicationLanguage.save(into: defaults) } }
     }
@@ -622,6 +623,7 @@ final class LauncherSettings: ObservableObject {
         if let s = d.string(forKey: Key.soundLatency.rawValue).flatMap(Latency.init(rawValue:)) { soundLatency = s }
         int(.cpus, &cpus)
         int(.memMiB, &memMiB)
+        bool(.vrchatSetup, &vrchatSetup)
         bool(.sshEnabled, &sshEnabled)
         int(.sshPort, &sshPort)
         bool(.network, &network)
@@ -715,6 +717,7 @@ final class LauncherSettings: ObservableObject {
             : ["0", "false", "off", "no"].contains(text.lowercased()) ? false : nil
         let i = Int(text), d = Double(text)
         switch key {
+        case .vrchatSetup: guard let b else { return false }; vrchatSetup = b
         case .applicationLanguage: guard let language = ApplicationLanguage(rawValue: text) else { return false }; applicationLanguage = language
         case .performanceMode: guard let mode = PerformanceMode(rawValue: text) else { return false }; performanceMode = mode
         case .showOverlay: guard let b else { return false }; showOverlay = b
@@ -804,6 +807,7 @@ final class LauncherSettings: ObservableObject {
         }
         let fresh = LauncherSettings(blank: ())
         loading = true
+        vrchatSetup = fresh.vrchatSetup
         applicationLanguage = fresh.applicationLanguage
         showOverlay = fresh.showOverlay; showStallIndicator = fresh.showStallIndicator
         openFullscreen = fresh.openFullscreen; perfStats = fresh.perfStats; sendCrashReports = fresh.sendCrashReports
@@ -861,7 +865,7 @@ final class LauncherSettings: ObservableObject {
     /// Effective next-start values (keys the command line overrides do not count).
     private func nextStartSnapshot() -> [Key: String] {
         let values: [Key: Any] = [
-            .applicationLanguage: applicationLanguage.rawValue,
+            .vrchatSetup: vrchatSetup, .applicationLanguage: applicationLanguage.rawValue,
             .performanceMode: performanceMode.rawValue,
             .openFullscreen: openFullscreen, .dpiSource: dpiSource.rawValue,
             .fixedDPI: dpiSource == .dpi ? fixedDPI : 0,

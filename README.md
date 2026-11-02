@@ -2,9 +2,9 @@
 
 **English** · [日本語のREADME](README.ja.md)
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.3/SteamAC-Lite-1.9.4-lite.3-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.3) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.4/SteamAC-Lite-1.9.4-lite.4-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.4) · [はじめての導入手順](docs/quick-start.ja.md)
 
-Open the DMG and copy **SteamAC Lite.app** into **Applications**. No build tools are needed. This is an experimental, ad-hoc signed and unnotarized build; SteamOS and games are downloaded separately. VRChat still requires the FEX/Proton setup in [SETUP.md](SETUP.md#easy-anti-cheat).
+Open the DMG and copy **SteamAC Lite.app** into **Applications**. No build tools are needed. This is an experimental, ad-hoc signed and unnotarized build; SteamOS and games are downloaded separately. The optional **VRChat setup** bundles the patched FEX and prepares Proton/EAC and launch options after Steam sign-in. Steam download confirmations remain user actions; no game is started. See [the setup flow](docs/vrchat-setup.ja.md).
 
 This fork chooses VM RAM, vCPUs and initial resolution for the Mac, keeps a 3 GiB VM / 4 GiB guest disk-swap profile on 8 GB Macs, defaults to 60 Hz, detects physical US/JIS keyboards, and enables Japanese input through SteamOS's existing IBus/Anthy. Manual settings take priority. Game frame rates and compatibility are not guaranteed. See [automatic profiles](docs/performance-profiles.md), [8 GB limitations](docs/8gb-profile.md), and [keyboard / Japanese input](docs/japanese-input.md).
 
@@ -69,8 +69,7 @@ DXMT (single runs, see [docs/eac-performance.md](docs/eac-performance.md)).
    size; the default, 1280×800, is 16:10). A 16:9 game in a 16:10 window is letterboxed.
 4. Grant the **microphone** permission when macOS asks. Without it, the guest's audio capture fails repeatedly and games
    can stutter.
-5. In Steam, install VRChat, set its compatibility tool to **Proton Experimental**, and install **Proton EasyAntiCheat
-   Runtime**. See [SETUP.md](SETUP.md) for the full steps.
+5. With **VRChat setup** enabled, sign in and confirm any tool downloads in Steam. Lite prepares FEX, Proton Experimental, EAC and VRChat launch options, then restarts Steam once. Install and launch VRChat yourself when ready. See [the setup flow](docs/vrchat-setup.ja.md).
 
 ### First open
 
@@ -105,14 +104,13 @@ be turned on and off while a game runs.
 
 EAC runs inside SteamOS under Valve's FEX emulator. This fork's patched FEX passes EAC's checks for VRChat, and for
 Mini Royale (EAC `301`; that game was not played past its account prompt). Results differ from game to game: each title
-ships its own EAC build and checks, so an untested game may or may not work. Today two
-manual steps are required for VRChat; both are planned to become automatic:
+ships its own EAC build and checks, so an untested game may or may not work. Lite.4 offers **VRChat setup** during first-run disk selection and in Settings > General. It installs the bundled,
+pinned FEX after Valve's base tool is ready, chooses Proton Experimental only for VRChat, and writes the EAC launch
+options with a CPU topology matching the VM. Steam supplies the tool downloads; sign-in and any installation dialogs
+are user actions. Existing custom settings are preserved unless the user selects replacement, and originals are backed
+up. Steam restarts once after preparation; VRChat is never started by the helper.
 
-1. Install the patched FEX: enable SSH (Settings > Advanced), then run `build-fex.sh` and `install-fex-tool.sh` in the
-   guest ([fex-eac/README.md](fex-eac/README.md)).
-2. Set VRChat's Steam launch options (`EAC_LAUNCHERDIR`, `PROTON_EAC_RUNTIME`, `WINE_CPU_TOPOLOGY`, ...), exactly as given
-   in [fex-eac/README.md](fex-eac/README.md) and [SETUP.md](SETUP.md).
-
+The [manual instructions](fex-eac/README.md) remain available for developer builds and recovery.
 - **Expected:** EAC's launcher reports `Launcher finished with: 301, 'Easy Anti-Cheat successfully loaded in-game'` and
   the game logs `AntiCheat Session Begin: Success`.
 - **Not expected to work:** anti-cheat that refuses virtual machines, and titles whose anti-cheat uses its own

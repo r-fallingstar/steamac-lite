@@ -303,6 +303,11 @@ private struct GeneralTab: View {
                 }
             }
             Section {
+                Toggle(isOn: $settings.vrchatSetup) {
+                    Label2(title: "VRChat setup", detail: String(localized: "Install bundled FEX and prepare Proton, EAC and launch options after Steam sign-in. Confirm downloads in Steam if prompted. Steam restarts once; VRChat is not started."), now: false, key: .vrchatSetup)
+                }
+            }
+            Section {
                 Toggle(isOn: $settings.showOverlay) {
                     Label2(title: "Show boot and shutdown overlay",
                            detail: String(localized: "Full-window FX progress while SteamOS starts, restarts and shuts down. Off, or after a click: a small progress pill."), now: true)
@@ -360,13 +365,15 @@ private struct GeneralTab: View {
             }
             Section {
                 CrashReportsToggle(settings: settings, showsApplies: true)
-                Toggle(isOn: $settings.checkForUpdates) {
-                    Label2(title: "Check for updates at startup",
-                           detail: String(localized: "Asks GitHub (api.github.com) for the newest release, at most every 6 hours; only the app version is sent.")
-                               + " " + (CrashReporting.buildKind == .development
-                                   ? String(localized: "This development build never checks at startup; FX Steam Launcher > Check for Updates… does.")
-                                   : String(localized: "FX Steam Launcher > Check for Updates… checks at any time.")),
-                           now: true)
+                if !UpdateChecker.isLite {
+                    Toggle(isOn: $settings.checkForUpdates) {
+                        Label2(title: "Check for updates at startup",
+                               detail: String(localized: "Asks GitHub (api.github.com) for the newest release, at most every 6 hours; only the app version is sent.")
+                                   + " " + (CrashReporting.buildKind == .development
+                                       ? String(localized: "This development build never checks at startup; FX Steam Launcher > Check for Updates… does.")
+                                       : String(localized: "FX Steam Launcher > Check for Updates… checks at any time.")),
+                               now: true)
+                    }
                 }
                 Toggle(isOn: $settings.perfStats) {
                     Label2(title: "Log frame-pacing statistics",

@@ -1,0 +1,20 @@
+{
+  "archive": "fex-eac-2610.5-aarch64.tar.xz",
+  "sha256": "23937dc611c2f0181b8ecd17af64af283701ac0171445e7908a0ffe733d41478",
+  "tag": "eac-2610.5",
+  "commit": "6effd2384085818345ec32e6abb4181c7135a9a7",
+  "source": "https://github.com/StonkGuy/FEX",
+  "target": "Linux aarch64, Apple M1 or later",
+  "files": {
+    "usr/bin/FEX": "d6a627d64289c8c8a0a575e8a827e0b78ee72653198453e568cc3942020deb54",
+    "usr/bin/FEXBash": "ec3e084e8ace83eee1de61d052b5d6b61f19d4ca6ca8d17180aeb39ccf512ddd",
+    "usr/bin/FEXGetConfig": "ab5d5f05c902b81471754239567d36dbc85afcdf78045a06f265bf1a2fe986ff",
+    "usr/bin/FEXOfflineCompiler": "75cf2b7e1d182c8abb15027adfb412498970acf743dcf7ee89632c887afa22e9",
+    "usr/bin/FEXServer": "4d88f240c2b4dfb4ace63ce022184ee587f17f03fbc3cd1051ae609da554d6ad",
+    "usr/bin/FEXServerManager": "842fc28c736fd65c5e2183eb148b5767bf19adb7175addd497312a15f47fb2c5",
+    "usr/bin/FEXpidof": "907b6801d8cbb2844b66ad8cb199cff933aa7e9b63f596ebd924179bbde9ef56",
+    "FEXCompatTool": "dde402dae11d7c96b3933bd32948997f0d07516521fda7485602bb7b2481fff3",
+    "VERSIONS.txt": "e431352e7a92aa573be70c70d85ab1f3765c39b1fa58def450b5eb48fee82198",
+    "ConfigTemplate.json": "e458d3fe3d0e259de3465f621b6742df16e6f0858aa8484a39fd5e47366aeb1d"
+  }
+}

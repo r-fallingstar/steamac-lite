@@ -1,0 +1,9 @@
+[Unit]
+Description=SteamAC Lite optional VRChat setup
+After=steam.service gamescope-session.service
+
+[Service]
+Type=simple
+Environment=DISPLAY=:0
+ExecStart=/usr/lib/steamac/vrchat-setup
+Restart=no

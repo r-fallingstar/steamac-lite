@@ -25,10 +25,23 @@ struct SteamClientPicker: View {
     static func alertAccessoryView(settings: LauncherSettings, width: CGFloat = 320) -> NSView {
         let host = NSHostingView(rootView: VStack(alignment: .leading, spacing: 12) {
             SteamClientPicker(settings: settings)
+            VRChatSetupToggle(settings: settings)
             CrashReportsToggle(settings: settings, checkbox: true)
         }
         .frame(width: width, alignment: .leading))
         host.frame.size = host.fittingSize
         return host
+    }
+}
+
+/// Included in the disk chooser before SteamOS or any game is installed.
+struct VRChatSetupToggle: View {
+    @ObservedObject var settings: LauncherSettings
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle("VRChat setup", isOn: $settings.vrchatSetup).toggleStyle(.checkbox)
+            Text("Install bundled FEX and prepare Proton, EAC and launch options after Steam sign-in. Confirm downloads in Steam if prompted. Steam restarts once; VRChat is not started.")
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
     }
 }

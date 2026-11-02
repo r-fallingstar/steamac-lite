@@ -1,0 +1,399 @@
+#!/usr/bin/python3
+"""Optional, resumable VRChat preparation. Never starts a game or handles credentials.
+
+Steam owns all downloads. Only its normal install URI is used; any Steam dialog
+is left to the user. VDF writes and FEX replacement happen with Steam stopped.
+"""
+import argparse
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import runpy
+import shlex
+import subprocess
+import sys
+import tarfile
+import tempfile
+import time
+
+HERE = Path(__file__).resolve().parent
+VDF = runpy.run_path(str(HERE / "steam-title-defaults"))
+entries, set_value, atomic_write = (VDF[n] for n in ("vdf_entries", "vdf_set", "atomic_write"))
+STEAM = Path(os.environ.get("STEAMAC_STEAM_ROOT", str(Path.home()/".local/share/Steam")))
+STATE = Path(os.environ.get("STEAMAC_VRCHAT_STATE", str(Path.home()/".config/steamac/vrchat-setup")))
+PAYLOAD = Path(os.environ.get("STEAMAC_FEX_PAYLOAD", "/usr/lib/steamac/fex-eac-runtime"))
+MAPPING = ("InstallConfigStore", "Software", "Valve", "Steam", "CompatToolMapping", "438100")
+LAUNCH = ("UserLocalConfigStore", "Software", "Valve", "Steam", "apps", "438100", "LaunchOptions")
+TOOLS = [("3127680", "FEX-Emu"), ("1493710", "Proton Experimental"),
+         ("1826330", "Proton EasyAntiCheat Runtime")]
+
+
+def load(path, default=None):
+    try:
+        return json.loads(path.read_text())
+    except FileNotFoundError:
+        return {} if default is None else default
+
+
+def save(path, data):
+    atomic_write(path, json.dumps(data, ensure_ascii=False, indent=2)+"\n")
+
+
+def value(text, path):
+    return entries(text)[0].get(tuple(x.lower() for x in path), (None,))[0]
+
+
+def libraries():
+    result = [STEAM]
+    path = STEAM/"steamapps/libraryfolders.vdf"
+    if path.exists():
+        for key, (v, *_) in entries(path.read_text())[0].items():
+            if len(key) == 3 and key[0] == "libraryfolders" and key[-1] == "path":
+                p = Path(v)
+                if p.is_absolute() and p not in result:
+                    result.append(p)
+    return result
+
+
+def tool(appid):
+    for library in libraries():
+        manifest = library/"steamapps"/f"appmanifest_{appid}.acf"
+        if not manifest.exists():
+            continue
+        text = manifest.read_text()
+        # Updates and partial downloads must finish before the files are changed.
+        if value(text, ("AppState", "StateFlags")) != "4":
+            continue
+        directory = value(text, ("AppState", "installdir"))
+        if directory and Path(directory).name == directory:
+            path = library/"steamapps/common"/directory
+            if path.is_dir() and any(path.iterdir()):
+                return path
+    return None
+
+
+def account():
+    path = STEAM/"config/loginusers.vdf"
+    if not path.exists():
+        return None
+    records = {}
+    for key, (v, *_) in entries(path.read_text())[0].items():
+        if len(key) == 3 and key[0] == "users" and key[1].isdigit():
+            records.setdefault(key[1], {})[key[2]] = v
+    candidates = []
+    for steamid, record in records.items():
+        if int(steamid) <= 76561197960265728:
+            continue
+        local = STEAM/"userdata"/str(int(steamid)-76561197960265728)/"config/localconfig.vdf"
+        if local.is_file():
+            candidates.append((record, local))
+    for record, local in candidates:
+        if record.get("mostrecent") == "1":
+            return local
+    # Some ARM Steam clients omit MostRecent. A single remembered account is
+    # unambiguous; otherwise use Steam's most recent sign-in timestamp.
+    remembered = [(r,p) for r,p in candidates if r.get("allowautologin") == "1" or r.get("autologin") == "1"]
+    if len(remembered) == 1:
+        return remembered[0][1]
+    if len(candidates) == 1:
+        return candidates[0][1]
+    dated = [(int(r["timestamp"]),p) for r,p in candidates if r.get("timestamp", "").isdigit()]
+    dated.sort(key=lambda item:item[0],reverse=True)
+    if dated and (len(dated) == 1 or dated[0][0] > dated[1][0]):
+        return dated[0][1]
+    return None
+
+
+def busy():
+    # A title's FEX server outlives its window. Never terminate it to do setup.
+    for name in ("FEXServer", "FEX", "wineserver", "wineserver64"):
+        if subprocess.run(["pgrep", "-x", name], stdout=subprocess.DEVNULL).returncode == 0:
+            return True
+    return False
+
+
+def steam_running():
+    return subprocess.run(["pgrep", "-x", "steam"], stdout=subprocess.DEVNULL).returncode == 0
+
+
+def launch_options(eac, cpus=None):
+    count = max(1, min(16, cpus or os.cpu_count() or 1))
+    topology = "16:"+",".join(str(i % count) for i in range(16))
+    return ('env EAC_LAUNCHERDIR="${STEAM_COMPAT_DATA_PATH:-$HOME/.local/share/Steam/steamapps/compatdata/438100}/pfx/drive_c/users/steamuser/AppData/Roaming/EasyAntiCheat" '
+            + "PROTON_EAC_RUNTIME="+shlex.quote(str(eac))+" WINEDEBUG=-all PROTON_USE_XALIA=0 WINE_CPU_TOPOLOGY="
+            +topology+" %command%")
+
+
+def compatible_launch(text):
+    return bool(text) and all(word in text for word in (
+        "EAC_LAUNCHERDIR=", "PROTON_EAC_RUNTIME=", "PROTON_USE_XALIA=0", "WINE_CPU_TOPOLOGY=", "%command%"))
+
+
+def conflicts(local):
+    config = STEAM/"config/config.vdf"
+    a, b = config.read_text(), local.read_text()
+    name, launch = value(a, (*MAPPING, "name")), value(b, LAUNCH)
+    return bool((name and name != "proton_experimental") or (launch and not compatible_launch(launch)))
+
+
+def validate_payload():
+    receipt = load(PAYLOAD/"manifest.json")
+    archive = PAYLOAD/receipt["archive"]
+    if hashlib.sha256(archive.read_bytes()).hexdigest() != receipt["sha256"]:
+        raise ValueError("FEX archive checksum mismatch")
+    return receipt, archive
+
+
+def install_fex(target):
+    receipt, archive = validate_payload()
+    hashes = receipt["files"]
+    if all((target/name).is_file() and hashlib.sha256((target/name).read_bytes()).hexdigest() == digest
+           for name, digest in hashes.items()):
+        return
+    if busy():
+        raise RuntimeError("game-running")
+    with tempfile.TemporaryDirectory(prefix="fex-stage-", dir=STATE) as tmp:
+        with tarfile.open(archive) as tar:
+            # Only regular, explicitly hashed runtime files, no archive symlinks.
+            for name, digest in hashes.items():
+                item = tar.getmember("stage/"+name)
+                if not item.isfile() or Path(name).is_absolute() or ".." in Path(name).parts:
+                    raise ValueError("Unsafe FEX archive member")
+                data = tar.extractfile(item).read()
+                if hashlib.sha256(data).hexdigest() != digest:
+                    raise ValueError("FEX file checksum mismatch")
+                dest = Path(tmp)/name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(data)
+                dest.chmod(0o755 if name.startswith("usr/bin/") or name == "FEXCompatTool" else 0o644)
+        # Preserve the original Valve files once, and keep a rollback copy for each attempt.
+        backup = STATE/"valve-fex-backup"
+        previous = {}
+        for name in hashes:
+            path = target/name
+            if not path.is_file():
+                raise ValueError("Incomplete Valve FEX tool: "+name)
+            previous[name] = (path.read_bytes(), path.stat().st_mode & 0o777)
+        if not backup.exists():
+            staged = STATE/"valve-fex-backup.pending"
+            staged.mkdir(exist_ok=True)
+            for name, (data, mode) in previous.items():
+                p = staged/name
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_bytes(data)
+                p.chmod(mode)
+            os.rename(staged, backup)
+        try:
+            for name in hashes:
+                path = target/name
+                temp = path.with_name("."+path.name+".steamac-new")
+                temp.write_bytes((Path(tmp)/name).read_bytes())
+                temp.chmod((Path(tmp)/name).stat().st_mode & 0o777)
+                os.replace(temp, path)
+        except BaseException:
+            for name, (data, mode) in previous.items():
+                path = target/name
+                path.write_bytes(data)
+                path.chmod(mode)
+            raise
+
+
+def configure(local, replace=False):
+    if steam_running() or busy():
+        raise RuntimeError("game-running")
+    if conflicts(local) and not replace:
+        raise RuntimeError("custom-settings")
+    eac, fex, proton = tool("1826330"), tool("3127680"), tool("1493710")
+    if not all((eac, fex, proton)):
+        raise RuntimeError("downloads-pending")
+    # DXMT and the patched FEX require the x86-64 Proton, not ARM64EC Wine.
+    version = proton/"version"
+    if not version.exists() or "x86_64" not in version.read_text():
+        raise RuntimeError("proton-architecture")
+    config = STEAM/"config/config.vdf"
+    text, user = config.read_text(), local.read_text()
+    original_text = text
+    # Back up exact originals before any write; never include these in distributions.
+    key = local.parent.parent.name
+    backup = STATE/"config-backups"/key
+    backup.mkdir(parents=True, exist_ok=True)
+    for name, data in (("config.vdf", text), ("localconfig.vdf", user)):
+        p = backup/name
+        if not p.exists():
+            atomic_write(p, data)
+    install_fex(fex)
+    for field, v in (("name", "proton_experimental"), ("config", ""), ("priority", "250")):
+        text = set_value(text, (*MAPPING, field), v)
+    old = value(user, LAUNCH)
+    # Retain an existing working VRChat command, including any user-added flags.
+    if not compatible_launch(old):
+        user = set_value(user, LAUNCH, launch_options(eac))
+    atomic_write(config, text)
+    try:
+        atomic_write(local, user)
+    except BaseException:
+        atomic_write(config, original_text)
+        raise
+    save(STATE/"complete.json", {"version": 1, "account": key, "fex_commit": validate_payload()[0]["commit"],
+                                 "proton_version": version.read_text().strip(), "vrchat_launched": False})
+
+
+def enabled():
+    return "steamac.vrchat_setup=1" in Path("/proc/cmdline").read_text().split()
+
+
+def run_ui():
+    import gi
+    gi.require_version("Gtk", "3.0")
+    from gi.repository import Gtk, GLib
+    japanese = "steamac.setup_language=ja" in Path("/proc/cmdline").read_text().split()
+
+    def tr(ja, en):
+        return ja if japanese else en
+
+    window = Gtk.Window(title=tr("VRChat向け設定", "VRChat setup"))
+    window.set_default_size(580, 300)
+    window.set_border_width(24)
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+    window.add(box)
+    label = Gtk.Label(xalign=0)
+    label.set_line_wrap(True)
+    box.pack_start(label, True, True, 0)
+    replace = Gtk.CheckButton(label=tr("既存のVRChat向け設定を置き換える（バックアップを作成します）",
+                                       "Replace existing VRChat settings (keep a backup)"))
+    replace.set_no_show_all(True)
+    box.pack_start(replace, False, False, 0)
+    row = Gtk.Box(spacing=12)
+    box.pack_start(row, False, False, 0)
+    retry = Gtk.Button(label=tr("再試行", "Retry"))
+    close = Gtk.Button(label=tr("あとで設定する", "Set up later"))
+    row.pack_start(retry, False, False, 0)
+    row.pack_end(close, False, False, 0)
+    pending = {"appid": None, "error": None}
+
+    def finish(*_):
+        Gtk.main_quit()
+
+    close.connect("clicked", finish)
+    window.connect("delete-event", lambda *_: (finish(), False)[1])
+
+    def tick(force=False):
+        try:
+            local = account()
+            if not local:
+                label.set_text(tr("Steamにログインしてください。ログインが完了すると、必要なツールの準備を始めます。",
+                                  "Sign in to Steam. Preparation starts after sign-in."))
+                return True
+            done = load(STATE/"complete.json")
+            if done.get("account") == local.parent.parent.name:
+                return False
+            for appid, title in TOOLS:
+                if not tool(appid):
+                    label.set_text(tr(f"{title} のダウンロードを待っています。\nSteamに確認画面が出た場合は、内容を確認してインストールしてください。キャンセルした場合は「再試行」でもう一度開けます。",
+                                      f"Waiting for {title}.\nConfirm installation in Steam if prompted. Use Retry if you cancelled it."))
+                    if pending["appid"] != appid or force:
+                        subprocess.Popen(["/usr/bin/steam", f"steam://install/{appid}"],
+                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        pending["appid"] = appid
+                    return True
+            if conflicts(local) and not replace.get_active():
+                replace.show()
+                label.set_text(tr("既存の互換ツールまたは起動オプションがあります。置き換える場合は「既存のVRChat向け設定を置き換える」にチェックを入れて「再試行」を押してください。",
+                                  "Existing compatibility settings or launch options were found. Select Replace and Retry to change them."))
+                return True
+            if busy():
+                label.set_text(tr("ゲームの終了を待っています。Steamのゲームをすべて終了すると設定を続けます。",
+                                  "Waiting for games to exit. Close all Steam games to continue."))
+                return True
+            label.set_text(tr("FEXとVRChat向け設定を適用します。Steamを一度再起動します。",
+                              "Applying FEX and VRChat settings. Steam will restart once."))
+            while Gtk.events_pending():
+                Gtk.main_iteration_do(False)
+            stopped = False
+            try:
+                subprocess.run(["systemctl", "--user", "stop", "steam.service"], check=True, timeout=45)
+                stopped = True
+                for _ in range(15):
+                    if not steam_running() and not busy():
+                        break
+                    time.sleep(1)
+                configure(local, replace=replace.get_active())
+            finally:
+                if stopped:
+                    subprocess.run(["systemctl", "--user", "start", "--no-block", "steam.service"], check=True, timeout=10)
+            label.set_text(tr("VRChat向け設定が完了しました。VRChatが未インストールの場合はSteamでインストールし、準備ができたら起動してください。\nVRChatは自動では起動しません。",
+                              "VRChat setup is complete. Install VRChat in Steam and start it when ready.\nVRChat has not been started."))
+            retry.hide()
+            close.set_label(tr("閉じる", "Close"))
+            return False
+        except Exception as error:
+            # Give actionable text; never expose account files or complete subprocess output.
+            code = str(error) if isinstance(error, RuntimeError) else type(error).__name__
+            messages = {
+                "game-running": tr("Steamまたはゲームが終了していません。ゲームを終了して、再試行してください。", "Steam or a game is still running. Close games and retry."),
+                "custom-settings": tr("既存のVRChat向け設定があります。置き換える場合は「既存のVRChat向け設定を置き換える」にチェックを入れて再試行してください。", "Existing VRChat settings were found. Select Replace and retry."),
+                "downloads-pending": tr("必要なツールのダウンロードが完了していません。Steamのダウンロード画面を確認して再試行してください。", "Required downloads are incomplete. Check Steam Downloads and retry."),
+                "proton-architecture": tr("対応するProton Experimental（x86_64版）を確認できません。SteamでProton Experimentalのインストール状態を確認してください。", "The required x86_64 Proton Experimental was not found. Check its installation in Steam."),
+                "OSError": tr("ファイルを書き込めませんでした。ディスクの空き容量とアクセス権を確認して再試行してください。", "Could not write files. Check free disk space and permissions, then retry."),
+                "ValueError": tr("ツールまたは設定ファイルの検証に失敗しました。Steamでツールのファイルを検証し、アプリの入手元も確認してください。", "Tool or configuration verification failed. Verify tool files in Steam and check the app download."),
+            }
+            message = messages.get(code, tr("設定を完了できませんでした。Steamのダウンロード状態を確認して再試行してください。", "Setup could not finish. Check Steam Downloads and retry."))
+            label.set_text(message)
+            pending["error"] = code
+            return False
+
+    def retry_clicked(*_):
+        if tick(True):
+            # One timer only; Retry also works after an error stopped the previous timer.
+            if timer[0]:
+                GLib.source_remove(timer[0])
+            timer[0] = GLib.timeout_add_seconds(5, timer_tick)
+
+    def timer_tick():
+        keep = tick()
+        if not keep:
+            timer[0] = 0
+        return keep
+
+    retry.connect("clicked", retry_clicked)
+    window.show_all()
+    timer = [GLib.timeout_add_seconds(5, timer_tick)]
+    tick()
+    Gtk.main()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--configure", action="store_true", help="offline configuration; Steam must be stopped")
+    parser.add_argument("--replace", action="store_true")
+    parser.add_argument("--maintain", action="store_true", help="restore the bundled FEX after a Valve tool update, before Steam starts")
+    args = parser.parse_args()
+    if not args.configure and not enabled():
+        return
+    STATE.mkdir(parents=True, exist_ok=True)
+    STATE.chmod(0o700)
+    with (STATE/"setup.lock").open("w") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return
+        if args.maintain:
+            target = tool("3127680")
+            if load(STATE/"complete.json") and target and not steam_running() and not busy():
+                install_fex(target)
+        elif args.configure:
+            local = account()
+            if not local:
+                raise RuntimeError("login-required")
+            configure(local, replace=args.replace)
+        else:
+            local = account()
+            done = load(STATE/"complete.json").get("account")
+            if not done or not local or done != local.parent.parent.name:
+                run_ui()
+
+
+if __name__ == "__main__":
+    main()

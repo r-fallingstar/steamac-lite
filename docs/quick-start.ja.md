@@ -2,7 +2,7 @@
 
 ## ダウンロードとインストール
 
-1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.3)から **SteamAC-Lite-1.9.4-lite.3-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
+1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.4)から **SteamAC-Lite-1.9.4-lite.4-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
 2. DMGを開き、**SteamAC Lite.app** を **Applications** フォルダへコピーします。
 3. アプリケーションフォルダからSteamAC Liteを開きます。ビルドやコマンド入力は不要です。
 
@@ -16,7 +16,8 @@ Apple Silicon（M1以降）・RAM 8 GB以上・macOS 15.5以降向けです。�
 
 1. **新しいディスクを作成…（Create New Disk…）**でSteamOS用のディスクを作成します。表示される利用条件を確認し、SteamOSのダウンロード・セットアップが終わるまで待ちます。
 2. Steamのログイン画面で、自分のアカウントへログインします。既存のSteamOSディスクを持っている場合は、**既存のディスクを使用…（Use Existing Disk…）**で指定することもできます。
-3. ゲームをインストールします。ゲームの購入・アカウント作成等はそれぞれのサービスで行います。
+3. 「VRChat向け設定」を有効にした場合は、必要なツールの準備が始まります。Steamに確認画面が出たら、内容を確認してインストールします。追加設定が完了するとSteamを一度再起動します。
+4. ゲームをインストールします。ゲームの購入・アカウント作成等はそれぞれのサービスで行います。
 
 アプリ本体にはSteamOSのディスク、Steamのログイン情報、ゲームは含まれていません。通常版の「FX Steam Launcher.app」とは別のアプリです。既存ディスクはそのまま利用されるので、試す場合は停止済みのディスクをコピーして指定してください。
 
@@ -41,8 +42,12 @@ Apple Silicon（M1以降）・RAM 8 GB以上・macOS 15.5以降向けです。�
 
 Macの物理キーボードからUS/JISを起動時に判別します。テキスト欄で **Control＋Space** を押して日本語へ切り替え、ローマ字で入力し、**Space**で変換、**Enter**で確定します。JISの「かな」「英数」キーにも対応します。外付けキーボードの交換後はアプリを再起動してください。
 
-## VRChatを利用する場合
+## VRChat向け設定
 
-**アプリを入れるだけでVRChatの準備がすべて終わるわけではありません。** Steam側でProton ExperimentalとProton EasyAntiCheat Runtime、対応するFEX、起動オプションの追加設定が必要です。[日本語README](https://github.com/r-fallingstar/steamac-lite/blob/main/README.ja.md)から[ゲーム設定の詳細](https://github.com/r-fallingstar/steamac-lite/blob/main/SETUP.md#easy-anti-cheat)を参照してください。FEXのビルド・導入は現時点で手動です。
+初回のディスク選択画面にある **VRChat向け設定** は既定で有効です。あとから **設定… > 一般 > VRChat向け設定** で変更でき、次回起動から反映されます。
+
+Steamへのログイン後、FEX-Emu・Proton Experimental・Proton EasyAntiCheat Runtimeの準備を順に進めます。Steamにインストールの確認画面が出た場合は、内容を確認してインストールしてください。追加設定は自動で適用するため、コマンド入力やFEXのビルドは不要です。途中で中断した場合は「再試行」、または次回の起動で続けられます。
+
+設定時にSteamを一度再起動します。ゲームの実行中は終了を待ちます。VRChatは自動では起動しません。完了後、SteamでVRChatをインストールし、準備ができたら自分で起動します。既存の互換ツールや起動オプションがある場合は、確認せずに置き換えません。[詳しい動作と復元方法](https://github.com/r-fallingstar/steamac-lite/blob/main/docs/vrchat-setup.ja.md)を参照してください。
 
 8 GBのM1 MacでVRChatが動作したとのユーザー報告があります。他のMacの実ゲーム性能・重いワールド・長時間の安定性は未確認です。自動設定は容量に基づく初期値で、GPUの速度やゲーム負荷を測定して調整する機能ではありません。

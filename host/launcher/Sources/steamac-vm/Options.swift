@@ -657,6 +657,8 @@ struct Options {
             if o.lowMemory { add("steamac.low_memory", "1") }
             add("steamac.keyboard", o.effectiveKeyboardLayout.rawValue)
             add("steamac.japanese_ime", "1")
+            add("steamac.vrchat_setup", settings.vrchatSetup ? "1" : "0")
+            add("steamac.setup_language", (settings.applicationLanguage == .system ? ApplicationLanguage.preferred(Locale.preferredLanguages) : settings.applicationLanguage).rawValue)
             // only written when on; absent is the default (off), so an explicit =0 needs no key
             if let a = Options.frameLatencyArg(o.frameLatency) { add(a.key, a.value) }
             if let a = Options.vrArg(o.vr && VRHost.unavailableReason(o) == nil) { add(a.key, a.value) }

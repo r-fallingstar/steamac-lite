@@ -4,11 +4,11 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.4-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.3/SteamAC-Lite-1.9.4-lite.3-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.4/SteamAC-Lite-1.9.4-lite.4-macos-arm64.dmg)**
 
-DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.3)
+DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.4)
 
-macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードし、VRChat用のFEX・Proton設定は現時点で手動です。
+macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 
 ## このForkの変更
 
@@ -52,7 +52,7 @@ bash scripts/lite/build-app.sh
 
 出力は`work/out/SteamAC Lite.app`です。元の署名付きアプリのカーネル・グラフィックス等を再利用し、変更したランチャーとゲスト設定を組み込みます。全コンポーネントをソースから構築するリリース手順とは異なります。
 
-停止済みのSteamOSディスクのコピーで試してください。同じディスクを複数のVMから同時に開かないでください。初回のスワップ作成時には、Mac・ゲストにそれぞれ8 GiB以上の空き容量が必要です。VRChatを使う場合はProton ExperimentalとProton EasyAntiCheat Runtime、対応するFEXの設定が別途必要です。
+停止済みのSteamOSディスクのコピーで試してください。同じディスクを複数のVMから同時に開かないでください。初回のスワップ作成時には、Mac・ゲストにそれぞれ8 GiB以上の空き容量が必要です。「VRChat向け設定」は既定で有効です。Steamへのログイン後、必要なツールのダウンロードが終わると追加設定を適用し、Steamを一度再起動します。VRChatは自動では起動しません。
 
 [ビルド手順とメモリ配分の詳細](docs/8gb-profile.md) · [上流のゲーム設定](SETUP.md)
 
