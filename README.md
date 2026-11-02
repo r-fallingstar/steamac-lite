@@ -1,3 +1,7 @@
+# SteamAC Lite — experimental 8 GB profile
+
+This fork adds an opt-in 3 GiB VM / 4 GiB guest disk-swap profile for 8 GB Apple Silicon Macs. VRChat compatibility and performance are not guaranteed. See [8 GB profile, build and limitations](docs/8gb-profile.md). Upstream documentation follows.
+
 # steamac with genuine-EAC games and a DXMT graphics path
 
 **English** · [Русский](README.ru.md) · [简体中文](README.zh.md)

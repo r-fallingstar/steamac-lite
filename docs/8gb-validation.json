@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-02",
+  "host": {"chip": "Apple M1", "memory_gib": 8, "macos": "27.2"},
+  "launcher_profile_selftest": "passed",
+  "swap_unit_tests": {"passed": 7, "failed": 0},
+  "upstream_steam_ui_gpu_test": "passed",
+  "upstream_mem_trim_test": "passed",
+  "vm_smoke_test": {
+    "disk": "APFS clone of existing SteamOS disk",
+    "headless": true,
+    "guest_memory_mib": 3072,
+    "guest_vcpus": 4,
+    "gpu_reported_budget_mib": 2048,
+    "additional_disk_swap_mib": 4096,
+    "swap_activation": "passed",
+    "steam_ready": true,
+    "normal_shutdown": true,
+    "audio_enabled": false,
+    "ssh_enabled": false,
+    "vr_enabled": false
+  },
+  "vrchat_in_game_test": "not performed; user continues playing on another PC",
+  "gui_audio_performance_and_long_term_stability": "not verified"
+}

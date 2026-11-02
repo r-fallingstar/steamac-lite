@@ -31,6 +31,11 @@ if options.selftestGameLayers { GameLayerSelfTest.run() }
 if options.selftestL10n { L10nSelfTest.run() }
 if options.selftestGraphicsPath { GraphicsPathSelfTest.run(options) }
 if options.selftestVR { VRSelfTest.run(options) }
+if options.selftestLowMemory {
+    let failures = LowMemoryProfile.selfCheck()
+    print(failures.isEmpty ? "low-memory: PASS" : "low-memory: FAIL: " + failures.joined(separator: "; "))
+    exit(failures.isEmpty ? 0 : 1)
+}
 // Before CrashReporting's GPU tags, the window or either Vulkan driver can initialise Metal.
 MetalCompilerCache.prepare()
 

@@ -10,7 +10,7 @@ import Foundation
 final class LauncherSettings: ObservableObject {
     /// This process's settings (the VM process's window, gamepad, sound and Settings window share it).
     static let shared = LauncherSettings()
-    static let defaultDomain = "es.fxgam.steamac"
+    static let defaultDomain = Bundle.main.object(forInfoDictionaryKey: "SteamacPreferencesDomain") as? String ?? "es.fxgam.steamac"
     /// Domain used before the bundle id change; copied once into the domain if that is still empty.
     static let legacyDomain = "dev.steamac.vm"
     static var domain: String {
@@ -367,7 +367,7 @@ final class LauncherSettings: ObservableObject {
     @Published var openFullscreen = false { didSet { save(.openFullscreen, openFullscreen) } }
     @Published var perfStats = false { didSet { save(.perfStats, perfStats) } }
     /// Crash reports and diagnostics through Sentry (CrashReporting); applies now.
-    @Published var sendCrashReports = true { didSet { save(.sendCrashReports, sendCrashReports) } }
+    @Published var sendCrashReports = !(Bundle.main.object(forInfoDictionaryKey: "SteamacLiteBuild") as? Bool ?? false) { didSet { save(.sendCrashReports, sendCrashReports) } }
     /// While the app is not active: mute the guest's sound / freeze the focused game.
     @Published var muteInBackground = true { didSet { save(.muteInBackground, muteInBackground) } }
     @Published var pauseInBackground = false { didSet { save(.pauseInBackground, pauseInBackground) } }
@@ -377,7 +377,7 @@ final class LauncherSettings: ObservableObject {
     @Published var shareConcealedClipboard = false { didSet { save(.shareConcealedClipboard, shareConcealedClipboard) } }
     @Published var closeAction = CloseAction.shutDown { didSet { save(.closeAction, closeAction.rawValue) } }
     /// New-version check when the app starts (UpdateChecker; never in development builds); applies now.
-    @Published var checkForUpdates = true { didSet { save(.checkForUpdates, checkForUpdates) } }
+    @Published var checkForUpdates = !(Bundle.main.object(forInfoDictionaryKey: "SteamacLiteBuild") as? Bool ?? false) { didSet { save(.checkForUpdates, checkForUpdates) } }
     /// Game statistics (GameStats): finished game sessions and the player's ratings go to the
     /// public statistics service; off until the user agrees. Applies now.
     @Published var shareGameStats = false { didSet { save(.shareGameStats, shareGameStats) } }
@@ -536,7 +536,7 @@ final class LauncherSettings: ObservableObject {
         // The embedded/bundled Info.plist makes es.fxgam.steamac our own identifier: that domain is
         // .standard (UserDefaults refuses it as a suite name).
         defaults = domain == Bundle.main.bundleIdentifier ? .standard : (UserDefaults(suiteName: domain) ?? .standard)
-        if domain == LauncherSettings.defaultDomain { LauncherSettings.migrateLegacy(into: defaults) }
+        if domain == "es.fxgam.steamac" { LauncherSettings.migrateLegacy(into: defaults) }
         load()
     }
 

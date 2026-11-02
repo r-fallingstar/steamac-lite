@@ -1,0 +1,19 @@
+[Unit]
+Description=SteamAC Lite experimental 4 GiB guest disk swap
+ConditionKernelCommandLine=steamac.low_memory=1
+RequiresMountsFor=/home
+After=home.mount
+Before=display-manager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/steamac/low-memory-swap
+StandardOutput=journal+console
+StandardError=journal+console
+TimeoutStartSec=120
+UMask=0077
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

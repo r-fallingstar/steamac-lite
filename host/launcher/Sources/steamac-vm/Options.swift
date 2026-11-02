@@ -19,6 +19,8 @@ enum MouseMode: String {
 }
 
 struct Options {
+    var lowMemory = Bundle.main.object(forInfoDictionaryKey: "SteamacLowMemoryDefaults") as? Bool ?? false
+    var selftestLowMemory = false
     var kernel: String = ""
     var initrd: String?
     /// virtio_snd.msg_timeout_ms: the CoreAudio backend starts a capture stream synchronously on the
@@ -209,6 +211,10 @@ struct Options {
                            cores, 2..8)
       --mem MiB            guest RAM (default: Settings > Advanced, automatic = half this Mac's RAM,
                            4096..16384; the GPU's memory comes from the same RAM)
+      --low-memory         experimental 8 GB profile: 3 GiB VM, non-Retina 960x600 at 30 Hz,
+                           DXMT when available, plus 4 GiB guest disk swap (8 GiB free required)
+      --no-low-memory      disable this profile for this boot (the Lite app enables it by default)
+      --selftest-low-memory  check profile precedence and memory budgets without starting a VM
       --display WxH        initial window size in points (default 1280x800); the guest display follows
                            the window: content size in points = guest pixels, x the screen's backing
                            scale with Settings > Display > Retina resolution (even, min 800x500, max
@@ -395,6 +401,9 @@ struct Options {
             if a == "-AppleLanguages" || a == "-AppleLocale" { i += 2; continue }
             o.explicit.insert(a)
             switch a {
+            case "--low-memory": o.lowMemory = true
+            case "--no-low-memory": o.lowMemory = false
+            case "--selftest-low-memory": o.selftestLowMemory = true
             case "--kernel": o.kernel = try value(a)
             case "--initrd": o.initrd = try value(a)
             case "--cmdline": o.cmdline = try value(a)
@@ -583,7 +592,7 @@ struct Options {
         selftestDisplay || selftestOverlay || selftestStall || selftestPill || selftestSettings || selftestProvision || selftestRemotePlay
             || selftestMetalCache || selftestPointer || selftestGameLayers || selftestVR || selftestL10n || createDisk != nil
             || growDisk != nil
-            || showSSHPassword != nil
+            || showSSHPassword != nil || selftestLowMemory
     }
 
     /// Command line + saved settings (+ app bundle resources): what this boot runs with, and which
@@ -591,6 +600,7 @@ struct Options {
     static func resolve(_ argv: [String], settings: LauncherSettings) throws -> (Options, [LauncherSettings.Key: String]) {
         var o = try parse(argv)
         var overrides = o.applySettings(settings)
+        o.applyLowMemoryProfile(overrides: &overrides)
         if !o.isSelftest, let reason = o.vulkanDriver.unavailableReason {
             guard !o.explicit.contains("--vulkan-driver") else {
                 throw OptionError("--vulkan-driver \(o.vulkanDriver.rawValue): \(o.vulkanDriver.name) \(reason)")
@@ -618,6 +628,7 @@ struct Options {
             add("steamac.steam_client", o.steamClient.rawValue)
             add("steamac.gfx", o.wmtrLibrary == nil ? "vulkan" : "dxmt")
             add("steamac.gpu_mib", String(VMSizing.gpuBudgetMiB(memMiB: o.memMiB)))
+            if o.lowMemory { add("steamac.low_memory", "1") }
             // only written when on; absent is the default (off), so an explicit =0 needs no key
             if let a = Options.frameLatencyArg(o.frameLatency) { add(a.key, a.value) }
             if let a = Options.vrArg(o.vr && VRHost.unavailableReason(o) == nil) { add(a.key, a.value) }
@@ -762,6 +773,11 @@ struct Options {
             }
         }
         if disks.count > 26 { throw OptionError("at most 26 disks") }
+        if lowMemory, let disk = disks.first,
+           let attributes = try? FileManager.default.attributesOfFileSystem(forPath: (disk.path as NSString).deletingLastPathComponent),
+           let free = attributes[.systemFreeSize] as? NSNumber, free.uint64Value < 8 * 1024 * 1024 * 1024 {
+            throw OptionError("--low-memory needs at least 8 GiB free on the Mac volume containing the SteamOS disk")
+        }
     }
 }
 

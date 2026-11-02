@@ -1,0 +1,106 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: MIT
+"""Opt-in disk swap for the 8 GB profile. Never change macOS swap or existing zram."""
+import json
+import os
+from pathlib import Path
+import shutil
+import stat
+import subprocess
+import sys
+
+GIB = 1024 ** 3
+
+
+def enabled(cmdline):
+    # A later explicit =0 wins, just as it does for the launcher's other boot settings.
+    setting = None
+    for word in cmdline.split():
+        if word.startswith('steamac.low_memory='):
+            setting = word.split('=', 1)[1]
+    return setting == '1'
+
+
+class SwapFile:
+    def __init__(self, directory=Path('/home/.steamac-low-memory'), runner=subprocess.run,
+                 disk_usage=shutil.disk_usage, owner=0,
+                 swaps_reader=lambda: Path('/proc/swaps').read_text()):
+        self.directory = directory
+        self.path = directory / 'swapfile'
+        self.runner = runner
+        self.disk_usage = disk_usage
+        self.owner = owner
+        self.swaps_reader = swaps_reader
+
+    def run(self, *args):
+        return self.runner(list(args), check=True, capture_output=True, text=True).stdout.strip()
+
+    def validate(self, path, directory=False):
+        info = path.lstat()
+        kind = stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)
+        if not kind or info.st_uid != self.owner or info.st_mode & 0o077:
+            raise ValueError(f'{path}: expected a private, root-owned {"directory" if directory else "file"}')
+        if not directory and (info.st_nlink != 1 or info.st_size != 4 * GIB):
+            raise ValueError(f'{path}: expected a 4 GiB file with no hard links')
+
+    def active(self):
+        # /proc/swaps works across util-linux versions, including SteamOS builds without JSON output.
+        for line in self.swaps_reader().splitlines()[1:]:
+            columns = line.split()
+            if columns:
+                name = columns[0].replace('\\040', ' ').replace('\\011', '\t').replace('\\134', '\\')
+                if name == str(self.path):
+                    return True
+        return False
+
+    def apply(self):
+        self.directory.mkdir(mode=0o700, exist_ok=True)
+        self.validate(self.directory, directory=True)
+        # lexists catches dangling symlinks too: never replace a user-created path.
+        if os.path.lexists(self.path):
+            self.validate(self.path)
+        else:
+            filesystem = self.run('findmnt', '--noheadings', '--output', 'FSTYPE', '--target', str(self.directory))
+            # SteamAC's provisioned /home is ext4. Other filesystems need different no-COW rules.
+            if filesystem != 'ext4':
+                raise ValueError(f'guest disk swap requires ext4 /home; found {filesystem}')
+            if self.disk_usage(self.directory).free < 8 * GIB:
+                raise ValueError('at least 8 GiB free in /home is required before reserving 4 GiB for swap')
+            temporary = self.directory / 'swapfile.new'
+            fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            os.close(fd)
+            try:
+                self.run('fallocate', '--length', str(4 * GIB), str(temporary))
+                self.run('mkswap', str(temporary))
+                self.validate(temporary)
+                os.replace(temporary, self.path)
+            finally:
+                # Only this invocation's exclusively created temporary file is removed.
+                temporary.unlink(missing_ok=True)
+        if not self.active():
+            # SteamOS zram normally has a higher priority and is left intact.
+            self.run('swapon', '--priority', '10', str(self.path))
+        if not self.active():
+            raise RuntimeError('swapon returned without activating the profile swap file')
+        return {'disk_swap_mib': 4096, 'priority': 10, 'path': str(self.path)}
+
+
+def main():
+    if not enabled(Path('/proc/cmdline').read_text()):
+        print('low-memory-swap: disabled; existing swap is unchanged')
+        return 0
+    if os.geteuid() != 0:
+        print('low-memory-swap: root is required', file=sys.stderr)
+        return 1
+    try:
+        result = SwapFile().apply()
+        print('low-memory-swap: active ' + json.dumps(result, sort_keys=True))
+        return 0
+    except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
+        detail = error.stderr.strip() if isinstance(error, subprocess.CalledProcessError) and error.stderr else str(error)
+        print(f'low-memory-swap: unavailable: {detail}', file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
