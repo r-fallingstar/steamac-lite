@@ -2,7 +2,7 @@
 
 **English** · [日本語のREADME](README.ja.md)
 
-**[写真付きの導入ガイド / Illustrated setup guide (Japanese)](https://r-fallingstar.github.io/steamac-lite/)**
+**Illustrated setup guide:** [日本語](https://r-fallingstar.github.io/steamac-lite/?lang=ja) · [English](https://r-fallingstar.github.io/steamac-lite/en/) · [한국어](https://r-fallingstar.github.io/steamac-lite/ko/) · [简体中文](https://r-fallingstar.github.io/steamac-lite/zh-CN/)
 
 **[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.6/SteamAC-Lite-1.9.4-lite.6-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.6) · [はじめての導入手順](docs/quick-start.ja.md)
 

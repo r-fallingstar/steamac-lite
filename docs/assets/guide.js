@@ -1,5 +1,7 @@
 (() => {
   const dialog = document.querySelector('#photo-dialog');
+  const zoomLabel = document.documentElement.dataset.photoZoom;
+  const fitLabel = document.documentElement.dataset.photoFit;
   if (dialog && typeof dialog.showModal === 'function') {
     const photo = document.querySelector('#photo-full');
     const title = document.querySelector('#photo-title');
@@ -13,7 +15,7 @@
         title.textContent = link.closest('figure').querySelector('figcaption').textContent;
         photo.classList.remove('is-zoomed');
         scale.setAttribute('aria-pressed', 'false');
-        scale.textContent = '拡大する';
+        scale.textContent = zoomLabel;
         dialog.showModal();
         dialog.scrollTop = 0;
         dialog.scrollLeft = 0;
@@ -22,7 +24,7 @@
     scale.addEventListener('click', () => {
       const expanded = photo.classList.toggle('is-zoomed');
       scale.setAttribute('aria-pressed', String(expanded));
-      scale.textContent = expanded ? '全体を見る' : '拡大する';
+      scale.textContent = expanded ? fitLabel : zoomLabel;
     });
     document.querySelector('#photo-close').addEventListener('click', () => dialog.close());
     dialog.addEventListener('click', event => {

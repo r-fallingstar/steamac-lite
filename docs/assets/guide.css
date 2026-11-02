@@ -206,7 +206,7 @@ dialog::backdrop { background: #493050b8; }
   .brand img { width: 32px; height: 32px; }
   .site-header nav { gap: 16px; }
   .site-header nav a { font-size: 11px; }
-  .site-header nav a:nth-child(2), .site-header nav a:nth-child(3) { display: none; }
+  .site-header .main-nav a:nth-child(2), .site-header .main-nav a:nth-child(3) { display: none; }
   .hero { display: grid; grid-template-columns: 1fr; gap: 36px; min-height: 0; padding-block: 40px 48px; }
   .hero::after { width: 125%; height: 48%; right: calc((100% - 100vw) / 2); top: auto; bottom: -3%; transform: none; }
   .eyebrow { font-size: 11px; padding: 6px 12px; margin-bottom: 24px; }
@@ -283,4 +283,27 @@ dialog::backdrop { background: #493050b8; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   a, button { transition: none !important; }
+}
+
+/* Shared language selector. Links work even when JavaScript/storage is disabled. */
+html:lang(en) { --font: "Avenir Next", "Segoe UI", sans-serif; }
+html:lang(ko) { --font: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; }
+html:lang(zh-Hans) { --font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif; }
+html:lang(ko) body { word-break: keep-all; overflow-wrap: anywhere; }
+.site-header { gap: 24px; height: auto; min-height: 100px; padding-block: 16px; flex-wrap: wrap; }
+.site-header .main-nav { margin-left: auto; }
+.language-picker { position: relative; z-index: 25; flex-shrink: 0; padding: 0; border-radius: 12px; background: white; }
+.language-picker summary { padding: 10px 14px; gap: 12px; min-height: 44px; font-size: 12px; }
+.language-picker summary::after { content: "⌄"; font-size: 14px; line-height: 1; }
+.language-picker[open] { background: white; }
+.language-picker[open] summary::after { content: "⌄"; transform: rotate(180deg); }
+.site-header .language-picker nav { display: grid; position: absolute; top: calc(100% + 8px); right: 0; width: 168px; gap: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 14px; background: white; box-shadow: 0 8px 24px #49305018; }
+.site-header .language-picker nav a { display: block; border: 0; padding: 10px 12px; border-radius: 8px; font-size: 13px; }
+.site-header .language-picker nav a:hover, .site-header .language-picker nav a[aria-current="page"] { background: var(--pink-soft); color: var(--accent); }
+@media (max-width: 760px) {
+  .site-header { min-height: 100px; gap: 8px 12px; }
+  .brand { flex: 1; }
+  .language-picker { order: 2; }
+  .site-header .main-nav { order: 3; flex-basis: 100%; margin-left: 0; justify-content: space-between; }
+  .site-header .main-nav a { padding-block: 4px; }
 }
