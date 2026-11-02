@@ -1,5 +1,7 @@
 # SteamAC Lite はじめに
 
+[写真付きの導入ガイド](https://r-fallingstar.github.io/steamac-lite/)では、ダウンロードからVRChat向け設定までを実画面で案内しています。
+
 ## ダウンロードとインストール
 
 1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.5)から **SteamAC-Lite-1.9.4-lite.5-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
