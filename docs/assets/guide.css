@@ -166,6 +166,14 @@ details p { margin: 16px 16px 0 0; font-size: 13px; line-height: 2; color: var(-
 .footer-links a:hover { text-decoration: underline; }
 .footer-meta { grid-column: 1/-1; margin: 0 !important; padding-top: 20px; border-top: 1px solid var(--line); font-size: 10px !important; }
 
+/* Alternative BOOTH installation route */
+.contents nav .contents-subsection { min-height: 32px; margin-left: 20px; font-size: 11px; }
+.download-alternative { margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--line); scroll-margin-top: 24px; }
+.download-alternative h3 { font-size: 20px; }
+.download-alternative > p { margin-top: 16px; font-size: 14px; }
+.download-alternative > .small { font-size: 12px; }
+.installer-photo { max-width: 570px; margin: 20px auto 8px; }
+
 /* Photo viewer */
 dialog { width: min(1200px, calc(100vw - 40px)); max-width: none; max-height: 92vh; max-height: 92dvh; overflow: auto; padding: 0; border: 3px solid white; border-radius: 20px; background: white; color: var(--ink); box-shadow: 0 24px 90px #49305055; }
 dialog::backdrop { background: #493050b8; }

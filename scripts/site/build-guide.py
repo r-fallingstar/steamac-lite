@@ -61,7 +61,8 @@ for locale,(name,language,path) in LANGUAGES.items():
         Fragment().feed(value)
     prefix = '../' if path else ''
     assert set(screenshots[locale]) == {'steam-ready', 'release-download', 'dmg-install',
-                                       'create-disk', 'vrchat-settings', 'display-settings'}
+                                       'create-disk', 'vrchat-settings', 'display-settings',
+                                       'installer-ready', 'installer-done'}
     images = {}
     for scene, asset in screenshots[locale].items():
         assert asset.startswith(f'media/guide/{locale}/') and '..' not in asset

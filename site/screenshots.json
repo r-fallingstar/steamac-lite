@@ -5,7 +5,9 @@
     "dmg-install": "media/guide/ja/dmg-install.svg",
     "create-disk": "media/guide/ja/create-disk.png",
     "vrchat-settings": "media/guide/ja/vrchat-settings.png",
-    "display-settings": "media/guide/ja/display-settings.png"
+    "display-settings": "media/guide/ja/display-settings.png",
+    "installer-ready": "media/guide/ja/installer-ready.jpg",
+    "installer-done": "media/guide/ja/installer-done.jpg"
   },
   "en": {
     "steam-ready": "media/guide/en/steam-ready.jpg",
@@ -13,7 +15,9 @@
     "dmg-install": "media/guide/en/dmg-install.svg",
     "create-disk": "media/guide/en/create-disk.png",
     "vrchat-settings": "media/guide/en/vrchat-settings.png",
-    "display-settings": "media/guide/en/display-settings.png"
+    "display-settings": "media/guide/en/display-settings.png",
+    "installer-ready": "media/guide/en/installer-ready.jpg",
+    "installer-done": "media/guide/en/installer-done.jpg"
   },
   "ko": {
     "steam-ready": "media/guide/ko/steam-ready.jpg",
@@ -21,7 +25,9 @@
     "dmg-install": "media/guide/ko/dmg-install.svg",
     "create-disk": "media/guide/ko/create-disk.png",
     "vrchat-settings": "media/guide/ko/vrchat-settings.png",
-    "display-settings": "media/guide/ko/display-settings.png"
+    "display-settings": "media/guide/ko/display-settings.png",
+    "installer-ready": "media/guide/ko/installer-ready.jpg",
+    "installer-done": "media/guide/ko/installer-done.jpg"
   },
   "zh-CN": {
     "steam-ready": "media/guide/zh-CN/steam-ready.jpg",
@@ -29,6 +35,8 @@
     "dmg-install": "media/guide/zh-CN/dmg-install.svg",
     "create-disk": "media/guide/zh-CN/create-disk.png",
     "vrchat-settings": "media/guide/zh-CN/vrchat-settings.png",
-    "display-settings": "media/guide/zh-CN/display-settings.png"
+    "display-settings": "media/guide/zh-CN/display-settings.png",
+    "installer-ready": "media/guide/zh-CN/installer-ready.jpg",
+    "installer-done": "media/guide/zh-CN/installer-done.jpg"
   }
 }

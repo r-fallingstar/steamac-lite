@@ -21,7 +21,7 @@ Gemini 3.8 Flash High reviewed all four locale files in Antigravity on November 
 
 ## Screenshots
 
-`docs/media/guide/{ja,en,ko,zh-CN}/` contains each language’s six scenes. Settings and disk creation are real window captures from the installed Lite.8 app, using isolated preferences and `--selftest-settings`. Steam was photographed in a disposable clone with `english`, `japanese`, `koreana` and `schinese` selected; VRChat was not launched. The original VM and preferences were retained.
+`docs/media/guide/{ja,en,ko,zh-CN}/` contains each language’s app and installation scenes. Settings and disk creation are real window captures from the installed Lite.8 app, using isolated preferences and `--selftest-settings`. Steam was photographed in a disposable clone with `english`, `japanese`, `koreana` and `schinese` selected; VRChat was not launched. The original VM and preferences were retained.
 
 `build-guide-annotations.py` wraps the original captures in `shared/` with translated headings and callouts as SVG. It does not replace UI text. Finder follows the Mac’s language and GitHub labels remain English. Run its `--check` option to detect stale annotations. Captions, alternative text and annotation text were reviewed with Gemini 3.8 Flash High on November 3, 2026.
 
@@ -34,3 +34,9 @@ Run `python3 scripts/site/build-share-cards.py` to prepare the HTML artwork in `
 ## Access analytics
 
 All four guide pages include the Cloudflare Web Analytics snippet from the shared template. Only the guide pages load it; the app and other repository documentation do not. The beacon token is a public ingestion identifier, not an account credential. Reports are available to the owner in Cloudflare under Observability → Analytics → Web Analytics → `r-fallingstar.github.io`. No public visitor counter is displayed. Collection starts after installation and does not include earlier visits.
+
+## BOOTH online installer
+
+The `#booth` subsection is an alternative to the manual DMG install. It links to the free product and continues at `#language`, skipping the manual copy step. Each locale has real `installer-ready.jpg` and `installer-done.jpg` window captures from the 1.0.0 installer with Lite.9. A disposable installation in `~/Applications` was used; the installed app was never opened and was removed after capture. The normal app in `/Applications`, SteamOS disk and preferences were retained. Screenshots use each page's display language.
+
+The Release Assets and Finder captures in `shared/` now show Lite.9. `build-guide-annotations.py` adds translated instructions around those unmodified captures. The direct download links and file labels also target Lite.9.
