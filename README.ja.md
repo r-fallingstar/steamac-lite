@@ -75,3 +75,11 @@ Apple M1・RAM 8 GiB・macOS 27.2で、Steamの画面表示と正常終了、3 G
 Lite.5では、新しいSteamOSディスクの作成から、FEX・Proton・EACのダウンロード、VRChat向け設定の完了まで確認しました。Steamへのログインとインストール確認は手動です。別の未起動SteamOSディスクで、Steamの初回ログイン画面が日本語になることも確認しています。[検証結果と制限](docs/validation-lite.5.md)を参照してください。
 
 配列・日本語入力の確認方法は[日本語入力と配列](docs/japanese-input.md)を参照してください。上流版の最低RAM要件は16 GBで、この8 GBプロファイルは独自の実験です。Valve、VRChat、Epic Games、FX GAMES等の公式製品ではありません。元のライセンス・noticeは保持しています。
+
+## 開発への支援
+
+SteamAC Liteは、これからも無料で公開していく予定です。このForkの改良・検証・保守を続けるため、r-fallingstarへの任意の支援を受け付けています。
+
+[GitHub Sponsorsで開発を支援する](https://github.com/sponsors/r-fallingstar)
+
+支援は任意です。個別サポートや機能追加をお約束するものではありません。

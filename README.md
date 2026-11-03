@@ -192,6 +192,12 @@ whose peak needs more than the VM and the Mac have (see *Limits*).
 | [fex-eac/README.md](fex-eac/README.md) | patched FEX setup and launch options |
 | [docs/upstream/README.md](docs/upstream/README.md) | upstream steamac's documentation (Apache-2.0, © FX GAMES FZ LLC) |
 
+## Support this fork
+
+SteamAC Lite will continue to be available for free. If this fork helps you, you can [support r-fallingstar through GitHub Sponsors](https://github.com/sponsors/r-fallingstar) to help cover development and testing costs.
+
+Sponsorship supports r-fallingstar's improvements, testing, and maintenance of this fork. It is optional and does not include individual support or guaranteed feature requests.
+
 ## Licences and attributions
 
 | component | licence |
