@@ -29,6 +29,41 @@
     "model": "Gemini 3.8 Flash High",
     "application": "Antigravity",
     "date": "2026-11-03",
-    "result": "No corrections requested for the multilingual paragraphs and developer-tested M1 8 GB wording."
-  }
+    "result": "No corrections requested for the multilingual paragraphs and developer-tested M1 8 GB wording.",
+    "cover_result": "No corrections requested for the English, Korean and Simplified Chinese gallery cover captions."
+  },
+  "gallery": [
+    {
+      "language": "ja",
+      "file": "site/booth/product-cover-square.jpg",
+      "dimensions": [
+        1200,
+        1200
+      ]
+    },
+    {
+      "language": "en",
+      "file": "site/booth/covers/en.jpg",
+      "dimensions": [
+        1200,
+        1200
+      ]
+    },
+    {
+      "language": "ko",
+      "file": "site/booth/covers/ko.jpg",
+      "dimensions": [
+        1200,
+        1200
+      ]
+    },
+    {
+      "language": "zh-CN",
+      "file": "site/booth/covers/zh-CN.jpg",
+      "dimensions": [
+        1200,
+        1200
+      ]
+    }
+  ]
 }

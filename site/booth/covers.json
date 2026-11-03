@@ -1,0 +1,26 @@
+{
+  "en": {
+    "language": "en",
+    "eyebrow": "Free · For Apple Silicon Macs",
+    "subtitle": "SteamOS launcher",
+    "description": "Lightweight settings for 8 GB Macs, CJK text input and VRChat setup.",
+    "requirements": "Apple Silicon · RAM 8 GB+",
+    "image_alt": "English Steam showing VRChat before launch"
+  },
+  "ko": {
+    "language": "ko",
+    "eyebrow": "무료 · Apple Silicon Mac용",
+    "subtitle": "SteamOS 런처",
+    "description": "RAM 8 GB용 경량 설정, 한·중·일 입력, VRChat용 설정 지원.",
+    "requirements": "Apple Silicon · RAM 8 GB+",
+    "image_alt": "VRChat 실행 전의 한국어 Steam 화면"
+  },
+  "zh-CN": {
+    "language": "zh-Hans",
+    "eyebrow": "免费 · 适用于 Apple Silicon Mac",
+    "subtitle": "SteamOS 启动器",
+    "description": "8 GB 内存轻量配置、中日韩输入、VRChat 专用设置。",
+    "requirements": "Apple Silicon · RAM 8 GB+",
+    "image_alt": "启动 VRChat 前的简体中文 Steam 界面"
+  }
+}
