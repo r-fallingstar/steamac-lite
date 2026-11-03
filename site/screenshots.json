@@ -1,0 +1,34 @@
+{
+  "ja": {
+    "steam-ready": "media/guide/ja/steam-ready.jpg",
+    "release-download": "media/guide/ja/release-download.svg",
+    "dmg-install": "media/guide/ja/dmg-install.svg",
+    "create-disk": "media/guide/ja/create-disk.png",
+    "vrchat-settings": "media/guide/ja/vrchat-settings.png",
+    "display-settings": "media/guide/ja/display-settings.png"
+  },
+  "en": {
+    "steam-ready": "media/guide/en/steam-ready.jpg",
+    "release-download": "media/guide/en/release-download.svg",
+    "dmg-install": "media/guide/en/dmg-install.svg",
+    "create-disk": "media/guide/en/create-disk.png",
+    "vrchat-settings": "media/guide/en/vrchat-settings.png",
+    "display-settings": "media/guide/en/display-settings.png"
+  },
+  "ko": {
+    "steam-ready": "media/guide/ko/steam-ready.jpg",
+    "release-download": "media/guide/ko/release-download.svg",
+    "dmg-install": "media/guide/ko/dmg-install.svg",
+    "create-disk": "media/guide/ko/create-disk.png",
+    "vrchat-settings": "media/guide/ko/vrchat-settings.png",
+    "display-settings": "media/guide/ko/display-settings.png"
+  },
+  "zh-CN": {
+    "steam-ready": "media/guide/zh-CN/steam-ready.jpg",
+    "release-download": "media/guide/zh-CN/release-download.svg",
+    "dmg-install": "media/guide/zh-CN/dmg-install.svg",
+    "create-disk": "media/guide/zh-CN/create-disk.png",
+    "vrchat-settings": "media/guide/zh-CN/vrchat-settings.png",
+    "display-settings": "media/guide/zh-CN/display-settings.png"
+  }
+}
