@@ -8,11 +8,11 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.4-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.7/SteamAC-Lite-1.9.4-lite.7-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.8/SteamAC-Lite-1.9.4-lite.8-macos-arm64.dmg)**
 
 Lite.6でSteamOSのマイク入力が無音になる問題を修正しました。[原因と確認内容](docs/microphone-fix.md)。
 
-DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.7)
+DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.8)
 
 macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 
@@ -38,6 +38,8 @@ macOSの仮想メモリ設定は変更しません。スワップはRAM不足に
 
 ## 日本語の入力
 
+必要に応じてControl＋.で日本語（Anthy）を選んでから入力します。
+
 1. テキスト欄を選びます。初回は英数入力で始まります。
 2. **Control＋Space**で英数・日本語を切り替えます。JISでは**かな**でひらがな、**英数**で直接入力へ切り替えられます。
 3. ローマ字で入力し、**Space**で漢字変換、**Enter**で確定します。
@@ -46,7 +48,7 @@ macOSの仮想メモリ設定は変更しません。スワップはRAM不足に
 
 詳しい設定と手動指定は[日本語入力と配列](docs/japanese-input.md)にあります。
 
-中国語はShift、韓国語はControl＋Spaceで英数入力と切り替えます。Control＋.で入力方式を変更できます。初回は表示言語に合う入力方式を英数モードで用意します。
+中国語はShift、韓国語はControl＋Spaceで英数入力と切り替えます。Control＋.で入力方式を変更できます。初回は表示言語と物理配列とは別にMacの入力ソースを判別します。ABC/USなら直接英数、対応する日本語・ピンイン・2ボル式ならその入力方式を英数モードで用意します。判別できない場合は直接英数です。既存のSteamOS入力設定は保持します。
 
 ## ビルドと起動
 

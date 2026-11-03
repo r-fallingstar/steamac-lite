@@ -44,11 +44,21 @@ class KeyboardTests(unittest.TestCase):
         self.assertIn('Ctrl+space', changed['on_off'])
         self.assertEqual(module.anthy_shortcuts(changed), changed)
 
-    def test_first_input_method_follows_display_language_not_physical_layout(self):
+    def test_first_input_method_follows_detected_mac_source_not_display_language(self):
         self.assertEqual(module.preferred_engine('steamac.keyboard=jis steamac.input_language=ko'), 'hangul')
         self.assertEqual(module.preferred_engine('steamac.keyboard=us steamac.input_language=zh-Hans'), 'pinyin')
         self.assertEqual(module.preferred_engine('steamac.input_language=ja'), 'anthy')
-        self.assertEqual(module.preferred_engine('steamac.input_language=ko;id'), 'anthy')
+        self.assertEqual(module.preferred_engine('steamac.input_language=ko;id'), 'xkb:us::eng')
+
+    def test_mac_abc_stays_latin_with_korean_or_chinese_ui(self):
+        for ui in ['ja', 'ko', 'zh-Hans']:
+            for layout, engine in [('us', 'xkb:us::eng'), ('jis', 'xkb:jp::jpn')]:
+                cmdline = f'steamac.setup_language={ui} steamac.keyboard={layout} steamac.input_language=latin'
+                self.assertEqual(module.preferred_engine(cmdline), engine)
+
+    def test_unknown_source_does_not_guess_an_ime_from_ui_or_jis_geometry(self):
+        self.assertEqual(module.preferred_engine('steamac.setup_language=ko steamac.keyboard=jis'), 'xkb:jp::jpn')
+        self.assertEqual(module.preferred_engine('steamac.setup_language=zh-Hans steamac.input_language=ru'), 'xkb:us::eng')
 
     def test_fresh_engine_order_and_existing_custom_order(self):
         order = module.engine_order(['anthy', 'xkb:jp::jpn'], 'jis', 'hangul', True)

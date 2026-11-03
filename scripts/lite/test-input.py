@@ -15,7 +15,8 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--app', type=Path, default=ROOT/'work/out/SteamAC Lite.app')
 parser.add_argument('--disk', required=True, type=Path)
 parser.add_argument('--layout', choices=['us', 'jis'], default='jis')
-parser.add_argument('--input-language', choices=['ja', 'ko', 'zh-Hans'])
+parser.add_argument('--input-source', '--input-language', dest='input_source', choices=['auto', 'latin', 'ja', 'ko', 'zh-Hans'])
+parser.add_argument('--display-language', choices=['ja', 'en', 'ko', 'zh-Hans'], default='ja')
 args = parser.parse_args()
 disk = args.disk.resolve(strict=True)
 for domain in ['es.fxgam.steamac', 'local.ryuu.steamac-lite']:
@@ -27,7 +28,7 @@ if subprocess.run(['lsof', '-t', str(disk)], capture_output=True, text=True).std
 work = ROOT/'work'
 fsck = os.environ.get('FSCK_EROFS', str(work/'build/erofs-utils/fsck/fsck.erofs'))
 mkfs = os.environ.get('MKFS_EROFS', str(work/'build/erofs-utils/mkfs/mkfs.erofs'))
-label = args.layout + ('-'+args.input_language if args.input_language else '')
+label = args.layout + ('-'+args.input_source+'-'+args.display_language if args.input_source else '')
 log = work/f'input-test-{label}-console.log'
 result_path = work/f'input-test-{label}-result.json'
 runner = '''#!/bin/bash
@@ -62,7 +63,7 @@ with tempfile.TemporaryDirectory(prefix='input-test-', dir=work) as tmp:
                     str(args.app/'Contents/Resources/steamac-layer.img')], check=True)
     lib = layer/'usr/lib/steamac'
     (lib/'japanese-input-test').write_bytes((ROOT/'scripts/test/japanese-input-guest.py').read_bytes())
-    if args.input_language:
+    if args.input_source:
         (lib/'cjk-input-test').write_bytes((ROOT/'scripts/test/cjk-input-guest.py').read_bytes())
         runner = runner.replace('/usr/lib/steamac/japanese-input-test', '/usr/lib/steamac/cjk-input-test')
         # Only this disposable test disk is reset. The normal app disk is refused above.
@@ -99,13 +100,21 @@ StandardError=journal+console
     cmd = [str(args.app/'Contents/MacOS/steamac-vm'), '--headless', '--no-sound', '--no-ssh',
            '--no-vr', '--no-crash-reports', '--keyboard-layout', args.layout,
            '--disk', str(disk), '--disk', str(image)+':ro']
-    if args.input_language:
+    if args.input_source:
         cmd += ['--cmdline', 'console=hvc0 loglevel=4 rootwait virtio_snd.msg_timeout_ms=10000 '
-                'steamac.vrchat_setup=0 steamac.input_language='+args.input_language]
+                'steamac.vrchat_setup=0'+(' steamac.input_language='+args.input_source if args.input_source != 'auto' else ''),
+                '-AppleLanguages', '('+args.display_language+')']
+    test_domain = 'steamac.lite.input-source-test.'+label
+    subprocess.run(['defaults', 'write', test_domain, 'applicationLanguage', '-string', args.display_language], check=True)
+    test_env = {**os.environ, 'STEAMAC_DEFAULTS_DOMAIN': test_domain}
+    expected_source = args.input_source
+    if args.input_source == 'auto':
+        probe = subprocess.check_output([str(args.app/'Contents/MacOS/steamac-vm'), '--selftest-keyboard'], env=test_env, text=True)
+        expected_source = re.search(r'input-source: detected ([\w-]+)', probe)[1]
     forced = False
     started = time.monotonic()
     with log.open('w') as out:
-        process = subprocess.Popen(cmd, stdout=out, stderr=subprocess.STDOUT, start_new_session=True)
+        process = subprocess.Popen(cmd, stdout=out, stderr=subprocess.STDOUT, start_new_session=True, env=test_env)
         try:
             while time.monotonic()-started < 165:
                 content = log.read_text(errors='replace')
@@ -121,14 +130,22 @@ StandardError=journal+console
                 forced = True
                 os.killpg(process.pid, signal.SIGKILL)
                 process.wait()
+            subprocess.run(['defaults', 'delete', test_domain], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     content = log.read_text(errors='replace')
     passed = 'JAPANESE_INPUT_TEST_EXIT=0' in content and not forced and process.returncode == 0
     details = re.search(r'JAPANESE_INPUT_RESULT (\{[^\r\n]*\})', content)
     result = dict(layout=args.layout, test_passed=passed, exit_code=process.returncode,
                   shutdown_forced=forced, elapsed_seconds=round(time.monotonic()-started, 1),
                   vrchat_launched=False, refresh_hz=60)
+    if args.input_source and not details:
+        passed = False
+        result['test_passed'] = False
     if details:
         result['checks'] = json.loads(details[1])
+        if args.input_source:
+            passed = passed and result['checks']['detected_mac_input_source'] == expected_source
+            passed = passed and result['checks']['display_language'] == args.display_language
+            result['test_passed'] = passed
     result_path.write_text(json.dumps(result, indent=2, ensure_ascii=False)+'\n')
     print(json.dumps(result, ensure_ascii=False), flush=True)
     if not passed:

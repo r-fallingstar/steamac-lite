@@ -70,7 +70,7 @@ def main():
     legacy = runtime/'activate-anthy'
     if activate.exists():
         engine = activate.read_text().strip()
-        if engine not in ('anthy', 'pinyin', 'hangul'):
+        if engine not in ('anthy', 'pinyin', 'hangul', 'xkb:jp::jpn', 'xkb:us::eng'):
             raise ValueError('Unexpected input engine')
         activate_engine(engine)
         activate.unlink()

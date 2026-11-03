@@ -15,7 +15,7 @@ enum KeyboardLayout: String {
     }
 
     static func selfCheck() -> [String] {
-        var failures: [String] = []
+        var failures = MacInputSource.selfCheck()
         for (carbon, want) in [(kKeyboardJIS, KeyboardLayout.jis), (kKeyboardANSI, .us), (kKeyboardISO, .iso)] {
             if fromCarbon(OSType(carbon)) != want { failures.append("Carbon geometry \(want)") }
         }

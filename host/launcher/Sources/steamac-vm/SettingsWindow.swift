@@ -303,7 +303,7 @@ private struct GeneralTab: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Text input")
-                    Text(String(localized: "Japanese: Control+Space. Chinese (Pinyin): Shift. Korean (2-set): Control+Space. Change input methods with Control+period. Initial setup selects the method for the display language and starts in Latin mode."))
+                    Text(String(localized: "Japanese: Control+Space. Chinese (Pinyin): Shift. Korean (2-set): Control+Space. Choose an input method with Control+period. Initial setup detects the Mac's current input source, independently of display language and US/JIS geometry. Input starts in Latin mode. Unknown sources use direct Latin input. Existing SteamOS input settings are kept."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

@@ -40,7 +40,8 @@ def anthy_shortcuts(current):
 
 def preferred_engine(cmdline):
     words = dict(word.split('=', 1) for word in cmdline.split() if '=' in word)
-    return {'ko': 'hangul', 'zh-Hans': 'pinyin'}.get(words.get('steamac.input_language'), 'anthy')
+    base = 'xkb:jp::jpn' if words.get('steamac.keyboard') == 'jis' else 'xkb:us::eng'
+    return {'ja': 'anthy', 'ko': 'hangul', 'zh-Hans': 'pinyin'}.get(words.get('steamac.input_language'), base)
 
 
 def engine_order(current, layout, preferred, fresh):

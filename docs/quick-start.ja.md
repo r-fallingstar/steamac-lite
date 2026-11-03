@@ -4,7 +4,7 @@
 
 ## ダウンロードとインストール
 
-1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.7)から **SteamAC-Lite-1.9.4-lite.7-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
+1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.8)から **SteamAC-Lite-1.9.4-lite.8-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
 2. DMGを開き、**SteamAC Lite.app** を **Applications** フォルダへコピーします。
 3. アプリケーションフォルダからSteamAC Liteを開きます。ビルドやコマンド入力は不要です。
 
@@ -42,7 +42,7 @@ Apple Silicon（M1以降）・RAM 8 GB以上・macOS 15.5以降向けです。�
 
 ## 日本語の入力
 
-Macの物理キーボードからUS/JISを起動時に判別します。テキスト欄で **Control＋Space** を押して日本語へ切り替え、ローマ字で入力し、**Space**で変換、**Enter**で確定します。JISの「かな」「英数」キーにも対応します。外付けキーボードの交換後はアプリを再起動してください。
+Macの物理キーボードからUS/JISを起動時に判別します。必要に応じて **Control＋.** でAnthyを選び、テキスト欄で **Control＋Space** を押して日本語へ切り替え、ローマ字で入力し、**Space**で変換、**Enter**で確定します。JISの「かな」「英数」キーにも対応します。外付けキーボードの交換後はアプリを再起動してください。
 
 ## VRChat向け設定
 
@@ -54,4 +54,4 @@ Steamへのログイン後、FEX-Emu・Proton Experimental・Proton EasyAntiChea
 
 8 GBのM1 MacでVRChatが動作したとのユーザー報告があります。他のMacの実ゲーム性能・重いワールド・長時間の安定性は未確認です。自動設定は容量に基づく初期値で、GPUの速度やゲーム負荷を測定して調整する機能ではありません。
 
-中国語（ピンイン）はShift、韓国語（2ボル式）はControl＋Spaceで英数入力と切り替えます。Control＋.で入力方式を変更できます。初回は表示言語に合う入力方式を用意します。追加ダウンロードは不要です。
+中国語（ピンイン）はShift、韓国語（2ボル式）はControl＋Spaceで英数入力と切り替えます。Control＋.で入力方式を変更できます。初回は表示言語とUS/JIS配列とは別にMacの入力ソースを判別します。ABC/USなら直接英数、対応する日本語・ピンイン・2ボル式ならその入力方式を英数モードで用意します。判別できない場合は直接英数です。既存のSteamOS入力設定は保持します。追加ダウンロードは不要です。

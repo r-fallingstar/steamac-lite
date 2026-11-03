@@ -21,13 +21,13 @@ root = pathlib.Path(os.environ['BASE_APP'])
 with (root/'Contents/Info.plist').open('rb') as f:
     p = plistlib.load(f)
 identity = (p.get('CFBundleIdentifier'), p.get('CFBundleShortVersionString'))
-if identity not in [('es.fxgam.steamac', '1.9.4'), ('local.ryuu.steamac-lite', '1.9.4-lite.6')]:
-    raise SystemExit('Expected the v1.9.4-eac.1 upstream donor or verified Lite.6 base app')
+if identity not in [('es.fxgam.steamac', '1.9.4'), ('local.ryuu.steamac-lite', '1.9.4-lite.6'), ('local.ryuu.steamac-lite', '1.9.4-lite.7')]:
+    raise SystemExit('Expected the v1.9.4-eac.1 upstream donor or verified Lite.6 or Lite.7 base app')
 if identity[0] == 'local.ryuu.steamac-lite':
     import hashlib, json
     receipt = json.loads((root/'Contents/Resources/steamac-lite-provenance.json').read_text())
     for name, field in [('Resources/steamac-layer.img', 'layer_sha256'), ('Frameworks/libkrun.1.dylib', 'libkrun_sha256')]:
-        assert hashlib.sha256((root/'Contents'/name).read_bytes()).hexdigest() == receipt[field], 'Lite.6 base receipt mismatch'
+        assert hashlib.sha256((root/'Contents'/name).read_bytes()).hexdigest() == receipt[field], 'Lite base receipt mismatch'
 PY
 
 mkdir -p "$HOST/include" "$HOST/lib" "$WORK/build"
@@ -62,9 +62,9 @@ import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='SteamAC Lite',
-         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.7',
+         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.8',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194007',
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194008',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
          LSMinimumSystemVersion='15.5')
 p.pop('SteamacBuildOut', None)
@@ -134,7 +134,7 @@ for unit in steamac-vrchat-setup.service steam.service.d/70-steamac-vrchat-setup
     mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
     install -m644 "guest/layer/usr/lib/systemd/user/$unit" "$LAYER/usr/lib/systemd/user/$unit"
 done
-echo 'steamac-lite v1.9.4-lite.7 adaptive-performance CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
+echo 'steamac-lite v1.9.4-lite.8 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"

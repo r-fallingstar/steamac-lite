@@ -4,7 +4,7 @@
 
 **Illustrated setup guide:** [日本語](https://r-fallingstar.github.io/steamac-lite/?lang=ja) · [English](https://r-fallingstar.github.io/steamac-lite/en/) · [한국어](https://r-fallingstar.github.io/steamac-lite/ko/) · [简体中文](https://r-fallingstar.github.io/steamac-lite/zh-CN/)
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.7/SteamAC-Lite-1.9.4-lite.7-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.7) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.8/SteamAC-Lite-1.9.4-lite.8-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.8) · [はじめての導入手順](docs/quick-start.ja.md)
 
 Lite.6 fixes silent microphone input in SteamOS. [Cause, fix and validation](docs/microphone-fix.md).
 
@@ -12,7 +12,7 @@ Open the DMG and copy **SteamAC Lite.app** into **Applications**. No build tools
 
 This fork chooses VM RAM, vCPUs and initial resolution for the Mac, keeps a 3 GiB VM / 4 GiB guest disk-swap profile on 8 GB Macs, defaults to 60 Hz, detects physical US/JIS keyboards, and enables Japanese input through SteamOS's existing IBus/Anthy. Manual settings take priority. Game frame rates and compatibility are not guaranteed. See [automatic profiles](docs/performance-profiles.md), [8 GB limitations](docs/8gb-profile.md), and [keyboard / Japanese input](docs/japanese-input.md).
 
-The app supports English, Japanese, Korean, Simplified Chinese and Russian. Initial setup enables Japanese, Chinese Pinyin and Korean 2-set input without extra downloads. See [input methods and shortcuts](docs/cjk-input.md).
+The app supports English, Japanese, Korean, Simplified Chinese and Russian. Initial setup detects the Mac’s current input source independently of the app language and physical US/JIS geometry. ABC/US starts with direct Latin input; supported Japanese, Chinese Pinyin and Korean 2-set sources use the corresponding method. All three input engines remain available without extra downloads. See [input methods and shortcuts](docs/cjk-input.md).
 
 On a new SteamOS disk, Steam starts in the language selected in the launcher. Existing Steam language settings are preserved. A fresh-disk test completed all FEX/Proton/EAC downloads and VRChat setup with manual Steam confirmations. See [validation and limitations](docs/validation-lite.5.md).
 
@@ -20,7 +20,7 @@ On a new SteamOS disk, Steam starts in the language selected in the launcher. Ex
 
 Apple Silicon向けの実験版です。8 GBではVMのRAMを3 GiBに抑え、ゲスト用ディスクスワップ4 GiB、初期描画960×600を使います。16・18 GBでは1440×900、24 GBでは1600×1000、32 GB以上では1920×1200を目安に、画面に収まる大きさへ調整します。既定は60 Hz、DXMT優先です。自分で選んだ設定は保持します。60 Hzは表示更新頻度であり、ゲームの60 fps動作を保証するものではありません。
 
-Mac側の物理キーボード情報からUS/JISを起動時に判別し、Steamとゲームの配列へ反映します。日本語入力は既存のIBus・Anthyを使います。最初は英数入力で、**Control＋Space**で日本語入力へ切り替え、Spaceで変換、Enterで確定します。JISの「かな」「英数」キーにも対応します。
+Mac側の物理キーボード情報からUS/JISを起動時に判別し、Steamとゲームの配列へ反映します。日本語入力は既存のIBus・Anthyを使います。最初は英数入力です。必要に応じて**Control＋.**でAnthyを選び、**Control＋Space**で日本語入力へ切り替え、Spaceで変換、Enterで確定します。JISの「かな」「英数」キーにも対応します。
 
 詳細は[日本語README](README.ja.md)、[導入・ビルドと制限](docs/8gb-profile.md)、[日本語入力と配列](docs/japanese-input.md)を参照してください。8 GBのM1 MacでVRChatが動いたというユーザー報告があります。FPS、重いワールド、長時間の安定性は測定していません。
 

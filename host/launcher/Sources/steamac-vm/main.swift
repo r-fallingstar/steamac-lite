@@ -41,6 +41,7 @@ if options.selftestLowMemory {
 if options.selftestKeyboard {
     let failures = KeyboardLayout.selfCheck()
     print("keyboard: detected \(KeyboardLayout.detected.rawValue)")
+    print("input-source: detected \(MacInputSource.detected.rawValue)")
     print(failures.isEmpty ? "keyboard: PASS" : "keyboard: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }

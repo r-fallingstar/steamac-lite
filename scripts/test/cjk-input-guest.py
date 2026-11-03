@@ -70,8 +70,11 @@ def main():
     bus = IBus.Bus.new()
     assert bus.is_connected()
     language = next((w.split('=', 1)[1] for w in Path('/proc/cmdline').read_text().split()
-                     if w.startswith('steamac.input_language=')), 'ja')
-    selected = {'ko': 'hangul', 'zh-Hans': 'pinyin'}.get(language, 'anthy')
+                     if w.startswith('steamac.input_language=')), 'latin')
+    display_language = next((w.split('=', 1)[1] for w in Path('/proc/cmdline').read_text().split()
+                            if w.startswith('steamac.setup_language=')), None)
+    base = 'xkb:jp::jpn' if 'steamac.keyboard=jis' in Path('/proc/cmdline').read_text().split() else 'xkb:us::eng'
+    selected = {'ja': 'anthy', 'ko': 'hangul', 'zh-Hans': 'pinyin'}.get(language, base)
     active = subprocess.check_output(['ibus', 'engine'], text=True).strip()
     assert active == selected, f'First-run engine {active} != {selected}'
     general = Gio.Settings.new('org.freedesktop.ibus.general')
@@ -105,7 +108,7 @@ def main():
     assert list(hotkey.get_strv('triggers')) == ['<Alt>space']
     assert hangul.get_string('switch-keys') == 'Hangul,Shift+space'
     assert subprocess.check_output(['ibus', 'engine'], text=True).strip() == before
-    result = {'display_language': language, 'first_engine': active,
+    result = {'detected_mac_input_source': language, 'display_language': display_language, 'first_engine': active,
               'japanese': japanese, 'chinese': chinese, 'korean': korean,
               'user_edits_preserved': True, 'xwaylands': helpers['test_xwaylands'](),
               'guest_refresh_hz': helpers['test_refresh']()}

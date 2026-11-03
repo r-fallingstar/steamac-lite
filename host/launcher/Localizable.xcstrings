@@ -18817,30 +18817,30 @@
         }
       }
     },
-    "Japanese: Control+Space. Chinese (Pinyin): Shift. Korean (2-set): Control+Space. Change input methods with Control+period. Initial setup selects the method for the display language and starts in Latin mode.": {
+    "Japanese: Control+Space. Chinese (Pinyin): Shift. Korean (2-set): Control+Space. Choose an input method with Control+period. Initial setup detects the Mac's current input source, independently of display language and US/JIS geometry. Input starts in Latin mode. Unknown sources use direct Latin input. Existing SteamOS input settings are kept.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "日本語：Control＋Space。中国語（ピンイン）：Shift。韓国語（2ボル式）：Control＋Space。入力方式の変更はControl＋.。初回は表示言語に合う入力方式を選び、英数入力で始めます。"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Японский: Control+Space. Китайский (пиньинь): Shift. Корейский (дубольсик): Control+Space. Смена метода ввода: Control+.. При первой настройке метод выбирается по языку интерфейса и начинает работу в режиме латиницы."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "日语：Control+Space。中文（拼音）：Shift。韩语（两套式）：Control+Space。按 Control+. 切换输入法。首次设置按界面语言选择输入法，初始为英文输入模式。"
+            "value": "日本語：Control＋Space。中国語（ピンイン）：Shift。韓国語（2ボル式）：Control＋Space。Control＋.で入力方式を選びます。初回は表示言語とUS/JIS配列とは別にMacの入力ソースを判別し、英数モードで始めます。判別できない場合は直接英数入力を使います。既存のSteamOS入力設定は保持します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "일본어: Control+Space. 중국어(병음): Shift. 한국어(두벌식): Control+Space. Control+.로 입력기를 변경합니다. 처음에는 표시 언어에 맞는 입력기를 선택하며 영문 입력 모드로 시작합니다."
+            "value": "일본어: Control+Space. 중국어(병음): Shift. 한국어(두벌식): Control+Space. Control+.로 입력기를 선택합니다. 처음에는 표시 언어 및 US/JIS 배열과 별도로 Mac에서 선택한 입력 소스를 감지하고 영문 입력 모드로 시작합니다. 감지할 수 없으면 직접 영문 입력을 사용합니다. 기존 SteamOS 입력 설정은 유지됩니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日语：Control+Space。中文（拼音）：Shift。韩语（两套式）：Control+Space。按 Control+. 选择输入法。首次设置会检测 Mac 当前选择的输入源，与界面语言和 US/JIS 布局分别处理，并以英文输入模式开始。无法识别时使用直接英文输入。已有 SteamOS 输入设置保持不变。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Японский: Control+Space. Китайский (пиньинь): Shift. Корейский (дубольсик): Control+Space. Выбор метода ввода: Control+точка. При первой настройке определяется текущий источник ввода Mac независимо от языка интерфейса и физической раскладки US/JIS. Ввод начинается в режиме латиницы. Неизвестный источник означает прямой ввод латиницы. Существующие настройки ввода SteamOS сохраняются."
           }
         }
       }
