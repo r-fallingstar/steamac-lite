@@ -101,7 +101,7 @@
   "footer.a2": "릴리스",
   "footer.a3": "라이선스",
   "footer.a4": "원본 프로젝트",
-  "footer.p2": "안내 버전: v1.9.4-lite.9. 앱과 Steam은 각 페이지의 언어로 촬영했습니다. GitHub와 Finder 화면에는 번역된 안내를 추가했습니다. Mac과 버전에 따라 화면이 다를 수 있습니다.<br>문장은 Gemini 3.8 Flash High로 교정하고 구현 및 실기기 확인 결과와 대조했습니다.",
+  "footer.p2": "안내 버전: v1.9.4-lite.9. 앱과 Steam은 각 페이지의 언어로 촬영했습니다. GitHub와 Finder 화면에는 번역된 안내를 추가했습니다. Mac과 버전에 따라 화면이 다를 수 있습니다.",
   "photo-dialog.p1": "화면 사진",
   "photo-dialog.button2": "닫기 <span aria-hidden=\"true\">×</span>",
   "attr.content1": "SteamAC Lite 다운로드부터 SteamOS 초기 설정, VRChat용 설정, 일본어 입력까지 화면 사진으로 설명하는 설치 가이드입니다.",

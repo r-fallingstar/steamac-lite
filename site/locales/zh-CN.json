@@ -101,7 +101,7 @@
   "footer.a2": "发布版本",
   "footer.a3": "许可证",
   "footer.a4": "上游项目",
-  "footer.p2": "指南适用于 v1.9.4-lite.9。应用和 Steam 截图使用各页面对应的语言。GitHub 和 Finder 截图附有对应语言的说明。显示内容可能因 Mac 和版本而异。<br>文字经 Gemini 3.8 Flash High 校对，并与实现和实机验证结果核对。",
+  "footer.p2": "指南适用于 v1.9.4-lite.9。应用和 Steam 截图使用各页面对应的语言。GitHub 和 Finder 截图附有对应语言的说明。显示内容可能因 Mac 和版本而异。",
   "photo-dialog.p1": "界面截图",
   "photo-dialog.button2": "关闭 <span aria-hidden=\"true\">×</span>",
   "attr.content1": "通过实际界面的截图，介绍 SteamAC Lite 下载、SteamOS 初始设置、VRChat 专用设置及日语输入方法。",
