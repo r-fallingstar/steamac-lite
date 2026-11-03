@@ -57,5 +57,8 @@
     }
   ],
   "distribution_type": "online-installer",
-  "installer_version": "1.0.0"
+  "installer_version": "1.0.0",
+  "archive_sha256": "2331688da71ceb834196050e9632bda575091f475c071f13ea8a11f657fe250d",
+  "archive_bytes": 142489,
+  "installer_source_commit": "8fa8292d2f0ab0116f2bec026e3cef183373ff4f"
 }
