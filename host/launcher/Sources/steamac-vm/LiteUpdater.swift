@@ -41,9 +41,9 @@ final class LiteUpdater {
             try UpdateInstallSupport.validateDestination(destination)
             UpdateInstallSupport.cleanAbandonedStages(beside: destination)
         }
-        catch { changed(.failed(String(localized: "Move SteamAC Lite to a writable Applications folder, then try updating again."))); return }
+        catch { changed(.failedUpdate(String(localized: "Move SteamAC Lite to a writable Applications folder, then try updating again."))); return }
         guard let url = release.dmg, let digest = release.sha256, release.size > 0 else {
-            changed(.failed(String(localized: "This release has no verified app download. Open the releases page to update manually.")))
+            changed(.failedUpdate(String(localized: "This release has no verified app download. Open the releases page to update manually.")))
             return
         }
         if let stage { try? FileManager.default.removeItem(at: stage.deletingLastPathComponent()); self.stage = nil }
@@ -87,7 +87,7 @@ final class LiteUpdater {
                     if self.cancelled { self.changed(.available(release, current: UpdateChecker.currentVersion)) }
                     else {
                         log("update: preparation failed: \(error)")
-                        self.changed(.failed(String(localized: "The update could not be downloaded or verified. Your app has not been changed. Try again or open the releases page.")))
+                        self.changed(.failedUpdate(String(localized: "The update could not be downloaded or verified. Your app has not been changed. Try again or open the releases page.")))
                     }
                 }
             }
@@ -131,7 +131,7 @@ final class LiteUpdater {
             NSApp.terminate(nil)
         } catch {
             log("update: install could not start: \(error)")
-            changed(.failed(String(localized: "The update could not start. Your app has not been changed. Open the releases page to update manually.")))
+            changed(.failedUpdate(String(localized: "The update could not start. Your app has not been changed. Open the releases page to update manually.")))
         }
     }
 

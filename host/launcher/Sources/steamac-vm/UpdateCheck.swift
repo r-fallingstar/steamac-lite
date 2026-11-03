@@ -435,6 +435,7 @@ final class UpdatePanel: NSObject, NSWindowDelegate {
         case available(UpdateChecker.Release, current: String)
         case upToDate(current: String)
         case failed(String)
+        case failedUpdate(String)
         case downloading(Double)
         case preparing
         case ready(UpdateChecker.Release)
@@ -446,6 +447,7 @@ final class UpdatePanel: NSObject, NSWindowDelegate {
             case .available(let r, _): return "available \(r.tag)"
             case .upToDate: return "up to date"
             case .failed: return "failed"
+            case .failedUpdate: return "update failed"
             case .downloading: return "downloading"
             case .preparing: return "preparing"
             case .ready: return "ready"
@@ -546,7 +548,7 @@ final class UpdatePanel: NSObject, NSWindowDelegate {
         case ("download", .available(let r, _)): actions.download(r)
         case ("skip", .available(let r, _)): actions.skip(r)
         case ("later", .available): actions.later()
-        case ("releases", .failed): actions.releases()
+        case ("releases", .failed), ("releases", .failedUpdate): actions.releases()
         case ("install", .ready(let release)): actions.install(release)
         case ("cancel", .downloading), ("cancel", .preparing): actions.cancel()
         case ("ok", _), ("cancel", _): actions.dismiss()
@@ -692,8 +694,12 @@ struct UpdateView: View {
                 case .installing:
                     Text("Waiting for SteamOS to shut down…").font(.headline)
                     ProgressView().progressViewStyle(.linear)
-                case .failed(let message):
-                    Text("Couldn't check for updates").font(.headline)
+                case .failed(let message), .failedUpdate(let message):
+                    if case .failedUpdate = model.state {
+                        Text("SteamAC Lite could not be updated").font(.headline)
+                    } else {
+                        Text("Couldn't check for updates").font(.headline)
+                    }
                     Text(verbatim: message)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

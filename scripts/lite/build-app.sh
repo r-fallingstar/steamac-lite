@@ -102,7 +102,8 @@ if [[ -n ${LIBKRUN_OVERRIDE:-} ]]; then
 fi
 cp "$BIN" "$APP/Contents/MacOS/steamac-vm"
 cp "$PLIST" "$APP/Contents/Info.plist"
-swiftc -O -sdk "$SDK" host/launcher/Sources/steamac-vm/UpdateInstallSupport.swift host/launcher/updater/main.swift -o "$APP/Contents/Resources/steamac-updater"
+swiftc -O -debug-prefix-map "$ROOT=/src/steamac-lite" -file-prefix-map "$ROOT=/src/steamac-lite" -sdk "$SDK" host/launcher/Sources/steamac-vm/UpdateInstallSupport.swift host/launcher/updater/main.swift -o "$APP/Contents/Resources/steamac-updater"
+strip -S "$APP/Contents/Resources/steamac-updater"
 codesign --force --sign - "$APP/Contents/Resources/steamac-updater"
 python3 host/launcher/l10n.py check --strict --stringsdata "$WORK/lite-stringsdata"
 python3 host/launcher/l10n.py compile "$STAGE/localizations"
