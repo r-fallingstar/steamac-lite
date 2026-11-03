@@ -44,6 +44,22 @@ class KeyboardTests(unittest.TestCase):
         self.assertIn('Ctrl+space', changed['on_off'])
         self.assertEqual(module.anthy_shortcuts(changed), changed)
 
+    def test_first_input_method_follows_display_language_not_physical_layout(self):
+        self.assertEqual(module.preferred_engine('steamac.keyboard=jis steamac.input_language=ko'), 'hangul')
+        self.assertEqual(module.preferred_engine('steamac.keyboard=us steamac.input_language=zh-Hans'), 'pinyin')
+        self.assertEqual(module.preferred_engine('steamac.input_language=ja'), 'anthy')
+        self.assertEqual(module.preferred_engine('steamac.input_language=ko;id'), 'anthy')
+
+    def test_fresh_engine_order_and_existing_custom_order(self):
+        order = module.engine_order(['anthy', 'xkb:jp::jpn'], 'jis', 'hangul', True)
+        self.assertEqual(order, ['hangul', 'xkb:jp::jpn', 'anthy', 'pinyin'])
+        custom = ['custom-engine', 'pinyin', 'anthy']
+        migrated = module.engine_order(custom, 'us', 'hangul', False)
+        self.assertEqual(migrated[:len(custom)], custom)
+        self.assertEqual(migrated.count('pinyin'), 1)
+        self.assertIn('hangul', migrated)
+        self.assertIn('xkb:us::eng', migrated)
+
     def test_nested_desktop_follows_changed_hardware(self):
         jis, managed = module.desktop_layout('[Other]\nKeep=yes\n', 'jis')
         self.assertIn('LayoutList=jp', jis)

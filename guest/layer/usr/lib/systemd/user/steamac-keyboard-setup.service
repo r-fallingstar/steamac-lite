@@ -1,5 +1,5 @@
 [Unit]
-Description=SteamAC physical keyboard and Japanese input setup
+Description=SteamAC physical keyboard and Japanese, Chinese, Korean input setup
 Before=gamescope-session.service ibus-gamescope.service
 PartOf=gamescope-session.target plasma-session.target
 

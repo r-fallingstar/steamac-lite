@@ -243,7 +243,7 @@ struct Options {
                            this DPI (physical size = new size x the same mm per pixel).
       --headless           no window and no input devices; SIGUSR1 dumps the latest frame
       --log FILE           also append the hvc0 console to FILE
-      -AppleLanguages '(L)' UI language for this run: en, ru or zh-Hans (default: the macOS language)
+      -AppleLanguages '(L)' UI language for this run: en, ja, ko, ru or zh-Hans (default: the macOS language)
       --no-net             no virtio-net / gvproxy
       --lan-remote-play    expose Steam Remote Play on the LAN (Settings > Advanced; off by default)
       --no-lan-remote-play disable the LAN discovery relay and Remote Play forwards for this boot
@@ -366,7 +366,7 @@ struct Options {
                            (default work/out/steamos.img, opened read-only), squashfs + CMS verification of
                            the cached bundle, cpio payload, SHA-512 crypt, desync progress parsing
       --selftest-metal-cache reproduce an inaccessible Metal module cache and verify startup recovery
-      --selftest-l10n      the bundle's ru and zh-Hans tables: present, the same keys, the same format
+      --selftest-l10n      the bundle's ja, ko, ru and zh-Hans tables: present, the same keys, the same format
                            arguments, the launcher's settings strings translated
       --selftest-pointer   host pointer -> guest cursor mapping (Retina on/off, window vs scanout size,
                            full-screen letterbox, MetalFX, the guest's focused surface from focus lines)
@@ -657,6 +657,7 @@ struct Options {
             if o.lowMemory { add("steamac.low_memory", "1") }
             add("steamac.keyboard", o.effectiveKeyboardLayout.rawValue)
             add("steamac.japanese_ime", "1")
+            add("steamac.input_language", (settings.applicationLanguage == .system ? ApplicationLanguage.preferred(Locale.preferredLanguages) : settings.applicationLanguage).rawValue)
             add("steamac.vrchat_setup", settings.vrchatSetup ? "1" : "0")
             add("steamac.setup_language", (settings.applicationLanguage == .system ? ApplicationLanguage.preferred(Locale.preferredLanguages) : settings.applicationLanguage).rawValue)
             // only written when on; absent is the default (off), so an explicit =0 needs no key

@@ -4,7 +4,7 @@
 
 ## ダウンロードとインストール
 
-1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.6)から **SteamAC-Lite-1.9.4-lite.6-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
+1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.7)から **SteamAC-Lite-1.9.4-lite.7-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
 2. DMGを開き、**SteamAC Lite.app** を **Applications** フォルダへコピーします。
 3. アプリケーションフォルダからSteamAC Liteを開きます。ビルドやコマンド入力は不要です。
 
@@ -53,3 +53,5 @@ Steamへのログイン後、FEX-Emu・Proton Experimental・Proton EasyAntiChea
 設定時にSteamを一度再起動します。ゲームの実行中は終了を待ちます。VRChatは自動では起動しません。完了後、SteamでVRChatをインストールし、準備ができたら自分で起動します。既存の互換ツールや起動オプションがある場合は、確認せずに置き換えません。[詳しい動作と復元方法](https://github.com/r-fallingstar/steamac-lite/blob/main/docs/vrchat-setup.ja.md)を参照してください。
 
 8 GBのM1 MacでVRChatが動作したとのユーザー報告があります。他のMacの実ゲーム性能・重いワールド・長時間の安定性は未確認です。自動設定は容量に基づく初期値で、GPUの速度やゲーム負荷を測定して調整する機能ではありません。
+
+中国語（ピンイン）はShift、韓国語（2ボル式）はControl＋Spaceで英数入力と切り替えます。Control＋.で入力方式を変更できます。初回は表示言語に合う入力方式を用意します。追加ダウンロードは不要です。

@@ -1,63 +1,75 @@
 {
-  "sourceLanguage" : "en",
-  "version" : "1.0",
-  "strings" : {
-    "NSMicrophoneUsageDescription" : {
-      "comment" : "Microphone permission prompt",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The SteamOS virtual machine records from the microphone while a game or Steam voice chat in it uses one."
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "NSMicrophoneUsageDescription": {
+      "comment": "Microphone permission prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The SteamOS virtual machine records from the microphone while a game or Steam voice chat in it uses one."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Виртуальная машина SteamOS записывает звук с микрофона, когда он нужен игре или голосовому чату Steam внутри неё."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виртуальная машина SteamOS записывает звук с микрофона, когда он нужен игре или голосовому чату Steam внутри неё."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SteamOS 虚拟机在其中的游戏或 Steam 语音聊天使用麦克风时进行录音。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOS 虚拟机在其中的游戏或 Steam 语音聊天使用麦克风时进行录音。"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SteamOS内のゲームやSteamのボイスチャットでマイクを使うとき、仮想マシンが録音します。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOS内のゲームやSteamのボイスチャットでマイクを使うとき、仮想マシンが録音します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOS 가상 머신 내의 게임이나 Steam 음성 채팅에서 마이크를 사용할 때 소리를 녹음합니다."
           }
         }
       }
     },
-    "NSLocalNetworkUsageDescription" : {
-      "comment" : "Local network permission prompt",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Discover Steam Link and Remote Play devices on your local network and connect them to Steam in the SteamOS virtual machine when LAN Remote Play is enabled."
+    "NSLocalNetworkUsageDescription": {
+      "comment": "Local network permission prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discover Steam Link and Remote Play devices on your local network and connect them to Steam in the SteamOS virtual machine when LAN Remote Play is enabled."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Находить устройства Steam Link и Remote Play в локальной сети и подключать их к Steam в виртуальной машине SteamOS, когда включён Remote Play по локальной сети."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Находить устройства Steam Link и Remote Play в локальной сети и подключать их к Steam в виртуальной машине SteamOS, когда включён Remote Play по локальной сети."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在启用局域网 Remote Play 时，发现本地网络上的 Steam Link 和 Remote Play 设备，并将其连接到 SteamOS 虚拟机中的 Steam。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在启用局域网 Remote Play 时，发现本地网络上的 Steam Link 和 Remote Play 设备，并将其连接到 SteamOS 虚拟机中的 Steam。"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LANリモートプレイが有効なとき、同じネットワークのSteam Link・Remote Playデバイスを検出し、SteamOS内のSteamへ接続します。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LANリモートプレイが有効なとき、同じネットワークのSteam Link・Remote Playデバイスを検出し、SteamOS内のSteamへ接続します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN Remote Play가 켜져 있을 때 로컬 네트워크의 Steam Link 및 Remote Play 기기를 검색하여 SteamOS 가상 머신의 Steam에 연결합니다."
           }
         }
       }

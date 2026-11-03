@@ -7,7 +7,7 @@ import Foundation
 /// to everyone. The source-side check (every string the compiler extracted is in the catalog and
 /// translated) is `l10n.py check --strict --stringsdata DIR`, run by build.sh.
 enum L10nSelfTest {
-    static let languages = ["ru", "zh-Hans", "ja"]
+    static let languages = ["ru", "zh-Hans", "ja", "ko"]
 
     /// Strings of the launcher's own settings and windows (graphics path, render scale, frame latency,
     /// GPU-idle card, Settings > VR, the pairing PIN in the window title, VR host errors) whose

@@ -14,7 +14,7 @@ All languages must contain the same keys. The build stops on a missing translati
 
 The root Japanese page checks an explicit `?lang=` choice, the saved preference and then supported browser languages. Other language URLs always display the requested language. The Japanese link uses `?lang=ja` so it also works when storage is blocked. Without JavaScript, each page and the language links still work. Language changes preserve the current section.
 
-Chinese uses Simplified Chinese. The Korean guide explains that the app itself has no Korean UI and uses English menu labels. Screenshots remain in Japanese. This update changes the guide only.
+Chinese uses Simplified Chinese. The Korean guide uses the app’s Korean menu labels from Lite.7. Screenshots remain in Japanese. The guide covers the Lite.7 app and its input setup.
 
 Gemini 3.8 Flash High reviewed all four locale files in Antigravity on November 3, 2026. Chinese UI labels were aligned with the app (通用, VRChat 专用设置, 新建磁盘…) and the Korean Steam settings wording was made consistent.
 

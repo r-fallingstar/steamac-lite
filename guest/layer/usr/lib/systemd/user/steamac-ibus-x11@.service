@@ -1,5 +1,5 @@
 [Unit]
-Description=SteamAC Japanese XIM on Xwayland %i
+Description=SteamAC IBus XIM on Xwayland %i
 After=ibus-gamescope.service gamescope-session.service
 PartOf=gamescope-session.target plasma-session.target
 

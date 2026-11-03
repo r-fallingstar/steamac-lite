@@ -3,13 +3,14 @@ import Darwin
 import Foundation
 
 enum ApplicationLanguage: String, CaseIterable, Identifiable {
-    case system, japanese = "ja", english = "en", russian = "ru", chinese = "zh-Hans"
+    case system, japanese = "ja", english = "en", korean = "ko", russian = "ru", chinese = "zh-Hans"
     var id: String { rawValue }
     var title: String {
         switch self {
         case .system: return String(localized: "Follow system language")
         case .japanese: return "日本語"
         case .english: return "English"
+        case .korean: return "한국어"
         case .russian: return "Русский"
         case .chinese: return "简体中文"
         }
@@ -19,6 +20,7 @@ enum ApplicationLanguage: String, CaseIterable, Identifiable {
         for language in languages {
             if language.hasPrefix("ja") { return .japanese }
             if language.hasPrefix("en") { return .english }
+            if language.hasPrefix("ko") { return .korean }
             if language.hasPrefix("ru") { return .russian }
             if language.hasPrefix("zh") { return .chinese }
         }
@@ -82,7 +84,7 @@ enum ApplicationLanguage: String, CaseIterable, Identifiable {
     static func selfCheck() -> [String] {
         var failures: [String] = []
         if preferred(["ja-JP"]) != .japanese || preferred(["en-GB"]) != .english
-            || preferred(["zh-TW"]) != .chinese || preferred(["de-DE"]) != .english {
+            || preferred(["ko-KR"]) != .korean || preferred(["zh-TW"]) != .chinese || preferred(["de-DE"]) != .english {
             failures.append("preferred language")
         }
         let domain = "steamac.language-test." + UUID().uuidString
@@ -102,6 +104,15 @@ enum ApplicationLanguage: String, CaseIterable, Identifiable {
                     failures.append("Japanese lookup: " + key)
                 }
             }
+        }
+        if let path = Bundle.main.path(forResource: "ko", ofType: "lproj"), let korean = Bundle(path: path) {
+            for key in ["Settings…", "Display", "General", "VRChat setup"] {
+                if korean.localizedString(forKey: key, value: nil, table: nil) == key {
+                    failures.append("Korean lookup: " + key)
+                }
+            }
+        } else {
+            failures.append("Korean catalog missing")
         }
         return failures
     }

@@ -35,7 +35,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SOURCES = HERE / "Sources/steamac-vm"
 CATALOGS = [HERE / "Localizable.xcstrings", HERE / "InfoPlist.xcstrings"]
-LANGUAGES = ["ru", "zh-Hans", "ja"]
+LANGUAGES = ["ru", "zh-Hans", "ja", "ko"]
 
 SPEC = re.compile(r"%(?:(\d+)\$)?[-+ #0']*\d*(?:\.\d+)?(hh|h|ll|l|q|z|t|j|L)?([@dDiuUxXoOfFeEgGaAcCsSp%])")
 

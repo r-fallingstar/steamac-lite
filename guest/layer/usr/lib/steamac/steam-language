@@ -12,7 +12,7 @@ import runpy
 HERE = Path(__file__).resolve().parent
 VDF = runpy.run_path(str(HERE/"steam-title-defaults"))
 REGISTRY_LANGUAGE_PATH = ("Registry", "HKCU", "Software", "Valve", "Steam", "language")
-LANGUAGES = {"ja":"japanese", "en":"english", "ru":"russian", "zh-Hans":"schinese"}
+LANGUAGES = {"ja":"japanese", "en":"english", "ru":"russian", "ko":"koreana", "zh-Hans":"schinese"}
 
 
 def seed(home, cmdline):

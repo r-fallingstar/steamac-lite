@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--app', type=Path, default=ROOT/'work/out/SteamAC Lite.app')
 parser.add_argument('--disk', required=True, type=Path)
 parser.add_argument('--layout', choices=['us', 'jis'], default='jis')
+parser.add_argument('--input-language', choices=['ja', 'ko', 'zh-Hans'])
 args = parser.parse_args()
 disk = args.disk.resolve(strict=True)
 for domain in ['es.fxgam.steamac', 'local.ryuu.steamac-lite']:
@@ -26,8 +27,9 @@ if subprocess.run(['lsof', '-t', str(disk)], capture_output=True, text=True).std
 work = ROOT/'work'
 fsck = os.environ.get('FSCK_EROFS', str(work/'build/erofs-utils/fsck/fsck.erofs'))
 mkfs = os.environ.get('MKFS_EROFS', str(work/'build/erofs-utils/mkfs/mkfs.erofs'))
-log = work/f'input-test-{args.layout}-console.log'
-result_path = work/f'input-test-{args.layout}-result.json'
+label = args.layout + ('-'+args.input_language if args.input_language else '')
+log = work/f'input-test-{label}-console.log'
+result_path = work/f'input-test-{label}-result.json'
 runner = '''#!/bin/bash
 exec 2>&1
 export XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus DISPLAY=:0
@@ -35,6 +37,7 @@ echo JAPANESE_INPUT_TEST_BEGIN
 as_user() { setpriv --reuid=1000 --regid=1000 --init-groups env HOME=/home/steamos USER=steamos LOGNAME=steamos "$@"; }
 for ((i=0;i<80;i++)); do
     if timeout 3s setpriv --reuid=1000 --regid=1000 --init-groups systemctl --user is-active --quiet steamac-keyboard-session.service; then break; fi
+    if timeout 3s setpriv --reuid=1000 --regid=1000 --init-groups systemctl --user is-failed --quiet steamac-keyboard-session.service; then break; fi
     sleep 1
 done
 set -a
@@ -59,6 +62,23 @@ with tempfile.TemporaryDirectory(prefix='input-test-', dir=work) as tmp:
                     str(args.app/'Contents/Resources/steamac-layer.img')], check=True)
     lib = layer/'usr/lib/steamac'
     (lib/'japanese-input-test').write_bytes((ROOT/'scripts/test/japanese-input-guest.py').read_bytes())
+    if args.input_language:
+        (lib/'cjk-input-test').write_bytes((ROOT/'scripts/test/cjk-input-guest.py').read_bytes())
+        runner = runner.replace('/usr/lib/steamac/japanese-input-test', '/usr/lib/steamac/cjk-input-test')
+        # Only this disposable test disk is reset. The normal app disk is refused above.
+        prepare = '''#!/usr/bin/python3
+import os, subprocess
+from pathlib import Path
+for name in ['japanese-input-v1.json', 'cjk-input-v1.json']:
+    (Path.home()/'.config/steamac'/name).unlink(missing_ok=True)
+for path in ['/desktop/ibus/', '/org/freedesktop/ibus/engine/hangul/']:
+    subprocess.run(['dconf', 'reset', '-f', path], check=True)
+'''
+        (lib/'cjk-test-prepare').write_text(prepare)
+        (lib/'cjk-test-prepare').chmod(0o755)
+        dropin = layer/'usr/lib/systemd/user/steamac-keyboard-setup.service.d'
+        dropin.mkdir(parents=True, exist_ok=True)
+        (dropin/'90-test-only.conf').write_text('[Service]\nExecStartPre=/usr/lib/steamac/cjk-test-prepare\n')
     (lib/'input-test-runner').write_text(runner)
     (lib/'input-test-runner').chmod(0o755)
     units = layer/'usr/lib/systemd/system'
@@ -79,6 +99,9 @@ StandardError=journal+console
     cmd = [str(args.app/'Contents/MacOS/steamac-vm'), '--headless', '--no-sound', '--no-ssh',
            '--no-vr', '--no-crash-reports', '--keyboard-layout', args.layout,
            '--disk', str(disk), '--disk', str(image)+':ro']
+    if args.input_language:
+        cmd += ['--cmdline', 'console=hvc0 loglevel=4 rootwait virtio_snd.msg_timeout_ms=10000 '
+                'steamac.vrchat_setup=0 steamac.input_language='+args.input_language]
     forced = False
     started = time.monotonic()
     with log.open('w') as out:

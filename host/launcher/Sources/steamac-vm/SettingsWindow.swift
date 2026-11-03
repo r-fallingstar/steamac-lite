@@ -301,6 +301,11 @@ private struct GeneralTab: View {
                     Label2(title: "Display language", detail: String(localized: "Restart the app to apply the display language."),
                            now: false, key: .applicationLanguage)
                 }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Text input")
+                    Text(String(localized: "Japanese: Control+Space. Chinese (Pinyin): Shift. Korean (2-set): Control+Space. Change input methods with Control+period. Initial setup selects the method for the display language and starts in Latin mode."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
             Section {
                 Toggle(isOn: $settings.vrchatSetup) {

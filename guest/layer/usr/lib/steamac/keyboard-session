@@ -1,9 +1,55 @@
 #!/usr/bin/python3
 """Apply the physical layout to every gamescope Xwayland after it becomes ready."""
 import os
+import json
 from pathlib import Path
 import re
 import subprocess
+import time
+
+
+def activate_engine(engine):
+    # IBus may cancel a first request while its panel selects the initial engine.
+    for _ in range(4):
+        current = subprocess.run(['ibus', 'engine'], capture_output=True, text=True, timeout=5)
+        if current.stdout.strip() == engine:
+            return
+        selected = subprocess.run(['ibus', 'engine', engine], capture_output=True, text=True, timeout=5)
+        if selected.returncode == 0:
+            return
+        time.sleep(0.2)
+    raise RuntimeError('Could not activate input engine '+engine)
+
+
+def initialize_pinyin():
+    """The SteamOS Pinyin engine uses IBusConfig, not a GSettings schema."""
+    marker = Path.home()/'.config/steamac/cjk-input-v1.json'
+    if not marker.exists():
+        return
+    state = json.loads(marker.read_text())
+    if not state.get('pinyin_pending'):
+        return
+    import gi
+    gi.require_version('IBus', '1.0')
+    from gi.repository import IBus, GLib
+    IBus.init()
+    bus = IBus.Bus.new()
+    config = bus.get_config()
+    if config is None:
+        raise RuntimeError('IBus configuration service is not ready')
+    for key, value in [('InitChinese', False), ('InitFull', False),
+                       ('InitFullPunct', False), ('InitSimplifiedChinese', True)]:
+        if config.get_value('engine/Pinyin', key) is None:
+            # PyGObject exposes this legacy method as void on some SteamOS builds.
+            config.set_value('engine/Pinyin', key, GLib.Variant('b', value))
+            saved = config.get_value('engine/Pinyin', key)
+            if saved is None or saved.unpack() != value:
+                raise RuntimeError('Could not initialize Pinyin '+key)
+    state['pinyin_pending'] = False
+    # Reuse the atomic writer so a shutdown cannot leave a half-written marker.
+    import runpy
+    setup = runpy.run_path(str(Path(__file__).with_name('keyboard-setup')))
+    setup['atomic_write'](marker, json.dumps(state, indent=2)+'\n')
 
 
 def main():
@@ -18,10 +64,19 @@ def main():
             subprocess.run(['setxkbmap', '-display', display, '-model', 'pc105', '-layout', layout,
                             '-variant', '', '-option', ''], check=True, timeout=10)
             print(f'keyboard-session: {display} layout={layout}', flush=True)
-    activate = Path(os.environ['XDG_RUNTIME_DIR'])/'steamac/activate-anthy'
+    runtime = Path(os.environ['XDG_RUNTIME_DIR'])/'steamac'
+    initialize_pinyin()
+    activate = runtime/'activate-engine'
+    legacy = runtime/'activate-anthy'
     if activate.exists():
-        subprocess.run(['ibus', 'engine', 'anthy'], check=True, timeout=10)
+        engine = activate.read_text().strip()
+        if engine not in ('anthy', 'pinyin', 'hangul'):
+            raise ValueError('Unexpected input engine')
+        activate_engine(engine)
         activate.unlink()
+    elif legacy.exists():
+        activate_engine('anthy')
+        legacy.unlink()
     if os.environ.get('XMODIFIERS') == '@im=ibus':
         primary = os.environ.get('DISPLAY', ':0')
         for display in sorted(displays - {'', primary}):

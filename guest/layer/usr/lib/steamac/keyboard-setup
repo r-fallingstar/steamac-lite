@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Configure the host's physical layout and existing Anthy once, before the session."""
+"""Configure the physical layout and the existing Japanese/Chinese/Korean engines."""
 import configparser
 import io
 import json
@@ -38,6 +38,56 @@ def anthy_shortcuts(current):
     return result
 
 
+def preferred_engine(cmdline):
+    words = dict(word.split('=', 1) for word in cmdline.split() if '=' in word)
+    return {'ko': 'hangul', 'zh-Hans': 'pinyin'}.get(words.get('steamac.input_language'), 'anthy')
+
+
+def engine_order(current, layout, preferred, fresh):
+    base = 'xkb:jp::jpn' if layout == 'jis' else 'xkb:us::eng'
+    added = [preferred, base, 'anthy', 'pinyin', 'hangul']
+    return list(dict.fromkeys(added + current if fresh else current + added))
+
+
+def configure_cjk(layout, preferred, runtime, fresh):
+    """One migration adds engines; subsequent starts retain edits and the selected engine."""
+    marker = Path.home()/'.config/steamac/cjk-input-v1.json'
+    if marker.exists():
+        return
+    for component in ('pinyin.xml', 'hangul.xml'):
+        if not (Path('/usr/share/ibus/component')/component).is_file():
+            raise RuntimeError('SteamOS input component missing: '+component)
+    import gi
+    gi.require_version('Gio', '2.0')
+    from gi.repository import Gio, GLib
+    general = Gio.Settings.new('org.freedesktop.ibus.general')
+    hotkey = Gio.Settings.new('org.freedesktop.ibus.general.hotkey')
+    hangul = Gio.Settings.new('org.freedesktop.ibus.engine.hangul')
+    previous = {}
+
+    def save(settings, key, value, only_unset=False):
+        if only_unset and settings.get_user_value(key) is not None:
+            return
+        previous[settings.props.schema_id+'/'+key] = settings.get_value(key).print_(True)
+        if not settings.set_value(key, value):
+            raise RuntimeError('Could not save '+key)
+
+    for key in ('preload-engines', 'engines-order'):
+        save(general, key, GLib.Variant('as', engine_order(list(general.get_strv(key)), layout, preferred, fresh)))
+    # This opens IBus's engine switcher without taking Anthy's Control+Space shortcut.
+    save(hotkey, 'triggers', GLib.Variant('as', list(dict.fromkeys([
+        *hotkey.get_strv('triggers'), '<Control>period']))))
+    for key, value in [('hangul-keyboard', '2'), ('initial-input-mode', 'latin'),
+                       ('switch-keys', 'Hangul,Control+space')]:
+        save(hangul, key, GLib.Variant('s', value), only_unset=True)
+    Gio.Settings.sync()
+    atomic_write(marker, json.dumps({'version': 1, 'previous': previous,
+                                    'pinyin_pending': True}, indent=2)+'\n')
+    if fresh:
+        atomic_write(runtime/'activate-engine', preferred+'\n')
+        (runtime/'activate-anthy').unlink(missing_ok=True)
+
+
 def desktop_layout(text, layout, previous=None):
     """KWin's nested Wayland seat has its own layout; keep an observed user override."""
     config = configparser.ConfigParser(interpolation=None, strict=False)
@@ -69,7 +119,8 @@ def atomic_write(path, text):
 
 
 def main():
-    layout, japanese = boot_options(Path('/proc/cmdline').read_text())
+    cmdline = Path('/proc/cmdline').read_text()
+    layout, japanese = boot_options(cmdline)
     runtime = Path(os.environ['XDG_RUNTIME_DIR'])/'steamac'
     values = environment(layout, japanese)
     atomic_write(runtime/'input.env', ''.join(f'{k}={v}\n' for k, v in values.items()))
@@ -91,7 +142,8 @@ def main():
     if not Path('/usr/share/ibus/component/anthy.xml').is_file():
         raise RuntimeError('This SteamOS image does not include ibus-anthy; Japanese IME unavailable')
     marker = Path.home()/'.config/steamac/japanese-input-v1.json'
-    if not marker.exists():
+    fresh = not marker.exists()
+    if fresh:
         import gi
         gi.require_version('Gio', '2.0')
         from gi.repository import Gio, GLib
@@ -122,7 +174,8 @@ def main():
         # user edits, including shortcuts and other engines selected in IBus settings.
         atomic_write(marker, json.dumps({'version': 1, 'previous': previous}, indent=2)+'\n')
         atomic_write(runtime/'activate-anthy', '1\n')
-    print(f'keyboard-setup: physical={layout or "unchanged"} Japanese=Anthy (direct Latin at first start)')
+    configure_cjk(layout, preferred_engine(cmdline), runtime, fresh)
+    print(f'keyboard-setup: physical={layout or "unchanged"} IMEs=Anthy,Pinyin,Hangul (Latin at first start)')
 
 
 if __name__ == '__main__':

@@ -8,11 +8,11 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.4-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.6/SteamAC-Lite-1.9.4-lite.6-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.7/SteamAC-Lite-1.9.4-lite.7-macos-arm64.dmg)**
 
 Lite.6でSteamOSのマイク入力が無音になる問題を修正しました。[原因と確認内容](docs/microphone-fix.md)。
 
-DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.6)
+DMGを開いて **SteamAC Lite.app** を **Applications** へコピーするだけでアプリを導入できます。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.7)
 
 macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 
@@ -24,10 +24,10 @@ macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証�
 | ゲスト用ディスクスワップ | 8 GB向け設定では`/home`のext4上に4 GiB。既存のzramは維持 |
 | 初期描画 | MacのRAMと画面に合わせて960×600〜1920×1200。Retinaなし、60 Hz |
 | 手動設定 | 設定画面で自動・軽量・手動を選択。個別に選んだ値を優先 |
-| 表示言語 | 初回起動で選択。日本語の設定・メニュー・初期設定案内に対応 |
+| 表示言語 | 初回起動で日本語・英語・韓国語・簡体字中国語・ロシア語を選択 |
 | 描画経路 | DXMTを優先。利用できなければVulkan |
 | キーボード | Macの物理配列から起動時にUS/JISを自動判別 |
-| 日本語入力 | SteamOS付属のIBus・Anthy。追加ダウンロード不要 |
+| 文字入力 | 日本語・中国語（ピンイン）・韓国語（2ボル式）を初回に設定。追加ダウンロード不要 |
 | アプリ・設定 | `SteamAC Lite.app`として通常版と別に保存 |
 
 macOSの仮想メモリ設定は変更しません。スワップはRAM不足による終了を減らすための補助で、物理RAMやGPUメモリを増やすものではありません。頻繁なスワップは遅くなります。**60 Hzは画面更新の設定であり、ゲーム内60 fpsの保証ではありません。**
@@ -45,6 +45,8 @@ macOSの仮想メモリ設定は変更しません。スワップはRAM不足に
 配列はmacOSの表示言語やATOK等の入力ソースから推測せず、物理キーボード情報を使います。外付けキーボードを変更した場合はアプリを再起動してください。ISOの形状も判別しますが、地域別の英独仏配列までは自動推定しません。複数配列の同時利用や特殊なリマップ環境には制限があります。
 
 詳しい設定と手動指定は[日本語入力と配列](docs/japanese-input.md)にあります。
+
+中国語はShift、韓国語はControl＋Spaceで英数入力と切り替えます。Control＋.で入力方式を変更できます。初回は表示言語に合う入力方式を英数モードで用意します。
 
 ## ビルドと起動
 

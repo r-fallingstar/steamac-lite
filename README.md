@@ -4,13 +4,15 @@
 
 **Illustrated setup guide:** [日本語](https://r-fallingstar.github.io/steamac-lite/?lang=ja) · [English](https://r-fallingstar.github.io/steamac-lite/en/) · [한국어](https://r-fallingstar.github.io/steamac-lite/ko/) · [简体中文](https://r-fallingstar.github.io/steamac-lite/zh-CN/)
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.6/SteamAC-Lite-1.9.4-lite.6-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.6) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.7/SteamAC-Lite-1.9.4-lite.7-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.7) · [はじめての導入手順](docs/quick-start.ja.md)
 
 Lite.6 fixes silent microphone input in SteamOS. [Cause, fix and validation](docs/microphone-fix.md).
 
 Open the DMG and copy **SteamAC Lite.app** into **Applications**. No build tools are needed. This is an experimental, ad-hoc signed and unnotarized build; SteamOS and games are downloaded separately. The optional **VRChat setup** bundles the patched FEX and prepares Proton/EAC and launch options after Steam sign-in. Steam download confirmations remain user actions; no game is started. See [the setup flow](docs/vrchat-setup.ja.md).
 
 This fork chooses VM RAM, vCPUs and initial resolution for the Mac, keeps a 3 GiB VM / 4 GiB guest disk-swap profile on 8 GB Macs, defaults to 60 Hz, detects physical US/JIS keyboards, and enables Japanese input through SteamOS's existing IBus/Anthy. Manual settings take priority. Game frame rates and compatibility are not guaranteed. See [automatic profiles](docs/performance-profiles.md), [8 GB limitations](docs/8gb-profile.md), and [keyboard / Japanese input](docs/japanese-input.md).
+
+The app supports English, Japanese, Korean, Simplified Chinese and Russian. Initial setup enables Japanese, Chinese Pinyin and Korean 2-set input without extra downloads. See [input methods and shortcuts](docs/cjk-input.md).
 
 On a new SteamOS disk, Steam starts in the language selected in the launcher. Existing Steam language settings are preserved. A fresh-disk test completed all FEX/Proton/EAC downloads and VRChat setup with manual Steam confirmations. See [validation and limitations](docs/validation-lite.5.md).
 
