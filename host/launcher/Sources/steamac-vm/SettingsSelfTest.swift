@@ -32,6 +32,13 @@ enum SettingsSelfTest {
         let target = Target()
         target.sw = sw
         MainMenu.installMinimal(settings: (#selector(Target.open), target))
+        // Manual localization review uses the real settings controls without starting a VM.
+        // This mode keeps the window open for an accessibility client or a human reviewer.
+        if ProcessInfo.processInfo.environment["STEAMAC_SETTINGS_REVIEW"] == "1" {
+            DispatchQueue.main.async { app.activate(); sw.show(tab: .general) }
+            app.run()
+            exit(0)
+        }
         let dir = o.selftestOut ?? "."
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         // Crash-report scrubbing: the user, host, computer and Bonjour names never leave the Mac.
@@ -71,43 +78,11 @@ enum SettingsSelfTest {
             exit(failures.isEmpty ? 0 : 1)
         }
 
-        struct PopupControl {
-            let element: any NSAccessibilityProtocol
-            let button: NSButton?
-            var title: String {
-                button?.title ?? element.accessibilityValue() as? String
-                    ?? element.accessibilityLabel() ?? ""
-            }
-            var menu: NSMenu? { button?.menu }
-            func press() {
-                if let button { button.performClick(nil) }
-                else { _ = element.accessibilityPerformPress() }
-            }
-        }
-
-        /// SwiftUI may expose pickers as virtual accessibility elements without NSButton views.
-        func accessiblePopups(_ object: Any, depth: Int = 0) -> [PopupControl] {
-            guard depth < 40, let element = object as? any NSAccessibilityProtocol else { return [] }
-            if element.accessibilityRole() == .popUpButton {
-                return [PopupControl(element: element, button: object as? NSButton)]
-            }
-            return (element.accessibilityChildren() ?? []).flatMap { accessiblePopups($0, depth: depth + 1) }
-        }
-
-        func nativePopups(in view: NSView?) -> [PopupControl] {
+        /// SwiftUI menu pickers (SwiftUIPopupButton, an NSButton with a menu).
+        func popups(in view: NSView?) -> [NSButton] {
             guard let view else { return [] }
-            if let b = view as? NSButton,
-               b is NSPopUpButton || b.accessibilityRole() == .popUpButton
-                || "\(type(of: b))".localizedCaseInsensitiveContains("popup") {
-                return [PopupControl(element: b, button: b)]
-            }
-            return view.subviews.flatMap { nativePopups(in: $0) }
-        }
-
-        func popups(in view: NSView?) -> [PopupControl] {
-            guard let view else { return [] }
-            let native = nativePopups(in: view)
-            return native.isEmpty ? accessiblePopups(view) : native
+            if let b = view as? NSButton, "\(type(of: b))".contains("Popup") { return [b] }
+            return view.subviews.flatMap { popups(in: $0) }
         }
 
         /// The Display tab with the real window-size popup items drawn next to it (a popup menu is
@@ -219,8 +194,7 @@ enum SettingsSelfTest {
                 }
                 let selected = popup.title
                 let tabShot = sw.snapshot()
-                var trackedMenu = popup.menu
-                func itemTitles() -> [String] { trackedMenu?.items.map { $0.isSeparatorItem ? "----" : $0.title } ?? [] }
+                func itemTitles() -> [String] { popup.menu?.items.map { $0.isSeparatorItem ? "----" : $0.title } ?? [] }
                 // SwiftUI fills the picker's menu only when it opens. Read the items the moment
                 // tracking begins, then close it. While another app is frontmost (the Mac in use)
                 // an open can fail — tracking never starts, or ends at once when the other app
@@ -229,9 +203,7 @@ enum SettingsSelfTest {
                 var attempts = 0
                 let nc = NotificationCenter.default
                 let began = nc.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: nil) { n in
-                    guard let menu = n.object as? NSMenu,
-                          popup.menu == nil || menu === popup.menu else { return }
-                    trackedMenu = menu
+                    guard let menu = n.object as? NSMenu, menu === popup.menu else { return }
                     titles = itemTitles()
                     DispatchQueue.main.async { menu.cancelTracking() }
                 }
@@ -243,13 +215,10 @@ enum SettingsSelfTest {
                         // Safety net: never leave the menu open if the notification was missed.
                         let timer = Timer(timeInterval: 1, repeats: false) { _ in
                             if titles.isEmpty { titles = itemTitles() }
-                            trackedMenu?.cancelTracking()
-                            _ = popup.element.accessibilityPerformCancel()
+                            popup.menu?.cancelTracking()
                         }
                         RunLoop.main.add(timer, forMode: .common)
-                        popup.press()
-                        // Virtual SwiftUI controls can start menu tracking asynchronously.
-                        if titles.isEmpty { RunLoop.main.run(until: Date().addingTimeInterval(1)) }
+                        popup.performClick(nil)   // returns when the menu closes (or at once if it did not open)
                         timer.invalidate()
                         if titles.isEmpty {
                             log("selftest-settings: window size popup did not open (attempt \(attempts), app active: \(NSApp.isActive))")
