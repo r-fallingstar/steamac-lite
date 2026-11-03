@@ -2,25 +2,16 @@ import AppKit
 import Combine
 import SwiftUI
 
-/// New-version check: the latest GitHub release of fxgl/steamac against this launcher's
-/// CFBundleShortVersionString. Runs in the VM process of the first boot (once per app launch, not
-/// per VM reboot) a few seconds after the window is up, at most every 6 h (also across launches),
-/// never in development builds (work/out/steamac-vm), and only while Settings > General "Check for
-/// updates at startup" is on. The request goes to api.github.com with only the User-Agent
-/// `FXSteamLauncher/<version>` (plus the ETag of the previous answer, so GitHub can answer "not
-/// modified"); no Sentry involvement. Network and HTTP errors of the startup check are only logged.
-/// A newer release opens UpdatePanel beside the VM window, without taking the keyboard or the mouse
-/// capture; the app menu's "Check for Updates…" checks at once (no 6 h limit, skipped versions
-/// included) and also reports "up to date" and errors.
-///
-/// Test hooks: STEAMAC_UPDATE_URL (another release JSON, http(s):// or file://: a /releases/latest
-/// object or a /releases array; also enables the startup check of the dev launcher) and
-/// STEAMAC_FAKE_VERSION (the version this launcher pretends to be).
+/// Checks the product's own GitHub releases on startup and every six hours. Lite uses the
+/// numbered -lite.N experimental releases, verified ARM64 DMGs, and the in-app installer.
+/// Upstream keeps its stable-release/browser-download behavior. Checks are opt-out and do not
+/// interrupt input capture. The menu can always check immediately, including skipped versions.
+/// STEAMAC_UPDATE_URL and STEAMAC_FAKE_VERSION are local UI/release-parser test hooks.
 final class UpdateChecker {
     static let shared = UpdateChecker()
 
     static let isLite = Bundle.main.object(forInfoDictionaryKey: "SteamacLiteBuild") as? Bool ?? false
-    static let latestURL = URL(string: "https://api.github.com/repos/fxgl/steamac/releases/latest")!
+    static let latestURL = URL(string: isLite ? "https://api.github.com/repos/r-fallingstar/steamac-lite/releases?per_page=30" : "https://api.github.com/repos/fxgl/steamac/releases/latest")!
     static let releasesPage = URL(string: isLite ? "https://github.com/r-fallingstar/steamac-lite/releases" : "https://github.com/fxgl/steamac/releases")!
     static let urlEnv = "STEAMAC_UPDATE_URL", fakeVersionEnv = "STEAMAC_FAKE_VERSION"
     static let interval: TimeInterval = 6 * 3600
@@ -44,8 +35,10 @@ final class UpdateChecker {
         let page: URL?
         /// The .dmg asset.
         let dmg: URL?
+        var sha256: String? = nil
+        var size: Int64 = 0
 
-        var versionString: String { UpdateChecker.format(version) }
+        var versionString: String { tag.first == "v" || tag.first == "V" ? String(tag.dropFirst()) : tag }
         /// Download: the .dmg, else the release page, else the releases list.
         var downloadURL: URL { dmg ?? page ?? UpdateChecker.releasesPage }
     }
@@ -64,6 +57,10 @@ final class UpdateChecker {
     private var panel: UpdatePanel?
     private var vmWindow: () -> NSWindow? = { nil }
     private var subscription: AnyCancellable?
+    private var timer: Timer?
+    private var updater: LiteUpdater?
+    var isInstalling: Bool { panel?.model.state.name == "installing" }
+    func cancelPendingDownload() { if !isInstalling { updater?.cancel() } }
 
     // MARK: versions
 
@@ -76,6 +73,13 @@ final class UpdateChecker {
     static func parse(_ text: String) -> [Int]? {
         var t = Substring(text.trimmingCharacters(in: .whitespaces))
         if t.first == "v" || t.first == "V" { t = t.dropFirst() }
+        if t.contains("-lite.") {
+            let split = t.components(separatedBy: "-lite.")
+            guard split.count == 2, !split[1].isEmpty, split[1].count <= 9,
+                  split[1].allSatisfy({ $0.isASCII && $0.isNumber }), let revision = Int(split[1]),
+                  let base = parse(split[0]), base.count == 3 else { return nil }
+            return base + [-1, revision]
+        }
         let parts = t.split(separator: ".", omittingEmptySubsequences: false)
         guard (1...4).contains(parts.count) else { return nil }
         var out: [Int] = []
@@ -99,7 +103,7 @@ final class UpdateChecker {
 
     /// The newest published release of a /releases/latest object or a /releases array (drafts,
     /// prereleases and tags that are no version number ignored); nil if there is none.
-    static func newest(inJSON data: Data) throws -> Release? {
+    static func newest(inJSON data: Data, lite: Bool = isLite) throws -> Release? {
         let json = try JSONSerialization.jsonObject(with: data)
         let list: [[String: Any]]
         if let one = json as? [String: Any] { list = [one] }
@@ -111,13 +115,30 @@ final class UpdateChecker {
             return u
         }
         let releases: [Release] = list.compactMap { r in
-            guard r["draft"] as? Bool != true, r["prerelease"] as? Bool != true,
-                  let tag = r["tag_name"] as? String, let version = parse(tag) else { return nil }
+            guard r["draft"] as? Bool != true, (lite || r["prerelease"] as? Bool != true),
+                  let tag = r["tag_name"] as? String, let version = parse(tag),
+                  !lite || (version.count == 5 && version[3] == -1) else { return nil }
             let assets = r["assets"] as? [[String: Any]] ?? []
-            let dmg = assets.first { ($0["name"] as? String)?.lowercased().hasSuffix(".dmg") == true }
+            let versionText = tag.first == "v" || tag.first == "V" ? String(tag.dropFirst()) : tag
+            let dmg = assets.first {
+                lite ? ($0["name"] as? String) == "SteamAC-Lite-\(versionText)-macos-arm64.dmg"
+                     : ($0["name"] as? String)?.lowercased().hasSuffix(".dmg") == true
+            }
+            let download = web(dmg?["browser_download_url"])
+            let digest = (dmg?["digest"] as? String)?.lowercased()
+            let hash = digest.flatMap { $0.hasPrefix("sha256:") ? String($0.dropFirst(7)) : nil }
+            let size = (dmg?["size"] as? NSNumber)?.int64Value ?? 0
+            if lite {
+                guard let download, download.scheme == "https", download.host == "github.com",
+                      download.user == nil, download.password == nil, download.port == nil,
+                      download.query == nil, download.fragment == nil,
+                      download.path == "/r-fallingstar/steamac-lite/releases/download/\(tag)/SteamAC-Lite-\(versionText)-macos-arm64.dmg",
+                      let hash, hash.count == 64, hash.allSatisfy({ $0.isASCII && $0.isHexDigit }),
+                      size > 0, size < 1024 * 1024 * 1024 else { return nil }
+            }
             return Release(tag: tag, version: version, name: r["name"] as? String ?? "", notes: r["body"] as? String ?? "",
                            published: (r["published_at"] as? String).flatMap(iso.date(from:)),
-                           page: web(r["html_url"]), dmg: web(dmg?["browser_download_url"]))
+                           page: lite ? releasesPage : web(r["html_url"]), dmg: download, sha256: hash, size: size)
         }
         return releases.max { compare($0.version, $1.version) == .orderedAscending }
     }
@@ -132,6 +153,29 @@ final class UpdateChecker {
                                                             ("1.3", "1.3.1", .orderedAscending), ("2.0", "1.99.99", .orderedDescending),
                                                             ("v1.3.1", "1.3.1", .orderedSame)]
         for (a, b, want) in order where compare(parse(a)!, parse(b)!) != want { failures.append("update: \(a) vs \(b) not \(want.rawValue)") }
+        let liteVersions: [(String, String, ComparisonResult)] = [
+            ("v1.9.4-lite.10", "1.9.4-lite.9", .orderedDescending),
+            ("v1.9.4-lite.9", "1.9.4-lite.8", .orderedDescending),
+            ("v1.9.4-lite.8", "1.9.4-lite.8", .orderedSame),
+            ("v1.9.4-lite.8", "1.9.4", .orderedAscending),
+            ("v1.10.0-lite.1", "1.9.4-lite.99", .orderedDescending)]
+        for (a, b, want) in liteVersions where compare(parse(a)!, parse(b)!) != want { failures.append("update: Lite order \(a) vs \(b)") }
+        for invalid in ["1.9-lite.1", "1.9.4-lite.", "1.9.4-lite.-1", "1.9.4-lite.9-rc1"] where parse(invalid) != nil { failures.append("update: accepted invalid Lite version \(invalid)") }
+        let fixture: [String: Any] = ["tag_name": "v1.9.4-lite.10", "prerelease": true, "draft": false,
+            "assets": [["name": "SteamAC-Lite-1.9.4-lite.10-macos-arm64.dmg", "size": 100,
+                        "digest": "sha256:" + String(repeating: "a", count: 64),
+                        "browser_download_url": "https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.10/SteamAC-Lite-1.9.4-lite.10-macos-arm64.dmg"]]]
+        func selected(_ object: [String: Any]) -> Release? { try? Self.newest(inJSON: JSONSerialization.data(withJSONObject: object), lite: true) }
+        if selected(fixture)?.versionString != "1.9.4-lite.10" { failures.append("update: Lite prerelease not selected") }
+        for field in ["digest", "browser_download_url", "name", "size"] {
+            var damaged = fixture
+            var asset = (fixture["assets"] as! [[String: Any]])[0]
+            asset[field] = field == "size" ? 0 : "invalid"
+            damaged["assets"] = [asset]
+            if selected(damaged) != nil { failures.append("update: accepted invalid asset \(field)") }
+        }
+        var draft = fixture; draft["draft"] = true
+        if selected(draft) != nil { failures.append("update: accepted draft") }
         let json = """
             [{"tag_name": "v9.0", "draft": true}, {"tag_name": "v8.0", "prerelease": true}, {"tag_name": "nightly"},
              {"tag_name": "v1.3.10", "name": "1.3.10", "body": "x", "html_url": "https://github.com/fxgl/steamac/releases/tag/v1.3.10",
@@ -139,7 +183,7 @@ final class UpdateChecker {
                          {"name": "FX-Steam-Launcher-1.3.10.dmg", "browser_download_url": "https://e/x.dmg"}]},
              {"tag_name": "v1.3.9"}]
             """
-        let newest = try? newest(inJSON: Data(json.utf8))
+        let newest = try? newest(inJSON: Data(json.utf8), lite: false)
         if newest?.tag != "v1.3.10" || newest?.dmg?.absoluteString != "https://e/x.dmg" {
             failures.append("update: newest release \(newest?.tag ?? "none"), dmg \(newest?.dmg?.absoluteString ?? "none")")
         }
@@ -160,13 +204,14 @@ final class UpdateChecker {
             guard on else { return }
             DispatchQueue.main.async { self?.automaticCheck() }
         }
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: UpdateChecker.interval, repeats: true) { [weak self] _ in self?.automaticCheck() }
         guard Supervisor.bootNumber == 1 else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + UpdateChecker.startupDelay) { [weak self] in self?.automaticCheck() }
     }
 
     /// The startup check: setting, build kind, 6 h limit and Skip This Version apply; errors only logged.
     func automaticCheck() {
-        guard !UpdateChecker.isLite else { return }
         guard LauncherSettings.shared.checkForUpdates else { log("update: startup check off (Settings > General)"); return }
         let testURL = ProcessInfo.processInfo.environment[UpdateChecker.urlEnv].map { !$0.isEmpty } ?? false
         guard CrashReporting.buildKind != .development || testURL else {
@@ -205,8 +250,9 @@ final class UpdateChecker {
     /// App menu "Check for Updates…" (or "Update Available…"): the found release, else a check
     /// now that ignores the 6 h limit and skipped versions and reports the result.
     func menuAction() {
-        if UpdateChecker.isLite {
-            NSWorkspace.shared.open(UpdateChecker.releasesPage)
+        if let panel, ["downloading", "preparing", "ready", "installing"].contains(panel.model.state.name) {
+            panel.window.makeKeyAndOrderFront(nil)
+            NSApp.activate()
             return
         }
         if let r = available {
@@ -249,7 +295,7 @@ final class UpdateChecker {
         let current = UpdateChecker.currentVersion
         defaults.set(Date(), forKey: Store.lastCheck)
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: UpdateChecker.timeout)
-        request.setValue("FXSteamLauncher/\(current)", forHTTPHeaderField: "User-Agent")
+        request.setValue("\(Self.isLite ? "SteamAC-Lite" : "FXSteamLauncher")/\(current)", forHTTPHeaderField: "User-Agent")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         let cached = defaults.string(forKey: Store.url) == url.absoluteString ? defaults.data(forKey: Store.body) : nil
         if cached != nil, let etag = defaults.string(forKey: Store.etag) { request.setValue(etag, forHTTPHeaderField: "If-None-Match") }
@@ -318,9 +364,19 @@ final class UpdateChecker {
     private func show(_ state: UpdatePanel.State, activate: Bool) {
         let panel = self.panel ?? UpdatePanel(actions: .init(
             download: { [weak self] r in
-                log("update: download \(r.tag): opening \(r.downloadURL.absoluteString)")
-                NSWorkspace.shared.open(r.downloadURL)
-                self?.panel?.window.close()
+                guard let self else { return }
+                if UpdateChecker.isLite {
+                    let updater = self.updater ?? LiteUpdater()
+                    self.updater = updater
+                    updater.changed = { [weak self] state in
+                        guard let self, self.panel?.window.isVisible == true else { return }
+                        self.show(state, activate: false)
+                    }
+                    updater.download(r)
+                } else {
+                    NSWorkspace.shared.open(r.downloadURL)
+                    self.panel?.window.close()
+                }
             },
             skip: { [weak self] r in
                 guard let self else { return }
@@ -337,7 +393,9 @@ final class UpdateChecker {
                 NSWorkspace.shared.open(UpdateChecker.releasesPage)
                 self?.panel?.window.close()
             },
-            dismiss: { [weak self] in self?.panel?.window.close() }))
+            dismiss: { [weak self] in self?.updater?.cancel(); self?.panel?.window.close() },
+            install: { [weak self] release in self?.updater?.install(release) },
+            cancel: { [weak self] in self?.updater?.cancel() }))
         self.panel = panel
         if case .available(let r, let current) = state { log("update: \(r.tag) available (this launcher: \(current)); showing the update window") }
         panel.show(state, beside: vmWindow(), activate: activate)
@@ -371,12 +429,16 @@ final class UpdateChecker {
 /// The update window: a plain titled panel next to the VM window (on top of it only when the
 /// screen has no room beside it), shown without becoming key so the VM keeps the keyboard and a
 /// captured mouse.
-final class UpdatePanel {
+final class UpdatePanel: NSObject, NSWindowDelegate {
     enum State {
         case checking
         case available(UpdateChecker.Release, current: String)
         case upToDate(current: String)
         case failed(String)
+        case downloading(Double)
+        case preparing
+        case ready(UpdateChecker.Release)
+        case installing
 
         var name: String {
             switch self {
@@ -384,6 +446,10 @@ final class UpdatePanel {
             case .available(let r, _): return "available \(r.tag)"
             case .upToDate: return "up to date"
             case .failed: return "failed"
+            case .downloading: return "downloading"
+            case .preparing: return "preparing"
+            case .ready: return "ready"
+            case .installing: return "installing"
             }
         }
     }
@@ -395,6 +461,8 @@ final class UpdatePanel {
         let releases: () -> Void
         /// Cancel / OK: close the window.
         let dismiss: () -> Void
+        let install: (UpdateChecker.Release) -> Void
+        let cancel: () -> Void
     }
 
     final class Model: ObservableObject {
@@ -412,12 +480,18 @@ final class UpdatePanel {
         window = NSPanel(contentRect: NSRect(x: 0, y: 0, width: UpdatePanel.width, height: 200),
                          styleMask: [.titled, .closable], backing: .buffered, defer: false)
         host = NSHostingView(rootView: UpdateView(model: model, actions: actions))
+        super.init()
+        window.delegate = self
         window.title = String(localized: "Software Update")
         window.isReleasedWhenClosed = false
         window.hidesOnDeactivate = false
         window.isFloatingPanel = false
         window.becomesKeyOnlyIfNeeded = true
         window.contentView = host
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        if ["downloading", "preparing", "ready"].contains(model.state.name) { actions.cancel() }
     }
 
     func show(_ state: State, beside vm: NSWindow?, activate: Bool) {
@@ -473,6 +547,8 @@ final class UpdatePanel {
         case ("skip", .available(let r, _)): actions.skip(r)
         case ("later", .available): actions.later()
         case ("releases", .failed): actions.releases()
+        case ("install", .ready(let release)): actions.install(release)
+        case ("cancel", .downloading), ("cancel", .preparing): actions.cancel()
         case ("ok", _), ("cancel", _): actions.dismiss()
         default: log("control: update: no \(button) button in state \(model.state.name)")
         }
@@ -562,7 +638,7 @@ struct UpdateView: View {
                         Button("Cancel") { actions.dismiss() }.keyboardShortcut(.cancelAction)
                     }
                 case .available(let r, let current):
-                    Text("FX Steam Launcher \(r.versionString) is available — you have \(current)")
+                    Text("\(UpdateChecker.isLite ? "SteamAC Lite" : "FX Steam Launcher") \(r.versionString) is available — you have \(current)")
                         .font(.headline)
                         .fixedSize(horizontal: false, vertical: true)
                     if let subtitle = subtitle(r) {
@@ -583,17 +659,39 @@ struct UpdateView: View {
                         Button("Skip This Version") { actions.skip(r) }
                         Spacer()
                         Button("Remind Me Later") { actions.later() }.keyboardShortcut(.cancelAction)
-                        Button("Download") { actions.download(r) }.keyboardShortcut(.defaultAction)
+                        Button(UpdateChecker.isLite ? String(localized: "Update") : String(localized: "Download")) { actions.download(r) }.keyboardShortcut(.defaultAction)
                     }
                 case .upToDate(let current):
                     Text("You're up to date").font(.headline)
-                    Text("FX Steam Launcher \(current) is the newest version available.")
+                    Text("\(UpdateChecker.isLite ? "SteamAC Lite" : "FX Steam Launcher") \(current) is the newest version available.")
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     HStack {
                         Spacer()
                         Button("OK") { actions.dismiss() }.keyboardShortcut(.defaultAction)
                     }
+                case .downloading(let fraction):
+                    Text("Downloading update…").font(.headline)
+                    ProgressView(value: fraction).progressViewStyle(.linear)
+                    HStack { Spacer(); Button("Cancel") { actions.cancel() } }
+                case .preparing:
+                    Text("Verifying update…").font(.headline)
+                    ProgressView().progressViewStyle(.linear)
+                    HStack { Spacer(); Button("Cancel") { actions.cancel() } }
+                case .ready:
+                    Text("Ready to update").font(.headline)
+                    Text("SteamOS will shut down before the app is replaced. Your disk and settings will be kept.")
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack {
+                        Button("Later") { actions.dismiss() }
+                        Spacer()
+                        if case .ready(let release) = model.state {
+                            Button("Install and Relaunch") { actions.install(release) }.keyboardShortcut(.defaultAction)
+                        }
+                    }
+                case .installing:
+                    Text("Waiting for SteamOS to shut down…").font(.headline)
+                    ProgressView().progressViewStyle(.linear)
                 case .failed(let message):
                     Text("Couldn't check for updates").font(.headline)
                     Text(verbatim: message)

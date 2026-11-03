@@ -9,7 +9,7 @@
   "top.p2": "通过实际界面的截图，介绍从下载 SteamAC Lite 到完成 VRChat 专用设置的步骤。",
   "top.a1": "下载 Mac 版应用 <span aria-hidden=\"true\">↓</span>",
   "top.a2": "查看安装步骤 →",
-  "top.p3": "v1.9.4-lite.8 · 约 100 MB · Apple Silicon 实验版本",
+  "top.p3": "v1.9.4-lite.9 · 约 100 MB · Apple Silicon 实验版本",
   "top.figcaption1": "安装 VRChat 后的简体中文 Steam 界面",
   "top.p4": "开始之前",
   "top.h21": "准备事项",
@@ -101,7 +101,7 @@
   "footer.a2": "发布版本",
   "footer.a3": "许可证",
   "footer.a4": "上游项目",
-  "footer.p2": "指南适用于 v1.9.4-lite.8。应用和 Steam 截图使用各页面对应的语言。GitHub 和 Finder 截图附有对应语言的说明。显示内容可能因 Mac 和版本而异。<br>文字经 Gemini 3.8 Flash High 校对，并与实现和实机验证结果核对。",
+  "footer.p2": "指南适用于 v1.9.4-lite.9。应用和 Steam 截图使用各页面对应的语言。GitHub 和 Finder 截图附有对应语言的说明。显示内容可能因 Mac 和版本而异。<br>文字经 Gemini 3.8 Flash High 校对，并与实现和实机验证结果核对。",
   "photo-dialog.p1": "界面截图",
   "photo-dialog.button2": "关闭 <span aria-hidden=\"true\">×</span>",
   "attr.content1": "通过实际界面的截图，介绍 SteamAC Lite 下载、SteamOS 初始设置、VRChat 专用设置及日语输入方法。",
@@ -132,5 +132,7 @@
   "photo.download-note": "GitHub 的项目名称为英文。“Source code”不是应用程序。",
   "photo.install-title": "将应用拖到 Applications",
   "photo.install-note": "Finder 的显示语言取决于 Mac 设置。文件名保持不变。",
-  "attr.booth": "Snow Moon Works 的 BOOTH 商店"
+  "attr.booth": "Snow Moon Works 的 BOOTH 商店",
+  "faq.summary6": "如何更新应用？",
+  "faq.p6": "Lite.9 及更新版本会在应用内提示新版本。点击「更新」下载，再选择「安装并重新打开」即可应用更新。SteamOS 磁盘和设置会保留。Lite.8 及更早版本需要先通过本页的 DMG 手动更新一次。"
 }

@@ -50,6 +50,19 @@ if options.selftestLanguage {
     print(failures.isEmpty ? "language: PASS" : "language: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
+if options.selftestUpdate {
+    let failures = UpdateChecker.selfCheck()
+    print(failures.isEmpty ? "updates: PASS" : "updates: FAIL: " + failures.joined(separator: "; "))
+    exit(failures.isEmpty ? 0 : 1)
+}
+if options.previewUpdate {
+    let app = NSApplication.shared
+    app.setActivationPolicy(.regular)
+    MainMenu.installMinimal()
+    DispatchQueue.main.async { UpdateChecker.shared.manualCheck() }
+    app.run()
+    exit(0)
+}
 // Before CrashReporting's GPU tags, the window or either Vulkan driver can initialise Metal.
 MetalCompilerCache.prepare()
 
@@ -147,6 +160,7 @@ final class Lifecycle: NSObject, NSApplicationDelegate {
     }
 
     func requestShutdown(force: Bool = false) {
+        UpdateChecker.shared.cancelPendingDownload()
         CrashReporting.noteUserExit()
         if let at = requestedAt {
             // A terminal ^C / SIGTERM reaches both the supervisor and this process: only the
@@ -247,6 +261,10 @@ final class Lifecycle: NSObject, NSApplicationDelegate {
     /// a user's Quit asks first (the suspended state is lost; SuspendController.askQuit, answered
     /// later without a modal loop); logout / restart / shutdown of the Mac does not.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if UpdateChecker.shared.isInstalling {
+            if requestedAt == nil { requestShutdown() }
+            return .terminateCancel
+        }
         if requestedAt == nil, let suspender, suspender.suspended, !Lifecycle.quitBySystem {
             suspender.askQuit { [weak self] in self?.requestShutdown() }
             return .terminateCancel

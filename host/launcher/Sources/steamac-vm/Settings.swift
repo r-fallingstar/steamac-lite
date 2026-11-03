@@ -382,7 +382,7 @@ final class LauncherSettings: ObservableObject {
     @Published var shareConcealedClipboard = false { didSet { save(.shareConcealedClipboard, shareConcealedClipboard) } }
     @Published var closeAction = CloseAction.shutDown { didSet { save(.closeAction, closeAction.rawValue) } }
     /// New-version check when the app starts (UpdateChecker; never in development builds); applies now.
-    @Published var checkForUpdates = !(Bundle.main.object(forInfoDictionaryKey: "SteamacLiteBuild") as? Bool ?? false) { didSet { save(.checkForUpdates, checkForUpdates) } }
+    @Published var checkForUpdates = true { didSet { save(.checkForUpdates, checkForUpdates) } }
     /// Game statistics (GameStats): finished game sessions and the player's ratings go to the
     /// public statistics service; off until the user agrees. Applies now.
     @Published var shareGameStats = false { didSet { save(.shareGameStats, shareGameStats) } }

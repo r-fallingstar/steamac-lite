@@ -8,24 +8,27 @@ BASE_APP=${BASE_APP:-/Applications/FX Steam Launcher.app}
 export DEVELOPER_DIR=${DEVELOPER_DIR:-/Library/Developer/CommandLineTools}
 SDK=${SDK:-/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk}
 [[ -d "$SDK" ]] || SDK=$(xcrun --show-sdk-path)
+REUSE_LAYER=${LITE_REUSE_LAYER:-0}
 WORK=$ROOT/work
 OUT=$WORK/out
 HOST=$OUT/host
 PLIST=$WORK/lite-Info.plist
-export BASE_APP PLIST
+export BASE_APP PLIST REUSE_LAYER
 [[ -n ${LIBKRUN_OVERRIDE:-} ]] || { echo 'Lite requires the microphone fix. Run scripts/lite/build-audio-library.sh and set LIBKRUN_OVERRIDE.' >&2; exit 1; }
 codesign --verify --deep --strict "$BASE_APP"
 python3 - <<'PY'
-import os, pathlib, plistlib
+import os, pathlib, plistlib, subprocess
 root = pathlib.Path(os.environ['BASE_APP'])
 with (root/'Contents/Info.plist').open('rb') as f:
     p = plistlib.load(f)
 identity = (p.get('CFBundleIdentifier'), p.get('CFBundleShortVersionString'))
-if identity not in [('es.fxgam.steamac', '1.9.4'), ('local.ryuu.steamac-lite', '1.9.4-lite.6'), ('local.ryuu.steamac-lite', '1.9.4-lite.7')]:
-    raise SystemExit('Expected the v1.9.4-eac.1 upstream donor or verified Lite.6 or Lite.7 base app')
+if identity not in [('es.fxgam.steamac', '1.9.4'), ('local.ryuu.steamac-lite', '1.9.4-lite.6'), ('local.ryuu.steamac-lite', '1.9.4-lite.7'), ('local.ryuu.steamac-lite', '1.9.4-lite.8'), ('local.ryuu.steamac-lite', '1.9.4-lite.9')]:
+    raise SystemExit('Expected the v1.9.4-eac.1 upstream donor or verified Lite.6–Lite.9 base app')
 if identity[0] == 'local.ryuu.steamac-lite':
     import hashlib, json
     receipt = json.loads((root/'Contents/Resources/steamac-lite-provenance.json').read_text())
+    if os.environ['REUSE_LAYER'] == '1':
+        subprocess.run(['git', 'diff', '--exit-code', receipt['source_commit'], '--', 'guest/layer', 'fex-eac', 'scripts/lite/verify-fex-runtime.py'], check=True)
     for name, field in [('Resources/steamac-layer.img', 'layer_sha256'), ('Frameworks/libkrun.1.dylib', 'libkrun_sha256')]:
         assert hashlib.sha256((root/'Contents'/name).read_bytes()).hexdigest() == receipt[field], 'Lite base receipt mismatch'
 PY
@@ -62,9 +65,9 @@ import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='SteamAC Lite',
-         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.8',
+         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.9',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194008',
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194009',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
          LSMinimumSystemVersion='15.5')
 p.pop('SteamacBuildOut', None)
@@ -82,11 +85,13 @@ FLAGS=(--package-path host/launcher --build-system native --sdk "$SDK" -c releas
 swift build "${FLAGS[@]}"
 BIN=$(swift build "${FLAGS[@]}" --show-bin-path)/steamac-vm
 
+if [[ "$REUSE_LAYER" != 1 ]]; then
 # EROFS tools can be supplied by MacPorts/Homebrew, or built from upstream erofs-utils.
 FSCK=${FSCK_EROFS:-$WORK/build/erofs-utils/fsck/fsck.erofs}
 MKFS=${MKFS_EROFS:-$WORK/build/erofs-utils/mkfs/mkfs.erofs}
 [[ -x "$FSCK" ]] || FSCK=$(command -v fsck.erofs)
 [[ -x "$MKFS" ]] || MKFS=$(command -v mkfs.erofs)
+fi
 STAGE=$(mktemp -d "$WORK/lite-stage.XXXXXX")
 trap 'rm -rf "$STAGE"; [[ -z "$KRUN_OVERRIDE_COPY" ]] || rm -f "$KRUN_OVERRIDE_COPY"' EXIT
 APP=$STAGE/SteamAC\ Lite.app
@@ -97,6 +102,8 @@ if [[ -n ${LIBKRUN_OVERRIDE:-} ]]; then
 fi
 cp "$BIN" "$APP/Contents/MacOS/steamac-vm"
 cp "$PLIST" "$APP/Contents/Info.plist"
+swiftc -O -sdk "$SDK" host/launcher/Sources/steamac-vm/UpdateInstallSupport.swift host/launcher/updater/main.swift -o "$APP/Contents/Resources/steamac-updater"
+codesign --force --sign - "$APP/Contents/Resources/steamac-updater"
 python3 host/launcher/l10n.py check --strict --stringsdata "$WORK/lite-stringsdata"
 python3 host/launcher/l10n.py compile "$STAGE/localizations"
 cp -a "$STAGE/localizations/." "$APP/Contents/Resources/"
@@ -109,6 +116,7 @@ if otool -L "$EXE" | tail -n +2 | awk '{print $1}' | grep -Ev '^(@rpath/|/usr/li
     echo 'Unexpected external launcher dependency' >&2; exit 1
 fi
 
+if [[ "$REUSE_LAYER" != 1 ]]; then
 LAYER=$STAGE/layer
 "$FSCK" --extract="$LAYER" --no-preserve-owner "$BASE_APP/Contents/Resources/steamac-layer.img"
 install -m755 guest/layer/usr/lib/steamac/low-memory-swap "$LAYER/usr/lib/steamac/low-memory-swap"
@@ -134,13 +142,14 @@ for unit in steamac-vrchat-setup.service steam.service.d/70-steamac-vrchat-setup
     mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
     install -m644 "guest/layer/usr/lib/systemd/user/$unit" "$LAYER/usr/lib/systemd/user/$unit"
 done
-echo 'steamac-lite v1.9.4-lite.8 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
+echo 'steamac-lite v1.9.4-lite.9 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"
 "$FSCK" --extract "$APP/Contents/Resources/steamac-layer.img"
 # The source-bound upstream layer receipt cannot describe our modified layer.
 rm -f "$APP/Contents/Resources/steamac-layer.img.inputs.json"
+fi
 python3 - "$APP" "$BASE_APP" <<'PY'
 import hashlib, json, pathlib, plistlib, subprocess, sys
 app, donor = map(pathlib.Path, sys.argv[1:])
@@ -159,6 +168,7 @@ codesign --verify --deep --strict "$APP"
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-low-memory
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-keyboard
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-language
+STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-update
 DEST=$OUT/SteamAC\ Lite.app
 if [[ -e "$DEST" ]]; then mv "$DEST" "$OUT/SteamAC Lite.previous.$(date +%Y%m%d%H%M%S).app"; fi
 mv "$APP" "$DEST"

@@ -39,7 +39,7 @@ enum ApplicationLanguage: String, CaseIterable, Identifiable {
     static func chooseOnFirstLaunch(_ argv: [String]) {
         guard AppBundle.resources != nil, !Supervisor.isChild,
               !argv.dropFirst().contains(where: {
-                  $0.hasPrefix("--selftest") || $0 == "--headless" || $0 == "--ssh-password"
+                  $0.hasPrefix("--selftest") || $0 == "--preview-update" || $0 == "--headless" || $0 == "--ssh-password"
                       || $0 == "--create-disk" || $0 == "--grow-disk" || $0 == "--help" || $0 == "-h"
               }) else { return }
         let domain = LauncherSettings.domain

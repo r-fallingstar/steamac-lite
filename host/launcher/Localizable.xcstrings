@@ -18844,6 +18844,441 @@
           }
         }
       }
+    },
+    "This release has no verified app download. Open the releases page to update manually.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この版には検証できるアプリの配布ファイルがありません。Releaseページから手動で更新してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 릴리스에는 검증 가능한 앱 다운로드가 없습니다. 릴리스 페이지에서 수동으로 업데이트하십시오."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此版本没有可验证的应用下载。请打开发布页面手动更新。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для этой версии нет проверяемого файла приложения. Обновите приложение вручную со страницы выпусков."
+          }
+        }
+      }
+    },
+    "Move SteamAC Lite to a writable Applications folder, then try updating again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamAC Liteを書き込み可能なApplicationsフォルダに移してから更新してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamAC Lite를 쓰기 가능한 Applications 폴더로 옮긴 후 다시 업데이트하십시오."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请将 SteamAC Lite 移至可写入的 Applications 文件夹后重试。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переместите SteamAC Lite в доступную для записи папку Applications и повторите обновление."
+          }
+        }
+      }
+    },
+    "The update could not be downloaded or verified. Your app has not been changed. Try again or open the releases page.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新ファイルをダウンロードまたは検証できませんでした。アプリは変更していません。再度試すかReleaseページを開いてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트를 다운로드하거나 검증할 수 없습니다. 앱은 변경되지 않았습니다. 다시 시도하거나 릴리스 페이지를 여십시오."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法下载或验证更新。应用未被更改。请重试或打开发布页面。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить или проверить обновление. Приложение не изменено. Повторите попытку или откройте страницу выпусков."
+          }
+        }
+      }
+    },
+    "SteamAC Lite could not be updated": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamAC Liteを更新できませんでした"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamAC Lite를 업데이트할 수 없습니다"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法更新 SteamAC Lite"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось обновить SteamAC Lite"
+          }
+        }
+      }
+    },
+    "The update could not finish. Your SteamOS disk and settings have not been changed. Open the releases page to update manually.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新を完了できませんでした。SteamOSのディスクと設定は変更していません。Releaseページから手動で更新してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트를 완료할 수 없습니다. SteamOS 디스크와 설정은 변경되지 않았습니다. 릴리스 페이지에서 수동으로 업데이트하십시오."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法完成更新。SteamOS 磁盘和设置未被更改。请打开发布页面手动更新。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось завершить обновление. Диск SteamOS и настройки не изменены. Обновите приложение вручную со страницы выпусков."
+          }
+        }
+      }
+    },
+    "The update could not start. Your app has not been changed. Open the releases page to update manually.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新を開始できませんでした。アプリは変更していません。Releaseページから手動で更新してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트를 시작할 수 없습니다. 앱은 변경되지 않았습니다. 릴리스 페이지에서 수동으로 업데이트하십시오."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法开始更新。应用未被更改。请打开发布页面手动更新。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось начать обновление. Приложение не изменено. Обновите его вручную со страницы выпусков."
+          }
+        }
+      }
+    },
+    "%@ %@ is available — you have %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@に更新できます（現在：%3$@）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@(으)로 업데이트할 수 있습니다(현재 버전: %3$@)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@ 可用，当前版本为 %3$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступна версия %1$@ %2$@. У вас %3$@"
+          }
+        }
+      }
+    },
+    "%@ %@ is the newest version available.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@は最新版です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@은(는) 최신 버전입니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ 已是最新版本。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ — последняя доступная версия."
+          }
+        }
+      }
+    },
+    "Downloading update…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新をダウンロード中…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트 다운로드 중…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在下载更新…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузка обновления…"
+          }
+        }
+      }
+    },
+    "Verifying update…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新を検証中…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트 검증 중…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在验证更新…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка обновления…"
+          }
+        }
+      }
+    },
+    "Ready to update": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新の準備ができました"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트 준비 완료"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新已准备就绪"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё готово к обновлению"
+          }
+        }
+      }
+    },
+    "SteamOS will shut down before the app is replaced. Your disk and settings will be kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOSを終了してからアプリを入れ替えます。ディスクと設定は引き継ぎます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOS를 종료한 후 앱을 교체합니다. 디스크와 설정은 유지됩니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将先关闭 SteamOS 再替换应用。磁盘和设置会保留。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед заменой приложения SteamOS завершит работу. Диск и настройки сохранятся."
+          }
+        }
+      }
+    },
+    "Waiting for SteamOS to shut down…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOSの終了を待っています…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOS 종료를 기다리는 중…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待 SteamOS 关闭…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ожидание завершения работы SteamOS…"
+          }
+        }
+      }
+    },
+    "Update": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデート"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновить"
+          }
+        }
+      }
+    },
+    "Install and Relaunch": {
+      "extractionState": "manual",
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新して開き直す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설치 후 다시 열기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装并重新打开"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установить и перезапустить"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

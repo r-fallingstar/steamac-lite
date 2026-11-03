@@ -52,7 +52,7 @@ with tempfile.TemporaryDirectory(prefix='lite-dmg-', dir=ROOT/'work') as tmp:
         subprocess.run(['codesign', '--verify', '--deep', '--strict', str(portable)], check=True)
         assert json.loads((portable/'Contents/Resources/steamac-lite-provenance.json').read_text()) == receipt
         test_env = {**env, 'STEAMAC_DEFAULTS_DOMAIN': 'steamac.lite.distribution-selftest'}
-        for option in ['--selftest-low-memory', '--selftest-keyboard', '--selftest-language', '--selftest-l10n']:
+        for option in ['--selftest-low-memory', '--selftest-keyboard', '--selftest-language', '--selftest-l10n', '--selftest-update']:
             subprocess.run([str(portable/'Contents/MacOS/steamac-vm'), option], env=test_env, check=True)
     finally:
         subprocess.run(['hdiutil', 'detach', '-quiet', str(mount)], check=True)
@@ -62,7 +62,7 @@ record = {'version': version, 'source_commit': head, 'dmg': image.name, 'sha256'
           'bytes': image.stat().st_size, 'signature': 'ad-hoc; not notarized',
           'dmg_integrity_verified': True, 'copied_out_signature_verified': True,
           'copied_out_profile_selftest_passed': True, 'copied_out_keyboard_selftest_passed': True}
-record.update(copied_out_language_selftest_passed=True, copied_out_localization_selftest_passed=True)
+record.update(copied_out_update_selftest_passed=True, copied_out_language_selftest_passed=True, copied_out_localization_selftest_passed=True)
 record.update(libkrun_sha256=library_sha, audio_patch_sha256=audio['patch_sha256'],
               audio_regression_tests_passed=audio['audio_regression_tests_passed'], builder_paths_removed=True)
 (out/'distribution-validation.json').write_text(json.dumps(record, indent=2)+'\n')

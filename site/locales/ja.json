@@ -9,7 +9,7 @@
   "top.p2": "ダウンロードからVRChat向け設定までの手順を画面写真で説明します。",
   "top.a1": "Mac用アプリをダウンロード <span aria-hidden=\"true\">↓</span>",
   "top.a2": "導入手順を見る →",
-  "top.p3": "v1.9.4-lite.8 · 約100 MB · Apple Silicon向け実験版",
+  "top.p3": "v1.9.4-lite.9 · 約100 MB · Apple Silicon向け実験版",
   "top.span1": "写真を拡大 ↗",
   "top.figcaption1": "日本語表示のSteam（VRChatのインストール後）",
   "top.p4": "はじめる前に",
@@ -109,7 +109,7 @@
   "footer.a2": "Release",
   "footer.a3": "ライセンス",
   "footer.a4": "上流プロジェクト",
-  "footer.p2": "案内の対象：v1.9.4-lite.8 · 本体とSteamの写真は各ページの言語で撮影しています。GitHubとFinderには各言語の案内を付けています。Macやバージョンによって表示が異なります。<br>文章はGemini 3.8 Flash Highで校閲し、実装・実機の確認結果と照合しています。",
+  "footer.p2": "案内の対象：v1.9.4-lite.9 · 本体とSteamの写真は各ページの言語で撮影しています。GitHubとFinderには各言語の案内を付けています。Macやバージョンによって表示が異なります。<br>文章はGemini 3.8 Flash Highで校閲し、実装・実機の確認結果と照合しています。",
   "photo-dialog.p1": "画面写真",
   "photo-dialog.button1": "拡大する",
   "photo-dialog.button2": "閉じる <span aria-hidden=\"true\">×</span>",
@@ -132,5 +132,7 @@
   "photo.download-note": "GitHubの項目名は英語です。「Source code」はアプリではありません。",
   "photo.install-title": "アプリをApplicationsへドラッグ",
   "photo.install-note": "Finderの表示言語はMacの設定に従います。ファイル名はそのままです。",
-  "attr.booth": "Snow Moon WorksのBOOTHショップ"
+  "attr.booth": "Snow Moon WorksのBOOTHショップ",
+  "faq.summary6": "アプリを更新するには？",
+  "faq.p6": "Lite.9以降は新しいReleaseをアプリ内で通知します。「アップデート」でダウンロードし、「更新して開き直す」で反映します。SteamOSのディスクと設定は引き継ぎます。Lite.8以前は最初の1回だけ、このページのDMGから手動で更新してください。"
 }

@@ -26,6 +26,8 @@ struct Options {
     var selftestLowMemory = false
     var selftestKeyboard = false
     var selftestLanguage = false
+    var selftestUpdate = false
+    var previewUpdate = false
     /// nil follows the Mac's physical keyboard at each boot, not its input-source language.
     var keyboardLayout: KeyboardLayout?
     var effectiveKeyboardLayout: KeyboardLayout { keyboardLayout ?? .detected }
@@ -423,6 +425,8 @@ struct Options {
             case "--selftest-low-memory": o.selftestLowMemory = true
             case "--selftest-keyboard": o.selftestKeyboard = true
             case "--selftest-language": o.selftestLanguage = true
+            case "--selftest-update": o.selftestUpdate = true
+            case "--preview-update": o.previewUpdate = true
             case "--keyboard-layout":
                 let v = try value(a)
                 guard v == "auto" || KeyboardLayout(rawValue: v) != nil else {
@@ -617,7 +621,7 @@ struct Options {
         selftestDisplay || selftestOverlay || selftestStall || selftestPill || selftestSettings || selftestProvision || selftestRemotePlay
             || selftestMetalCache || selftestPointer || selftestGameLayers || selftestVR || selftestL10n || createDisk != nil
             || growDisk != nil
-            || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage
+            || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage || selftestUpdate || previewUpdate
     }
 
     /// Command line + saved settings (+ app bundle resources): what this boot runs with, and which
