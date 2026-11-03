@@ -40,7 +40,7 @@ https://r-fallingstar.github.io/steamac-lite/zh-CN/
 '''
 (OUT/'はじめに.txt').write_text(notice)
 (OUT/'Sources-and-Links.txt').write_text('Installer source: https://github.com/r-fallingstar/steamac-lite/tree/'+commit+'/host/installer\nApp releases: https://github.com/r-fallingstar/steamac-lite/releases\nGuide: https://r-fallingstar.github.io/steamac-lite/\nLicense: Apache-2.0; see LICENSE.txt and NOTICE.txt.\nThe downloaded app includes its component license notices; corresponding modified library source is attached to its release.\n')
-archive=OUT/f'SteamAC-Lite-Online-Installer-{version}-macos-arm64.zip'
+archive=OUT/f'SteamAC-Lite-Installer-{version}-macos-arm64.zip'
 files={str(p.relative_to(OUT)):p for p in APP.rglob('*') if p.is_file()}
 files.update({'はじめに.txt':OUT/'はじめに.txt','Sources-and-Links.txt':OUT/'Sources-and-Links.txt','LICENSE.txt':ROOT/'LICENSE','NOTICE.txt':ROOT/'NOTICE'})
 with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
