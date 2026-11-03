@@ -68,7 +68,7 @@ bash scripts/lite/build-app.sh
 
 ## 動作確認の範囲
 
-Apple M1・RAM 8 GiB・macOS 27.2で、Steamの画面表示と正常終了、3 GiBのVM RAM、4 GiBのゲスト用スワップを確認しました。ユーザーからVRChatが動作したとの報告もあります。FPSや長時間の安定性、すべてのワールド・アバターの互換性は未確認です。
+Apple M1・RAM 8 GiB・macOS 27.2で、Steamの画面表示と正常終了、3 GiBのVM RAM、4 GiBのゲスト用スワップを確認しました。作者の同環境でVRChatの動作も確認しました。FPSや長時間の安定性、すべてのワールド・アバターの互換性は未確認です。
 
 Lite.5では、新しいSteamOSディスクの作成から、FEX・Proton・EACのダウンロード、VRChat向け設定の完了まで確認しました。Steamへのログインとインストール確認は手動です。別の未起動SteamOSディスクで、Steamの初回ログイン画面が日本語になることも確認しています。[検証結果と制限](docs/validation-lite.5.md)を参照してください。
 

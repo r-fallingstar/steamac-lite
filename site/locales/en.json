@@ -84,7 +84,7 @@
   "display.figcaption1": "The recommended resolution depends on your display size.",
   "faq.h21": "Frequently asked questions",
   "faq.summary1": "Will it run on a Mac with 8 GB RAM?",
-  "faq.p1": "A lighter profile is available for 8 GB Macs. New-disk creation and VRChat setup were tested on an M1 Mac with 8 GB RAM. A user also reported that VRChat ran. Heavy worlds and avatars, long sessions and compatibility with every Mac have not been verified.",
+  "faq.p1": "A lighter profile is available for 8 GB Macs. The developer tested new-disk creation, VRChat setup and VRChat itself on their own M1 Mac with 8 GB RAM. Heavy worlds and avatars, long sessions and compatibility with every Mac have not been verified.",
   "faq.summary2": "Steam is not in my preferred language",
   "faq.p2": "Existing disks keep Steam’s language setting. Choose your preferred language in Steam’s Settings and follow its instructions to apply it. New disks created with Lite.5 or later use the language selected during the app’s first-run setup.",
   "faq.summary3": "Do I need to select Proton or enter launch options?",
@@ -131,5 +131,6 @@
   "photo.download-title": "Download the .dmg file",
   "photo.download-note": "GitHub labels are in English. “Source code” is not the app.",
   "photo.install-title": "Drag the app to Applications",
-  "photo.install-note": "Finder follows your Mac’s language. File names stay unchanged."
+  "photo.install-note": "Finder follows your Mac’s language. File names stay unchanged.",
+  "attr.booth": "Snow Moon Works on BOOTH"
 }

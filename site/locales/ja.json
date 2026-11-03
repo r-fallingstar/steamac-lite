@@ -92,7 +92,7 @@
   "display.figcaption1": "推奨される解像度は画面の大きさによって変わります。",
   "faq.h21": "よくある質問",
   "faq.summary1": "8 GBのMacでも使えますか？",
-  "faq.p1": "8 GB向けの軽量設定を用意しています。M1・RAM 8 GBのMacで新規ディスクの作成とVRChat向け設定の完了を確認し、VRChatが動作したというユーザー報告もあります。重いワールド・アバターや長時間の安定性、すべてのMacでの動作は未確認です。",
+  "faq.p1": "8 GB向けの軽量設定を用意しています。作者のM1・RAM 8 GBのMacで新規ディスクの作成、VRChat向け設定、VRChatの動作を確認しました。重いワールド・アバターや長時間の安定性、すべてのMacでの動作は未確認です。",
   "faq.summary2": "Steamが英語のままです",
   "faq.p2": "既存ディスクではSteamの言語を保持します。Steam内の「設定」で「日本語」を選び、Steamの案内に従って反映してください。新しいディスクをLite.5以降で作成する場合は、初回に選んだ言語を使います。",
   "faq.summary3": "Protonや起動オプションを自分で設定しますか？",
@@ -131,5 +131,6 @@
   "photo.download-title": ".dmgファイルをダウンロード",
   "photo.download-note": "GitHubの項目名は英語です。「Source code」はアプリではありません。",
   "photo.install-title": "アプリをApplicationsへドラッグ",
-  "photo.install-note": "Finderの表示言語はMacの設定に従います。ファイル名はそのままです。"
+  "photo.install-note": "Finderの表示言語はMacの設定に従います。ファイル名はそのままです。",
+  "attr.booth": "Snow Moon WorksのBOOTHショップ"
 }

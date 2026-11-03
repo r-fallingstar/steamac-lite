@@ -1,0 +1,29 @@
+SteamAC Lite 是在 Apple Silicon Mac 上运行 SteamOS 的免费启动器。它基于 SteamAC 的 Fork，增加了适合 8 GB 内存 Mac 的轻量配置、中日韩文字输入和 VRChat 专用设置。
+
+我已在自己的 M1、8 GB 内存 Mac 上确认 VRChat 可以运行。这是实验版本，尚未验证所有世界、其他 Mac 的性能和长时间运行的稳定性。
+
+主要功能
+根据 Mac 的内存容量选择初始内存和分辨率，提供 8 GB 轻量配置及虚拟机交换空间。默认显示刷新率为 60 Hz，不保证游戏内达到 60 fps。
+
+应用支持日语、英语、韩语、简体中文和俄语。可使用日语、中文拼音和韩语两套式输入。首次设置会检测 Mac 当前选择的输入源，与界面语言及物理 US/JIS 布局分别处理。已有 SteamOS 输入设置保持不变，也支持麦克风输入。
+
+VRChat 专用设置
+应用会准备 FEX-Emu、Proton Experimental、Proton EasyAntiCheat Runtime 和启动选项。请自行登录 Steam，并确认出现的安装提示。不会自动启动 VRChat。
+
+运行要求
+Apple Silicon Mac（M1 或更新机型）、macOS 15.5 或更新版本、至少 8 GB 内存。不支持 Intel Mac。初始设置需要约 20 GB 空间，另需预留游戏和交换空间。首次创建 8 GB 配置的交换空间时，Mac 和 SteamOS 磁盘各需至少 8 GiB 可用空间。还需要网络连接和您自己的 Steam 账号。
+
+安装方法
+解压 ZIP，打开 DMG，将 SteamAC Lite 复制到 Applications 文件夹。选择应用语言，准备 SteamOS 磁盘，然后登录 Steam。此实验版本未经 Apple 公证。若 macOS 显示安全提示，请确认下载来源，并按照指南自行允许。使用已有环境测试时，请先关闭 SteamOS，再复制磁盘并使用副本。
+
+简体中文安装指南
+https://r-fallingstar.github.io/steamac-lite/zh-CN/
+
+下载内容
+版本 1.9.4-lite.8：与 GitHub Release 相同的 DMG、入门说明、许可证说明和修改后的 libkrun 源代码。不包含 SteamOS 磁盘、Steam 登录信息或游戏文件。SteamOS 和游戏需要另行下载。
+
+源代码和许可证
+本项目是 StonkGuy/steamac 的非官方 Fork，并非 Valve 或 VRChat 的官方产品。启动器使用 Apache License 2.0，随附组件各自保留其许可证。详见 LICENSE、NOTICE 和应用内的 licenses 文件夹。
+上游项目：https://github.com/StonkGuy/steamac
+源代码和更新：https://github.com/r-fallingstar/steamac-lite
+最新版本：https://github.com/r-fallingstar/steamac-lite/releases

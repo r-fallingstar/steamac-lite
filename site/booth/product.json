@@ -1,0 +1,34 @@
+{
+  "title": "【無料】SteamAC Lite｜Apple Silicon Mac向けSteamOSランチャー【VRChat向け設定】",
+  "price": 0,
+  "version": "1.9.4-lite.8",
+  "description_file": "site/booth/product.ja.txt",
+  "cover": {
+    "eyebrow": "無料 · Apple Silicon Mac向け",
+    "subtitle": "SteamOSランチャー",
+    "description": "RAM 8 GB向けの軽量設定、日本語入力、VRChat向け設定に対応。"
+  },
+  "navigation_labels": {
+    "ja": "Snow Moon WorksのBOOTHショップ",
+    "en": "Snow Moon Works on BOOTH",
+    "ko": "Snow Moon Works BOOTH 스토어",
+    "zh-CN": "Snow Moon Works 的 BOOTH 商店"
+  },
+  "product_url": "https://snow-moon-works.booth.pm/items/9090308",
+  "intro_file": "site/booth/intro.ja.txt",
+  "paragraphs_file": "site/booth/paragraphs.json",
+  "thumbnail": "site/booth/product-cover-square.jpg",
+  "thumbnail_dimensions": [
+    1200,
+    1200
+  ],
+  "archive": "SteamAC-Lite-1.9.4-lite.8-macos-arm64-booth.zip",
+  "archive_sha256": "7dea30d2b0605332fd8bb0ef6af0445b2d4897f4360f2150c4fbb7d527e17f27",
+  "dmg_sha256": "2ca86a565d04324e42927648ae6bb77ffa7a145f129a763a0bd1a5a56cafed25",
+  "proofreading": {
+    "model": "Gemini 3.8 Flash High",
+    "application": "Antigravity",
+    "date": "2026-11-03",
+    "result": "No corrections requested for the multilingual paragraphs and developer-tested M1 8 GB wording."
+  }
+}

@@ -84,7 +84,7 @@
   "display.figcaption1": "推荐分辨率取决于屏幕大小。",
   "faq.h21": "常见问题",
   "faq.summary1": "8 GB 内存的 Mac 也能使用吗？",
-  "faq.p1": "提供适用于 8 GB Mac 的轻量配置。已在 M1、8 GB 内存的 Mac 上确认新磁盘创建及 VRChat 专用设置完成，也收到过 VRChat 成功运行的用户反馈。尚未验证高负载世界和虚拟形象、长时间稳定性及所有 Mac 机型。",
+  "faq.p1": "提供适合 8 GB Mac 的轻量配置。作者已在自己的 M1、8 GB 内存 Mac 上确认新建磁盘、VRChat 专用设置和 VRChat 的运行。尚未验证大型世界、复杂虚拟形象、长时间运行的稳定性以及所有 Mac 的兼容性。",
   "faq.summary2": "Steam 没有显示为我需要的语言",
   "faq.p2": "已有磁盘会保留 Steam 的语言设置。请在 Steam 的设置中选择所需语言，并按照提示应用更改。使用 Lite.5 或更新版本创建新磁盘时，Steam 会使用应用首次设置时选择的语言。",
   "faq.summary3": "需要手动指定 Proton 或输入启动选项吗？",
@@ -131,5 +131,6 @@
   "photo.download-title": "下载 .dmg 文件",
   "photo.download-note": "GitHub 的项目名称为英文。“Source code”不是应用程序。",
   "photo.install-title": "将应用拖到 Applications",
-  "photo.install-note": "Finder 的显示语言取决于 Mac 设置。文件名保持不变。"
+  "photo.install-note": "Finder 的显示语言取决于 Mac 设置。文件名保持不变。",
+  "attr.booth": "Snow Moon Works 的 BOOTH 商店"
 }

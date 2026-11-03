@@ -22,7 +22,7 @@ Apple Silicon向けの実験版です。8 GBではVMのRAMを3 GiBに抑え、�
 
 Mac側の物理キーボード情報からUS/JISを起動時に判別し、Steamとゲームの配列へ反映します。日本語入力は既存のIBus・Anthyを使います。最初は英数入力です。必要に応じて**Control＋.**でAnthyを選び、**Control＋Space**で日本語入力へ切り替え、Spaceで変換、Enterで確定します。JISの「かな」「英数」キーにも対応します。
 
-詳細は[日本語README](README.ja.md)、[導入・ビルドと制限](docs/8gb-profile.md)、[日本語入力と配列](docs/japanese-input.md)を参照してください。8 GBのM1 MacでVRChatが動いたというユーザー報告があります。FPS、重いワールド、長時間の安定性は測定していません。
+詳細は[日本語README](README.ja.md)、[導入・ビルドと制限](docs/8gb-profile.md)、[日本語入力と配列](docs/japanese-input.md)を参照してください。作者のM1・RAM 8 GBのMacでVRChatの動作を確認しました。FPS、重いワールド、長時間の安定性は測定していません。
 
 ---
 

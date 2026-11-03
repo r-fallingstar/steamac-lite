@@ -1,0 +1,52 @@
+Apple Silicon MacでSteamOSを動かす無料ランチャーです。
+SteamACをForkし、RAM 8 GB向けの軽量設定、日本語入力、VRChat向け設定などを追加しました。
+
+写真付きの導入ガイド
+https://r-fallingstar.github.io/steamac-lite/?lang=ja
+日本語・英語・韓国語・簡体字中国語に対応しています。
+
+■ 主な機能
+・MacのRAM容量に合わせたメモリ・解像度の初期設定
+・RAM 8 GB向けの軽量設定とゲスト用スワップ
+・画面更新は既定で60 Hz
+・日本語・中国語（ピンイン）・韓国語（2ボル式）の入力
+・US／JISの物理配列の自動判別
+・初回はMacの入力ソースを判別。アプリの表示言語とは別に設定
+・本体の表示言語は日本語・英語・韓国語・簡体字中国語・ロシア語
+・Steamへのマイク入力に対応
+
+■ VRChat向け設定
+FEX-Emu、Proton Experimental、Proton EasyAntiCheat Runtime、起動オプションの準備を進めます。Steamへのログインと、Steamに表示されるインストール確認はご自身で操作してください。VRChatは自動では起動しません。
+
+作者のM1・RAM 8 GBのMacでVRChatの動作を確認しました。すべてのMacやワールドでの動作、フレームレートを保証するものではありません。
+
+■ 動作環境
+・Apple Silicon Mac（M1以降）
+・macOS 15.5以降
+・RAM 8 GB以上
+・初期作成用に20 GB程度と、ゲーム・スワップ用の空き容量
+・インターネット接続とご自身のSteamアカウント
+Intel Macには対応していません。8 GB向けスワップの初回作成時は、Mac側とSteamOS側の双方に8 GiB以上の空きが必要です。
+
+■ 導入方法
+1. ZIPを展開し、中のDMGを開きます。
+2. SteamAC LiteをApplicationsフォルダへコピーします。
+3. アプリで表示言語を選び、SteamOSの準備とSteamへのログインを進めます。
+詳しい手順は上の導入ガイドをご覧ください。
+
+■ 配布内容
+バージョン：1.9.4-lite.8
+・Mac用DMG（GitHub Releaseと同じアプリ）
+・はじめに、ライセンスと第三者ソフトウェアの案内
+・変更したlibkrunのソース一式
+SteamOSのディスク、Steamのログイン情報、ゲームは含みません。SteamOSとゲームは別途ダウンロードします。
+
+このソフトは実験版です。Appleの公証は受けていません。初回にmacOSの確認が表示された場合は、入手元を確認し、導入ガイドに沿ってご自身で許可してください。
+既存環境で試す場合は、SteamOSを終了してからディスクをコピーし、コピーを指定してください。
+
+■ 開発元・ライセンス
+SteamACを元にした非公式のForkです。Valve・VRChat等の公式製品ではありません。
+上流プロジェクト：https://github.com/StonkGuy/steamac
+このForkのソース・更新履歴：https://github.com/r-fallingstar/steamac-lite
+最新版：https://github.com/r-fallingstar/steamac-lite/releases
+ランチャーのライセンスはApache License 2.0です。同梱ソフトウェアにはそれぞれのライセンスが適用されます。詳しくは配布物のLICENSE、NOTICEとアプリ内のlicensesフォルダをご確認ください。
