@@ -29,24 +29,24 @@ FEX-Emu、Proton Experimental、Proton EasyAntiCheat Runtime、起動オプシ�
 Intel Macには対応していません。8 GB向けスワップの初回作成時は、Mac側とSteamOS側の双方に8 GiB以上の空きが必要です。
 
 ■ 導入方法
-1. ZIPを展開し、中のDMGを開きます。
-2. SteamAC LiteをApplicationsフォルダへコピーします。
-3. アプリで表示言語を選び、SteamOSの準備とSteamへのログインを進めます。
-詳しい手順は上の導入ガイドをご覧ください。
+1. ZIPを展開し、Install SteamAC Lite.appを開きます。
+2. 「インストール」を押して最新版を取得します。
+3. 完了したら「SteamAC Liteを開く」を押し、表示言語、SteamOSの準備、Steamへのログインを進めます。
+本体を入れた後の操作は上の導入ガイドをご覧ください。
 
 ■ 配布内容
-バージョン：1.9.4-lite.9
-・Mac用DMG（GitHub Releaseと同じアプリ）
-・はじめに、ライセンスと第三者ソフトウェアの案内
-・変更したlibkrunのソース一式
-SteamOSのディスク、Steamのログイン情報、ゲームは含みません。SteamOSとゲームは別途ダウンロードします。
+ネットインストーラー：1.0.0
+・Install SteamAC Lite.app
+・はじめに、ライセンスとソースコードへのリンク
+本体は起動時にGitHub Releaseから最新版をダウンロードします。インターネット接続が必要です。
+SteamOSとゲームは本体の導入後に別途ダウンロードします。
 
-このソフトは実験版です。Appleの公証は受けていません。初回にmacOSの確認が表示された場合は、入手元を確認し、導入ガイドに沿ってご自身で許可してください。
-既存環境で試す場合は、SteamOSを終了してからディスクをコピーし、コピーを指定してください。
+インストーラーと本体は実験版です。Appleの公証は受けていません。macOSの確認が表示された場合は、入手元を確認し、導入ガイドに沿ってご自身で許可してください。
+既存のSteamOSディスクと設定は引き継ぎます。更新時はSteamAC Liteを終了してください。
 
 ■ 開発元・ライセンス
 SteamACを元にした非公式のForkです。Valve・VRChat等の公式製品ではありません。
 上流プロジェクト：https://github.com/StonkGuy/steamac
 このForkのソース・更新履歴：https://github.com/r-fallingstar/steamac-lite
 最新版：https://github.com/r-fallingstar/steamac-lite/releases
-ランチャーのライセンスはApache License 2.0です。同梱ソフトウェアにはそれぞれのライセンスが適用されます。詳しくは配布物のLICENSE、NOTICEとアプリ内のlicensesフォルダをご確認ください。
+インストーラーとランチャーのライセンスはApache License 2.0です。同梱ソフトウェアにはそれぞれのライセンスが適用されます。インストーラーのLICENSE、NOTICEと本体のlicensesフォルダをご確認ください。

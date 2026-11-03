@@ -14,16 +14,16 @@ FEX-Emu, Proton Experimental, Proton EasyAntiCheat Runtime과 실행 옵션을 �
 Apple Silicon Mac(M1 이상), macOS 15.5 이상, RAM 8 GB 이상이 필요합니다. Intel Mac은 지원하지 않습니다. 초기 설정용으로 약 20 GB와 게임·스왑용 여유 공간이 필요합니다. 8 GB 프로파일의 스왑을 처음 만들 때는 Mac과 SteamOS 디스크 양쪽에 각각 8 GiB 이상의 여유 공간이 있어야 합니다. 인터넷과 본인의 Steam 계정도 필요합니다.
 
 설치 방법
-ZIP을 풀고 DMG를 연 다음 SteamAC Lite를 Applications 폴더로 복사하세요. 앱의 언어를 선택하고 SteamOS를 준비한 후 Steam에 로그인하세요. Apple의 공증을 받지 않은 실험 버전입니다. macOS 확인 창이 표시되면 다운로드한 출처를 확인하고 가이드에 따라 직접 허용하세요. 기존 환경에서 시험할 때는 SteamOS를 종료한 후 디스크를 복사하여 복사본을 사용하세요.
+ZIP을 풀고 Install SteamAC Lite.app을 여세요. “설치”를 눌러 GitHub에서 최신 앱을 다운로드하세요. 완료되면 “SteamAC Lite 열기”를 누르고 앱 언어를 선택한 후 SteamOS 준비와 Steam 로그인을 진행하세요. 설치 이후의 과정은 아래 가이드를 참고하세요. 설치 프로그램과 앱은 Apple의 공증을 받지 않았습니다. macOS 확인 창이 표시되면 다운로드 출처를 확인하고 가이드에 따라 직접 허용하세요. 기존 SteamOS 디스크와 설정은 유지됩니다. 업데이트할 때는 SteamAC Lite를 먼저 종료하세요.
 
 한국어 설치 가이드
 https://r-fallingstar.github.io/steamac-lite/ko/
 
 배포 내용
-버전 1.9.4-lite.9: GitHub Release와 동일한 DMG, 시작 안내, 라이선스 안내와 수정한 libkrun 소스가 포함됩니다. SteamOS 디스크, Steam 로그인 정보와 게임 파일은 포함하지 않습니다. SteamOS와 게임은 별도로 다운로드합니다.
+온라인 설치 프로그램 1.0.0: Install SteamAC Lite.app, 시작 안내, 라이선스 안내와 소스 링크가 포함됩니다. 실행하면 GitHub 릴리스를 확인하고 최신 앱을 다운로드합니다. 인터넷 연결이 필요합니다. SteamOS와 게임은 앱 설치 후 별도로 다운로드합니다. SteamOS 디스크, Steam 로그인 정보와 게임 파일은 포함하지 않습니다.
 
 소스와 라이선스
-StonkGuy/steamac의 비공식 포크이며 Valve나 VRChat의 공식 제품이 아닙니다. 런처는 Apache License 2.0이며 동봉된 소프트웨어에는 각각의 라이선스가 적용됩니다. LICENSE, NOTICE와 앱의 licenses 폴더를 확인하세요.
+StonkGuy/steamac의 비공식 포크이며 Valve나 VRChat의 공식 제품이 아닙니다. 설치 프로그램과 런처는 Apache License 2.0입니다. 다운로드한 앱에 포함된 소프트웨어에는 각각의 라이선스가 적용됩니다. 설치 프로그램의 LICENSE, NOTICE와 앱의 licenses 폴더를 확인하세요.
 원본: https://github.com/StonkGuy/steamac
 소스와 업데이트: https://github.com/r-fallingstar/steamac-lite
 최신 배포: https://github.com/r-fallingstar/steamac-lite/releases

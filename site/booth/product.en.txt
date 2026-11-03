@@ -14,16 +14,16 @@ Requirements
 Apple Silicon Mac (M1 or later), macOS 15.5 or later, and at least 8 GB RAM. Intel Macs are not supported. Allow about 20 GB for initial setup, plus space for games and swap. Creating the 8 GB profile's swap requires at least 8 GiB free on both the Mac and the SteamOS disk. Internet access and your own Steam account are required.
 
 Installation
-Extract the ZIP, open the DMG and copy SteamAC Lite to Applications. Choose the app language, prepare the SteamOS disk and sign in to Steam. The build is not notarized by Apple. If macOS shows a security prompt, check the download source and follow the guide to allow it yourself. To try an existing environment, shut it down and use a copy of its disk.
+Extract the ZIP and open Install SteamAC Lite.app. Choose Install to download the latest app from GitHub. When it finishes, choose Open SteamAC Lite, then select the app language, prepare the SteamOS disk and sign in to Steam. The guide below explains the steps after installation. The installer and app are not notarized by Apple. If macOS shows a security prompt, check the download source and follow the guide to allow it yourself. Existing SteamOS disks and settings are kept. Quit SteamAC Lite before updating it.
 
 English setup guide
 https://r-fallingstar.github.io/steamac-lite/en/
 
 Download contents
-Version 1.9.4-lite.9: the same DMG as the GitHub release, a quick-start guide, license notices and the modified libkrun sources. No SteamOS disk, Steam account data or game files are included; SteamOS and games are downloaded separately.
+Online installer 1.0.0: Install SteamAC Lite.app, a quick-start guide, license notices and source links. The installer checks GitHub releases and downloads the latest app when opened. Internet access is required. SteamOS and games are downloaded separately after installing the app. No SteamOS disk, Steam account data or game files are included.
 
 Source and licenses
-This is an unofficial fork of StonkGuy/steamac and is not an official Valve or VRChat product. The launcher uses Apache License 2.0; bundled components retain their own licenses. See LICENSE, NOTICE and the app's licenses folder.
+This is an unofficial fork of StonkGuy/steamac and is not an official Valve or VRChat product. The installer and launcher use Apache License 2.0. Components in the downloaded app retain their own licenses. See the installer's LICENSE and NOTICE and the app's licenses folder.
 Upstream: https://github.com/StonkGuy/steamac
 Source and updates: https://github.com/r-fallingstar/steamac-lite
 Latest releases: https://github.com/r-fallingstar/steamac-lite/releases

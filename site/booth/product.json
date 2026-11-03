@@ -1,7 +1,6 @@
 {
   "title": "【無料】SteamAC Lite｜Apple Silicon Mac向けSteamOSランチャー【VRChat向け設定】",
   "price": 0,
-  "version": "1.9.4-lite.9",
   "description_file": "site/booth/product.ja.txt",
   "cover": {
     "eyebrow": "無料 · Apple Silicon Mac向け",
@@ -22,16 +21,7 @@
     1200,
     1200
   ],
-  "archive": "SteamAC-Lite-1.9.4-lite.9-macos-arm64-booth.zip",
-  "archive_sha256": "96a93a179f9a4807f5879a4ce5c12e770b2960a0c7ead7666ab772df6c14293f",
-  "dmg_sha256": "56b28c76188c7325652be837a883686943ecea031698ee2b7c70c10645450150",
-  "proofreading": {
-    "model": "Gemini 3.8 Flash High",
-    "application": "Antigravity",
-    "date": "2026-11-03",
-    "result": "No corrections requested for the multilingual paragraphs and developer-tested M1 8 GB wording.",
-    "cover_result": "No corrections requested for the English, Korean and Simplified Chinese gallery cover captions."
-  },
+  "archive": "SteamAC-Lite-Online-Installer-1.0.0-macos-arm64.zip",
   "gallery": [
     {
       "language": "ja",
@@ -65,5 +55,7 @@
         1200
       ]
     }
-  ]
+  ],
+  "distribution_type": "online-installer",
+  "installer_version": "1.0.0"
 }
