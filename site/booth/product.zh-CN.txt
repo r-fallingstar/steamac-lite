@@ -20,7 +20,7 @@ Apple Silicon Mac（M1 或更新机型）、macOS 15.5 或更新版本、至少 
 https://r-fallingstar.github.io/steamac-lite/zh-CN/
 
 下载内容
-版本 1.9.4-lite.8：与 GitHub Release 相同的 DMG、入门说明、许可证说明和修改后的 libkrun 源代码。不包含 SteamOS 磁盘、Steam 登录信息或游戏文件。SteamOS 和游戏需要另行下载。
+版本 1.9.4-lite.9：与 GitHub Release 相同的 DMG、入门说明、许可证说明和修改后的 libkrun 源代码。不包含 SteamOS 磁盘、Steam 登录信息或游戏文件。SteamOS 和游戏需要另行下载。
 
 源代码和许可证
 本项目是 StonkGuy/steamac 的非官方 Fork，并非 Valve 或 VRChat 的官方产品。启动器使用 Apache License 2.0，随附组件各自保留其许可证。详见 LICENSE、NOTICE 和应用内的 licenses 文件夹。

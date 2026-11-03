@@ -20,7 +20,7 @@ ZIP을 풀고 DMG를 연 다음 SteamAC Lite를 Applications 폴더로 복사하
 https://r-fallingstar.github.io/steamac-lite/ko/
 
 배포 내용
-버전 1.9.4-lite.8: GitHub Release와 동일한 DMG, 시작 안내, 라이선스 안내와 수정한 libkrun 소스가 포함됩니다. SteamOS 디스크, Steam 로그인 정보와 게임 파일은 포함하지 않습니다. SteamOS와 게임은 별도로 다운로드합니다.
+버전 1.9.4-lite.9: GitHub Release와 동일한 DMG, 시작 안내, 라이선스 안내와 수정한 libkrun 소스가 포함됩니다. SteamOS 디스크, Steam 로그인 정보와 게임 파일은 포함하지 않습니다. SteamOS와 게임은 별도로 다운로드합니다.
 
 소스와 라이선스
 StonkGuy/steamac의 비공식 포크이며 Valve나 VRChat의 공식 제품이 아닙니다. 런처는 Apache License 2.0이며 동봉된 소프트웨어에는 각각의 라이선스가 적용됩니다. LICENSE, NOTICE와 앱의 licenses 폴더를 확인하세요.

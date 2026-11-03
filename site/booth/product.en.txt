@@ -20,7 +20,7 @@ English setup guide
 https://r-fallingstar.github.io/steamac-lite/en/
 
 Download contents
-Version 1.9.4-lite.8: the same DMG as the GitHub release, a quick-start guide, license notices and the modified libkrun sources. No SteamOS disk, Steam account data or game files are included; SteamOS and games are downloaded separately.
+Version 1.9.4-lite.9: the same DMG as the GitHub release, a quick-start guide, license notices and the modified libkrun sources. No SteamOS disk, Steam account data or game files are included; SteamOS and games are downloaded separately.
 
 Source and licenses
 This is an unofficial fork of StonkGuy/steamac and is not an official Valve or VRChat product. The launcher uses Apache License 2.0; bundled components retain their own licenses. See LICENSE, NOTICE and the app's licenses folder.
