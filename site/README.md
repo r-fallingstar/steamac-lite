@@ -17,3 +17,9 @@ The root Japanese page checks an explicit `?lang=` choice, the saved preference 
 Chinese uses Simplified Chinese. The Korean guide explains that the app itself has no Korean UI and uses English menu labels. Screenshots remain in Japanese. This update changes the guide only.
 
 Gemini 3.8 Flash High reviewed all four locale files in Antigravity on November 3, 2026. Chinese UI labels were aligned with the app (通用, VRChat 专用设置, 新建磁盘…) and the Korean Steam settings wording was made consistent.
+
+## Link previews
+
+Each language has a 1200×630 JPEG in `docs/media/social/`. The artwork uses the homepage colors, typography and Steam screenshot. Open Graph and X metadata point to the corresponding language's image.
+
+Run `python3 scripts/site/build-share-cards.py` to prepare the HTML artwork in `work/share-cards/`. Serve the repository root locally, render each page in a 1200×630 browser viewport and export its JPEG to `docs/media/social/guide-<locale>-v1.jpg`. Change the filename version when replacing an image to avoid reusing an old image URL. Rebuild the guides after updating the metadata or artwork paths.

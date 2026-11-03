@@ -45,7 +45,8 @@ for locale,(name,language,path) in LANGUAGES.items():
     selector = (f'<details class="language-picker"><summary aria-label="{label}: {name}">{name}</summary>'
                 f'<nav aria-label="{label}">'+''.join(links)+'</nav></details>')
     values = {**copy, 'html_lang':language, 'root_prefix':prefix,
-              'canonical':SITE+path, 'alternates':alternatives,'language_selector':selector}
+              'canonical':SITE+path, 'alternates':alternatives,'language_selector':selector,
+              'og_image':SITE+f'media/social/guide-{locale}-v1.jpg'}
     def substitute(match):
         key = match[1]
         assert key in values, ('unknown template key',key)
