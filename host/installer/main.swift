@@ -270,7 +270,7 @@ final class InstallerDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate
         view = NSHostingView(rootView: InstallerView(model: model))
         let size = view.fittingSize
         window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-        window.title = "SteamAC Lite Installer"
+        window.title = "steamac Lite Installer"
         window.contentView = view
         window.isReleasedWhenClosed = false
         window.delegate = self

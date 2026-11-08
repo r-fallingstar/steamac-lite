@@ -41,7 +41,7 @@ final class LiteUpdater {
             try UpdateInstallSupport.validateDestination(destination)
             UpdateInstallSupport.cleanAbandonedStages(beside: destination)
         }
-        catch { changed(.failedUpdate(String(localized: "Move SteamAC Lite to a writable Applications folder, then try updating again."))); return }
+        catch { changed(.failedUpdate(String(localized: "Move steamac Lite to a writable Applications folder, then try updating again."))); return }
         guard let url = release.dmg, let digest = release.sha256, release.size > 0 else {
             changed(.failedUpdate(String(localized: "This release has no verified app download. Open the releases page to update manually.")))
             return
@@ -113,7 +113,7 @@ final class LiteUpdater {
             let plan = UpdateInstallPlan(destination: Bundle.main.bundleURL.standardizedFileURL.path, stagedApp: stage.path,
                 previousVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
                 version: release.versionString, processIDs: Supervisor.isChild ? [getpid(), getppid()] : [getpid()],
-                failureTitle: String(localized: "SteamAC Lite could not be updated"),
+                failureTitle: String(localized: "steamac Lite could not be updated"),
                 failureMessage: String(localized: "The update could not finish. Your SteamOS disk and settings have not been changed. Open the releases page to update manually."),
                 releasesLabel: String(localized: "Open Releases Page"), closeLabel: String(localized: "Close"))
             let planURL = stage.deletingLastPathComponent().appendingPathComponent("install.json")

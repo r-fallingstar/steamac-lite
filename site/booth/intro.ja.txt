@@ -1,7 +1,7 @@
 Apple Silicon MacでSteamOSを動かす無料ランチャーです。
 SteamACをForkし、RAM 8 GB向けの軽量設定、日本語入力、VRChat向け設定などを追加しました。
 
-このページではネットインストーラーを配布しています。起動するとGitHubからSteamAC Liteの最新版を取得します。
+このページではネットインストーラーを配布しています。起動するとGitHubからsteamac Liteの最新版を取得します。
 
 写真付きの導入ガイド
 https://r-fallingstar.github.io/steamac-lite/?lang=ja

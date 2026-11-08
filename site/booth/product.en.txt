@@ -1,4 +1,4 @@
-SteamAC Lite is a free SteamOS launcher for Apple Silicon Macs. It is a fork of SteamAC with lighter defaults for Macs with 8 GB RAM, CJK text input and VRChat setup.
+steamac Lite is a free SteamOS launcher for Apple Silicon Macs. It is a fork of steamac with lighter defaults for Macs with 8 GB RAM, CJK text input and VRChat setup.
 
 I tested VRChat on my own M1 Mac with 8 GB RAM and confirmed that it runs. This is an experimental build; performance in every world, long sessions and compatibility with other Macs have not been verified.
 
@@ -14,7 +14,7 @@ Requirements
 Apple Silicon Mac (M1 or later), macOS 15.5 or later, and at least 8 GB RAM. Intel Macs are not supported. Allow about 20 GB for initial setup, plus space for games and swap. Creating the 8 GB profile's swap requires at least 8 GiB free on both the Mac and the SteamOS disk. Internet access and your own Steam account are required.
 
 Installation
-Extract the ZIP and open Install SteamAC Lite.app. Choose Install to download the latest app from GitHub. When it finishes, choose Open SteamAC Lite, then select the app language, prepare the SteamOS disk and sign in to Steam. The guide below explains the steps after installation. The installer and app are not notarized by Apple. If macOS shows a security prompt, check the download source and follow the guide to allow it yourself. Existing SteamOS disks and settings are kept. Quit SteamAC Lite before updating it.
+Extract the ZIP and open Install SteamAC Lite.app. Choose Install to download the latest app from GitHub. When it finishes, choose Open steamac Lite, then select the app language, prepare the SteamOS disk and sign in to Steam. The guide below explains the steps after installation. The installer and app are not notarized by Apple. If macOS shows a security prompt, check the download source and follow the guide to allow it yourself. Existing SteamOS disks and settings are kept. Quit steamac Lite before updating it.
 
 English setup guide
 https://r-fallingstar.github.io/steamac-lite/en/

@@ -27,7 +27,7 @@ for locale,lang in [('ja','ja'),('en','en'),('ko','ko'),('zh-CN','zh-Hans')]:
             content = f'''<defs><clipPath id="photo"><rect x="0" y="96" width="1280" height="330"/></clipPath><marker id="arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L12 6L0 12Z" fill="#b92d77"/></marker></defs>
 <image x="0" y="96" width="1280" height="607" clip-path="url(#photo)" href="data:image/jpeg;base64,{finder}"/>
 <path d="M843 285V309Q843 325 827 325H386Q370 325 370 309V285" stroke="#b92d77" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
-<text x="606" y="370" text-anchor="middle" font-size="23" fill="#b92d77">SteamAC Lite → Applications</text>
+<text x="606" y="370" text-anchor="middle" font-size="23" fill="#b92d77">steamac Lite → Applications</text>
 <text x="32" y="486" font-size="22">{note}</text>'''
         svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="{height}" viewBox="0 0 1280 {height}" xml:lang="{lang}">
 <title>{heading}</title><desc>{note}</desc>

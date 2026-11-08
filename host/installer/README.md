@@ -1,8 +1,8 @@
-# SteamAC Lite online installer
+# steamac Lite online installer
 
 A separate ARM64 macOS application for the BOOTH download. It fetches this repository's release list and selects the newest published, numbered `-lite.N` release with an uploaded ARM64 DMG, SHA-256 digest and size. Drafts and unrelated release channels are ignored.
 
-The installer verifies the DMG and app signature, bundle identifier and version. Only the app is installed. Existing SteamOS disks and preferences are never opened. A current or newer installed app is kept. A running app is not stopped automatically. The installed app starts only when the user chooses **Open SteamAC Lite**.
+The installer verifies the DMG and app signature, bundle identifier and version. Only the app is installed. Existing SteamOS disks and preferences are never opened. A current or newer installed app is kept. A running app is not stopped automatically. The installed app starts only when the user chooses **Open steamac Lite**.
 
 Build and package from a clean checkout:
 

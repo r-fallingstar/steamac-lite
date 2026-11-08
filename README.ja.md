@@ -1,4 +1,4 @@
-# SteamAC Lite
+# steamac Lite
 
 [English](README.md) · **日本語**
 
@@ -78,7 +78,7 @@ Lite.5では、新しいSteamOSディスクの作成から、FEX・Proton・EAC�
 
 ## 開発への支援
 
-SteamAC Liteは、これからも無料で公開していく予定です。このForkの改良・検証・保守を続けるため、r-fallingstarへの任意の支援を受け付けています。
+steamac Liteは、これからも無料で公開していく予定です。このForkの改良・検証・保守を続けるため、r-fallingstarへの任意の支援を受け付けています。
 
 [GitHub Sponsorsで開発を支援する](https://github.com/sponsors/r-fallingstar)
 

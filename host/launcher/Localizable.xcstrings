@@ -4651,13 +4651,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Liteを起動できません"
+            "value": "steamac Liteを起動できません"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite을(를) 시작할 수 없습니다"
+            "value": "steamac Lite을(를) 시작할 수 없습니다"
           }
         }
       }
@@ -4679,13 +4679,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC LiteにはSteamOSディスクイメージが必要です（steamos.img、約87 GBのスパース形式）。\n\n"
+            "value": "steamac LiteにはSteamOSディスクイメージが必要です（steamos.img、約87 GBのスパース形式）。\n\n"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite에는 SteamOS 디스크 이미지(steamos.img, 약 87 GB 스파스)가 필요합니다.\n\n"
+            "value": "steamac Lite에는 SteamOS 디스크 이미지(steamos.img, 약 87 GB 스파스)가 필요합니다.\n\n"
           }
         }
       }
@@ -4707,13 +4707,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Liteが予期せず終了しました"
+            "value": "steamac Liteが予期せず終了しました"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite이(가) 예기치 않게 종료되었습니다"
+            "value": "steamac Lite이(가) 예기치 않게 종료되었습니다"
           }
         }
       }
@@ -4735,13 +4735,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite: SteamOSユーザー steamos（ディスク %@）"
+            "value": "steamac Lite: SteamOSユーザー steamos（ディスク %@）"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite: SteamOS 사용자 steamos (디스크 %@)"
+            "value": "steamac Lite: SteamOS 사용자 steamos (디스크 %@)"
           }
         }
       }
@@ -9514,13 +9514,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Liteを終了"
+            "value": "steamac Liteを終了"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite 종료"
+            "value": "steamac Lite 종료"
           }
         }
       }
@@ -9548,7 +9548,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite을 종료하면 SteamOS를 재개하여 정상적으로 종료합니다. 일시 중단된 상태(및 실행 중인 게임의 저장되지 않은 진행 상황)는 유지되지 않습니다."
+            "value": "steamac Lite을 종료하면 SteamOS를 재개하여 정상적으로 종료합니다. 일시 중단된 상태(및 실행 중인 게임의 저장되지 않은 진행 상황)는 유지되지 않습니다."
           }
         }
       }
@@ -10271,13 +10271,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Liteのすべての設定を初期値へ戻しますか？"
+            "value": "steamac Liteのすべての設定を初期値へ戻しますか？"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite의 모든 설정을 기본값으로 재설정하시겠습니까?"
+            "value": "steamac Lite의 모든 설정을 기본값으로 재설정하시겠습니까?"
           }
         }
       }
@@ -13202,13 +13202,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOS一時停止中 — SteamAC Lite"
+            "value": "SteamOS一時停止中 — steamac Lite"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOS 일시 중단됨 — SteamAC Lite"
+            "value": "SteamOS 일시 중단됨 — steamac Lite"
           }
         }
       }
@@ -13539,13 +13539,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「一時停止」を選ぶと、SteamOSとゲームをまとめて停止し、メモリ上へ保持します。Dockのアイコンかメニューバーの「再開」で元の状態へ戻ります。保持できるのはSteamAC Liteの実行中だけです。アプリの終了やMacの再起動でSteamOSも終了します。"
+            "value": "「一時停止」を選ぶと、SteamOSとゲームをまとめて停止し、メモリ上へ保持します。Dockのアイコンかメニューバーの「再開」で元の状態へ戻ります。保持できるのはsteamac Liteの実行中だけです。アプリの終了やMacの再起動でSteamOSも終了します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "'일시 중단'은 SteamOS와 실행 중인 게임을 한 번에 정지하고 메모리에 유지합니다. 중단된 위치부터 계속하려면 Dock 아이콘을 클릭하거나 메뉴 막대의 '재개'를 클릭하십시오. 일시 중단 상태는 SteamAC Lite이 실행되는 동안 유지됩니다. 앱을 종료하거나 Mac을 재시동하면 SteamOS가 종료됩니다."
+            "value": "'일시 중단'은 SteamOS와 실행 중인 게임을 한 번에 정지하고 메모리에 유지합니다. 중단된 위치부터 계속하려면 Dock 아이콘을 클릭하거나 메뉴 막대의 '재개'를 클릭하십시오. 일시 중단 상태는 steamac Lite이 실행되는 동안 유지됩니다. 앱을 종료하거나 Mac을 재시동하면 SteamOS가 종료됩니다."
           }
         }
       }
@@ -13567,13 +13567,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "一時停止の状態はSteamAC Liteの実行中だけ保持されます。"
+            "value": "一時停止の状態はsteamac Liteの実行中だけ保持されます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "일시 중단 상태는 SteamAC Lite이 실행되는 동안 유지됩니다."
+            "value": "일시 중단 상태는 steamac Lite이 실행되는 동안 유지됩니다."
           }
         }
       }
@@ -16298,7 +16298,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite이 백그라운드에 있을 때"
+            "value": "steamac Lite이 백그라운드에 있을 때"
           }
         }
       }
@@ -18116,7 +18116,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOSディスク%@を別のSteamAC Liteまたはsteamac-vmが使用中です。先に終了してください。同じディスクへの同時書き込みはファイルシステムを破損します。"
+            "value": "SteamOSディスク%@を別のsteamac Liteまたはsteamac-vmが使用中です。先に終了してください。同じディスクへの同時書き込みはファイルシステムを破損します。"
           }
         },
         "ko": {
@@ -18874,31 +18874,31 @@
         }
       }
     },
-    "Move SteamAC Lite to a writable Applications folder, then try updating again.": {
+    "Move steamac Lite to a writable Applications folder, then try updating again.": {
       "extractionState": "manual",
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Liteを書き込み可能なApplicationsフォルダに移してから更新してください。"
+            "value": "steamac Liteを書き込み可能なApplicationsフォルダに移してから更新してください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite를 쓰기 가능한 Applications 폴더로 옮긴 후 다시 업데이트하십시오."
+            "value": "steamac Lite를 쓰기 가능한 Applications 폴더로 옮긴 후 다시 업데이트하십시오."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请将 SteamAC Lite 移至可写入的 Applications 文件夹后重试。"
+            "value": "请将 steamac Lite 移至可写入的 Applications 文件夹后重试。"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Переместите SteamAC Lite в доступную для записи папку Applications и повторите обновление."
+            "value": "Переместите steamac Lite в доступную для записи папку Applications и повторите обновление."
           }
         }
       }
@@ -18932,31 +18932,31 @@
         }
       }
     },
-    "SteamAC Lite could not be updated": {
+    "steamac Lite could not be updated": {
       "extractionState": "manual",
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Liteを更新できませんでした"
+            "value": "steamac Liteを更新できませんでした"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamAC Lite를 업데이트할 수 없습니다"
+            "value": "steamac Lite를 업데이트할 수 없습니다"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法更新 SteamAC Lite"
+            "value": "无法更新 steamac Lite"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не удалось обновить SteamAC Lite"
+            "value": "Не удалось обновить steamac Lite"
           }
         }
       }

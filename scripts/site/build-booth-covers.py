@@ -9,7 +9,7 @@ copy=json.loads((ROOT/'site/booth/covers.json').read_text())
 for locale,text in copy.items():
     escape=lambda key:html.escape(text[key])
     page=source.replace('lang="ja"','lang="'+text['language']+'"',1)
-    page=re.sub(r'<title>.*?</title>','<title>SteamAC Lite — '+locale+' BOOTH cover</title>',page,count=1)
+    page=re.sub(r'<title>.*?</title>','<title>steamac Lite — '+locale+' BOOTH cover</title>',page,count=1)
     for tag,cls,key in [('p','eyebrow','eyebrow'),('p','description','description'),('p','requirements','requirements')]:
         page=re.sub(f'<{tag} class="{cls}">.*?</{tag}>',f'<{tag} class="{cls}">'+escape(key)+f'</{tag}>',page,count=1)
     page=re.sub(r'<h2>.*?</h2>','<h2>'+escape('subtitle')+'</h2>',page,count=1)

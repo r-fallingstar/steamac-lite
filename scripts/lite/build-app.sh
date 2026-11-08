@@ -64,8 +64,8 @@ python3 - <<'PY'
 import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
-p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='SteamAC Lite',
-         CFBundleDisplayName='SteamAC Lite', CFBundleShortVersionString='1.9.4-lite.9',
+p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='steamac Lite',
+         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.4-lite.9',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
          SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194009',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),

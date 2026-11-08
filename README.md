@@ -1,4 +1,4 @@
-# SteamAC Lite — adaptive Mac profiles
+# steamac Lite — adaptive Mac profiles
 
 **English** · [日本語のREADME](README.ja.md)
 
@@ -194,7 +194,7 @@ whose peak needs more than the VM and the Mac have (see *Limits*).
 
 ## Support this fork
 
-SteamAC Lite will continue to be available for free. If this fork helps you, you can [support r-fallingstar through GitHub Sponsors](https://github.com/sponsors/r-fallingstar) to help cover development and testing costs.
+steamac Lite will continue to be available for free. If this fork helps you, you can [support r-fallingstar through GitHub Sponsors](https://github.com/sponsors/r-fallingstar) to help cover development and testing costs.
 
 Sponsorship supports r-fallingstar's improvements, testing, and maintenance of this fork. It is optional and does not include individual support or guaranteed feature requests.
 

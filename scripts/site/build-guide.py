@@ -82,7 +82,7 @@ for locale,(name,language,path) in LANGUAGES.items():
                 f'<nav aria-label="{label}">'+''.join(links)+'</nav></details>')
     values = {**copy, **images, 'html_lang':language, 'root_prefix':prefix,
               'canonical':SITE+path, 'alternates':alternatives,'language_selector':selector,
-              'og_image':SITE+f'media/social/guide-{locale}-v2.jpg'}
+              'og_image':SITE+f'media/social/guide-{locale}-v3.jpg'}
     def substitute(match):
         key = match[1]
         assert key in values, ('unknown template key',key)

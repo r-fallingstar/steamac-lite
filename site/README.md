@@ -40,3 +40,5 @@ All four guide pages include the Cloudflare Web Analytics snippet from the share
 The `#booth` subsection is an alternative to the manual DMG install. It links to the free product and continues at `#language`, skipping the manual copy step. Each locale has real `installer-ready.jpg` and `installer-done.jpg` window captures from the 1.0.0 installer with Lite.9. A disposable installation in `~/Applications` was used; the installed app was never opened and was removed after capture. The normal app in `/Applications`, SteamOS disk and preferences were retained. Screenshots use each page's display language.
 
 The Release Assets and Finder captures in `shared/` now show Lite.9. `build-guide-annotations.py` adds translated instructions around those unmodified captures. The direct download links and file labels also target Lite.9.
+
+The project display name is `steamac Lite`. Legacy release asset filenames, existing app bundle paths and bundle identifiers are retained for updater compatibility. Historical window captures show the names in the published Lite.9 build.

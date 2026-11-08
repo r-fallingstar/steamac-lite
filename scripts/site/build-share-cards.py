@@ -28,7 +28,7 @@ for locale,lang in [('ja','ja'),('en','en'),('ko','ko'),('zh-CN','zh-Hans')]:
     copy = json.loads((ROOT/f'site/locales/{locale}.json').read_text())
     text = lambda key:html.escape(copy[key])
     page = f'''<!doctype html><html lang="{lang}" translate="no"><head><meta charset="utf-8"><meta name="google" content="notranslate"><title>{text('page.title1')} — share card</title><style>{style}</style></head><body>
-<div class="arc"></div><main class="copy"><p class="eyebrow">{text('top.p1')}</p><h1>SteamAC Lite</h1><h2>{text('hero-title.span1')}</h2><p class="description">{text('top.p2')}</p></main>
+<div class="arc"></div><main class="copy"><p class="eyebrow">{text('top.p1')}</p><h1>steamac Lite</h1><h2>{text('hero-title.span1')}</h2><p class="description">{text('top.p2')}</p></main>
 <figure class="photo"><img src="../../docs/media/guide/{locale}/steam-ready.jpg" alt="{text('attr.alt1')}"></figure>
 <p class="requirements">Apple Silicon · RAM 8 GB+</p><p class="address">r-fallingstar.github.io/steamac-lite</p>
 </body></html>'''

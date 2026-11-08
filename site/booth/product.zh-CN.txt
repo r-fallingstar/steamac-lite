@@ -1,4 +1,4 @@
-SteamAC Lite 是在 Apple Silicon Mac 上运行 SteamOS 的免费启动器。它基于 SteamAC 的 Fork，增加了适合 8 GB 内存 Mac 的轻量配置、中日韩文字输入和 VRChat 专用设置。
+steamac Lite 是在 Apple Silicon Mac 上运行 SteamOS 的免费启动器。它基于 steamac 的 Fork，增加了适合 8 GB 内存 Mac 的轻量配置、中日韩文字输入和 VRChat 专用设置。
 
 我已在自己的 M1、8 GB 内存 Mac 上确认 VRChat 可以运行。这是实验版本，尚未验证所有世界、其他 Mac 的性能和长时间运行的稳定性。
 
@@ -14,7 +14,7 @@ VRChat 专用设置
 Apple Silicon Mac（M1 或更新机型）、macOS 15.5 或更新版本、至少 8 GB 内存。不支持 Intel Mac。初始设置需要约 20 GB 空间，另需预留游戏和交换空间。首次创建 8 GB 配置的交换空间时，Mac 和 SteamOS 磁盘各需至少 8 GiB 可用空间。还需要网络连接和您自己的 Steam 账号。
 
 安装方法
-解压 ZIP，打开 Install SteamAC Lite.app。点击「安装」，从 GitHub 下载最新版应用。完成后点击「打开 SteamAC Lite」，选择应用语言、准备 SteamOS 磁盘并登录 Steam。安装后的操作请参阅下方指南。安装器和应用均未经 Apple 公证。若 macOS 显示安全提示，请确认下载来源，并按照指南自行允许。已有的 SteamOS 磁盘和设置会保留。更新前请先退出 SteamAC Lite。
+解压 ZIP，打开 Install SteamAC Lite.app。点击「安装」，从 GitHub 下载最新版应用。完成后点击「打开 steamac Lite」，选择应用语言、准备 SteamOS 磁盘并登录 Steam。安装后的操作请参阅下方指南。安装器和应用均未经 Apple 公证。若 macOS 显示安全提示，请确认下载来源，并按照指南自行允许。已有的 SteamOS 磁盘和设置会保留。更新前请先退出 steamac Lite。
 
 简体中文安装指南
 https://r-fallingstar.github.io/steamac-lite/zh-CN/
