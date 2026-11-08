@@ -1,12 +1,12 @@
-# SteamAC Lite はじめに
+# steamac Lite はじめに
 
 [写真付きの導入ガイド](https://r-fallingstar.github.io/steamac-lite/)では、ダウンロードからVRChat向け設定までを実画面で案内しています。
 
 ## ダウンロードとインストール
 
-1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.9)から **SteamAC-Lite-1.9.4-lite.9-macos-arm64.dmg** をダウンロードします。「Source code」はアプリではありません。
+1. [Releaseページ](https://github.com/r-fallingstar/steamac-lite/releases)から 最新の **Mac用DMG（ファイル名の末尾が-macos-arm64.dmg）** をダウンロードします。「Source code」はアプリではありません。
 2. DMGを開き、**SteamAC Lite.app** を **Applications** フォルダへコピーします。
-3. アプリケーションフォルダからSteamAC Liteを開きます。ビルドやコマンド入力は不要です。
+3. アプリケーションフォルダからsteamac Liteを開きます。ビルドやコマンド入力は不要です。
 
 初回は表示言語の選択画面が出ます。**日本語**を選んで「続ける」を押すと、以降のランチャー画面を日本語で表示します。Lite.5以降は、新しいSteamOSディスクのSteamも初回から日本語になります。既存ディスクのSteamの言語は変更しません。ランチャーは **設定… > 一般 > 表示言語** で変更し、アプリの再起動で反映します。Steamとゲームの言語はそれぞれの設定で変更してください。
 
