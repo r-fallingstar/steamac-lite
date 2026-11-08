@@ -20,7 +20,7 @@ Apple Silicon Mac（M1 或更新机型）、macOS 15.5 或更新版本、至少 
 https://r-fallingstar.github.io/steamac-lite/zh-CN/
 
 下载内容
-在线安装器 1.0.0：包含 Install SteamAC Lite.app、入门说明、许可证说明和源代码链接。打开后会检查 GitHub 发布版本并下载最新版应用，需要互联网连接。SteamOS 和游戏在应用安装后另行下载。不包含 SteamOS 磁盘、Steam 登录信息或游戏文件。
+在线安装器 1.0.1：包含 Install SteamAC Lite.app、入门说明、许可证说明和源代码链接。打开后会检查 GitHub 发布版本并下载最新版应用，需要互联网连接。SteamOS 和游戏在应用安装后另行下载。不包含 SteamOS 磁盘、Steam 登录信息或游戏文件。
 
 源代码和许可证
 本项目是 StonkGuy/steamac 的非官方 Fork，并非 Valve 或 VRChat 的官方产品。安装器和启动器使用 Apache License 2.0。下载的应用所含组件各自保留其许可证。详见安装器中的 LICENSE、NOTICE 和应用内的 licenses 文件夹。
