@@ -4544,108 +4544,108 @@
         }
       }
     },
-    "FX Steam Launcher %@ is available — you have %@": {
+    "steamac Lite %@ is available — you have %@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "FX Steam Launcher %1$@ is available — you have %2$@"
+            "value": "steamac Lite %1$@ is available — you have %2$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Доступен FX Steam Launcher %@ — у вас версия %@"
+            "value": "Доступен steamac Lite %@ — у вас версия %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher %@ 已发布 — 当前版本为 %@"
+            "value": "steamac Lite %@ 已发布 — 当前版本为 %@"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher %@が利用できます（現在: %@）"
+            "value": "steamac Lite %@が利用できます（現在: %@）"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher %1$@ 사용 가능 — 현재 버전 %2$@"
+            "value": "steamac Lite %1$@ 사용 가능 — 현재 버전 %2$@"
           }
         }
       }
     },
-    "FX Steam Launcher %@ is the newest version available.": {
+    "steamac Lite %@ is the newest version available.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher %@ — новейшая доступная версия."
+            "value": "steamac Lite %@ — новейшая доступная версия."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher %@ 已是最新版本。"
+            "value": "steamac Lite %@ 已是最新版本。"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher %@は最新です。"
+            "value": "steamac Lite %@は最新です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher %@은(는) 최신 버전입니다."
+            "value": "steamac Lite %@은(는) 최신 버전입니다."
           }
         }
       }
     },
-    "FX Steam Launcher > Check for Updates… checks at any time.": {
+    "steamac Lite > Check for Updates… checks at any time.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверить обновления в любое время можно через FX Steam Launcher > «Проверить обновления…»."
+            "value": "Проверить обновления в любое время можно через steamac Lite > «Проверить обновления…»."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "随时可通过“FX Steam Launcher > 检查更新…”检查更新。"
+            "value": "随时可通过“steamac Lite > 检查更新…”检查更新。"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcherの「アップデートを確認…」から随時確認できます。"
+            "value": "steamac Liteの「アップデートを確認…」から随時確認できます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher > 업데이트 확인…을 통해 언제든지 확인할 수 있습니다."
+            "value": "steamac Lite > 업데이트 확인…을 통해 언제든지 확인할 수 있습니다."
           }
         }
       }
     },
-    "FX Steam Launcher cannot start": {
+    "steamac Lite cannot start": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не удалось запустить FX Steam Launcher"
+            "value": "Не удалось запустить steamac Lite"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher 无法启动"
+            "value": "steamac Lite 无法启动"
           }
         },
         "ja": {
@@ -4662,18 +4662,18 @@
         }
       }
     },
-    "FX Steam Launcher needs a SteamOS disk image (steamos.img, ~87 GB sparse).\n\n": {
+    "steamac Lite needs a SteamOS disk image (steamos.img, ~87 GB sparse).\n\n": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher требуется образ диска SteamOS (steamos.img, ~87 ГБ, разреженный).\n\n"
+            "value": "steamac Lite требуется образ диска SteamOS (steamos.img, ~87 ГБ, разреженный).\n\n"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher 需要 SteamOS 磁盘映像（steamos.img，约 87 GB 稀疏文件）。\n\n"
+            "value": "steamac Lite 需要 SteamOS 磁盘映像（steamos.img，约 87 GB 稀疏文件）。\n\n"
           }
         },
         "ja": {
@@ -4690,18 +4690,18 @@
         }
       }
     },
-    "FX Steam Launcher stopped unexpectedly": {
+    "steamac Lite stopped unexpectedly": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher неожиданно завершил работу"
+            "value": "steamac Lite неожиданно завершил работу"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher 意外停止"
+            "value": "steamac Lite 意外停止"
           }
         },
         "ja": {
@@ -4718,18 +4718,18 @@
         }
       }
     },
-    "FX Steam Launcher: SteamOS user steamos (disk %@)": {
+    "steamac Lite: SteamOS user steamos (disk %@)": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher: пользователь SteamOS steamos (диск %@)"
+            "value": "steamac Lite: пользователь SteamOS steamos (диск %@)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "FX Steam Launcher：SteamOS 用户 steamos（磁盘 %@）"
+            "value": "steamac Lite：SteamOS 用户 steamos（磁盘 %@）"
           }
         },
         "ja": {
@@ -9497,18 +9497,18 @@
         }
       }
     },
-    "Quit FX Steam Launcher": {
+    "Quit steamac Lite": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Завершить FX Steam Launcher"
+            "value": "Завершить steamac Lite"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "退出 FX Steam Launcher"
+            "value": "退出 steamac Lite"
           }
         },
         "ja": {
@@ -9525,18 +9525,18 @@
         }
       }
     },
-    "Quitting FX Steam Launcher shuts SteamOS down: it resumes and shuts down cleanly. The suspended state (and a running game's unsaved progress) is not kept.": {
+    "Quitting steamac Lite shuts SteamOS down: it resumes and shuts down cleanly. The suspended state (and a running game's unsaved progress) is not kept.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "При завершении FX Steam Launcher SteamOS возобновляет работу и корректно выключается. Приостановленное состояние (и несохранённый прогресс запущенной игры) не сохраняется."
+            "value": "При завершении steamac Lite SteamOS возобновляет работу и корректно выключается. Приостановленное состояние (и несохранённый прогресс запущенной игры) не сохраняется."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "退出 FX Steam Launcher 会关闭 SteamOS：它会先恢复运行，再正常关机。挂起状态（以及正在运行的游戏中未保存的进度）不会保留。"
+            "value": "退出 steamac Lite 会关闭 SteamOS：它会先恢复运行，再正常关机。挂起状态（以及正在运行的游戏中未保存的进度）不会保留。"
           }
         },
         "ja": {
@@ -10254,18 +10254,18 @@
         }
       }
     },
-    "Reset all FX Steam Launcher settings to their defaults?": {
+    "Reset all steamac Lite settings to their defaults?": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сбросить все настройки FX Steam Launcher до значений по умолчанию?"
+            "value": "Сбросить все настройки steamac Lite до значений по умолчанию?"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "将所有 FX Steam Launcher 设置还原为默认值？"
+            "value": "将所有 steamac Lite 设置还原为默认值？"
           }
         },
         "ja": {
@@ -13185,18 +13185,18 @@
         }
       }
     },
-    "SteamOS suspended — FX Steam Launcher": {
+    "SteamOS suspended — steamac Lite": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOS приостановлена — FX Steam Launcher"
+            "value": "SteamOS приостановлена — steamac Lite"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOS 已挂起 — FX Steam Launcher"
+            "value": "SteamOS 已挂起 — steamac Lite"
           }
         },
         "ja": {
@@ -13522,18 +13522,18 @@
         }
       }
     },
-    "Suspend freezes SteamOS and the running game at once and keeps them in memory; click the Dock icon or Resume in the menu bar to continue where you left off. Suspended state is kept while FX Steam Launcher is running: quitting the app or restarting the Mac shuts SteamOS down.": {
+    "Suspend freezes SteamOS and the running game at once and keeps them in memory; click the Dock icon or Resume in the menu bar to continue where you left off. Suspended state is kept while steamac Lite is running: quitting the app or restarting the Mac shuts SteamOS down.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Приостановка одновременно замораживает SteamOS и запущенную игру и сохраняет их в памяти; нажмите значок в Dock или «Возобновить» в строке меню, чтобы продолжить с места остановки. Приостановленное состояние сохраняется, пока работает FX Steam Launcher: при завершении приложения или перезапуске Mac SteamOS выключается."
+            "value": "Приостановка одновременно замораживает SteamOS и запущенную игру и сохраняет их в памяти; нажмите значок в Dock или «Возобновить» в строке меню, чтобы продолжить с места остановки. Приостановленное состояние сохраняется, пока работает steamac Lite: при завершении приложения или перезапуске Mac SteamOS выключается."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "挂起会同时冻结 SteamOS 和正在运行的游戏，并将它们保留在内存中；点按程序坞图标或菜单栏中的“恢复”，即可从上次停止的位置继续。挂起状态仅在 FX Steam Launcher 运行期间保留：退出应用或重新启动 Mac 会关闭 SteamOS。"
+            "value": "挂起会同时冻结 SteamOS 和正在运行的游戏，并将它们保留在内存中；点按程序坞图标或菜单栏中的“恢复”，即可从上次停止的位置继续。挂起状态仅在 steamac Lite 运行期间保留：退出应用或重新启动 Mac 会关闭 SteamOS。"
           }
         },
         "ja": {
@@ -13550,18 +13550,18 @@
         }
       }
     },
-    "Suspended state is kept while FX Steam Launcher is running.": {
+    "Suspended state is kept while steamac Lite is running.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Приостановленное состояние сохраняется, пока работает FX Steam Launcher."
+            "value": "Приостановленное состояние сохраняется, пока работает steamac Lite."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "挂起状态仅在 FX Steam Launcher 运行期间保留。"
+            "value": "挂起状态仅在 steamac Lite 运行期间保留。"
           }
         },
         "ja": {
@@ -14194,18 +14194,18 @@
         }
       }
     },
-    "The location is read-only. Choose a writable folder, not the mounted FX Steam Launcher installer.": {
+    "The location is read-only. Choose a writable folder, not the mounted steamac Lite installer.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это место доступно только для чтения. Выберите папку с правом записи, а не смонтированный установщик FX Steam Launcher."
+            "value": "Это место доступно только для чтения. Выберите папку с правом записи, а не смонтированный установщик steamac Lite."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "此位置为只读。请选择可写文件夹，不要选择已挂载的 FX Steam Launcher 安装映像。"
+            "value": "此位置为只读。请选择可写文件夹，不要选择已挂载的 steamac Lite 安装映像。"
           }
         },
         "ja": {
@@ -14704,18 +14704,18 @@
         }
       }
     },
-    "This development build never checks at startup; FX Steam Launcher > Check for Updates… does.": {
+    "This development build never checks at startup; steamac Lite > Check for Updates… does.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Эта сборка для разработки никогда не проверяет обновления при запуске; проверить их можно через FX Steam Launcher > «Проверить обновления…»."
+            "value": "Эта сборка для разработки никогда не проверяет обновления при запуске; проверить их можно через steamac Lite > «Проверить обновления…»."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "此开发版不会在启动时检查更新；可通过“FX Steam Launcher > 检查更新…”检查。"
+            "value": "此开发版不会在启动时检查更新；可通过“steamac Lite > 检查更新…”检查。"
           }
         },
         "ja": {
@@ -16275,18 +16275,18 @@
         }
       }
     },
-    "When FX Steam Launcher is in the background": {
+    "When steamac Lite is in the background": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Когда FX Steam Launcher в фоновом режиме"
+            "value": "Когда steamac Lite в фоновом режиме"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "当 FX Steam Launcher 在后台时"
+            "value": "当 steamac Lite 在后台时"
           }
         },
         "ja": {
@@ -18099,18 +18099,18 @@
         }
       }
     },
-    "the SteamOS disk %@ is in use by another FX Steam Launcher (or steamac-vm). Quit it first: two VMs writing one disk corrupt its file systems.": {
+    "the SteamOS disk %@ is in use by another steamac Lite (or steamac-vm). Quit it first: two VMs writing one disk corrupt its file systems.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "диск SteamOS %@ используется другим FX Steam Launcher (или steamac-vm). Сначала завершите его работу: две ВМ, записывающие данные на один диск, повреждают его файловые системы."
+            "value": "диск SteamOS %@ используется другим steamac Lite (или steamac-vm). Сначала завершите его работу: две ВМ, записывающие данные на один диск, повреждают его файловые системы."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOS 磁盘 %@ 正被另一个 FX Steam Launcher（或 steamac-vm）使用。请先退出它：两个虚拟机同时写入同一磁盘会损坏其文件系统。"
+            "value": "SteamOS 磁盘 %@ 正被另一个 steamac Lite（或 steamac-vm）使用。请先退出它：两个虚拟机同时写入同一磁盘会损坏其文件系统。"
           }
         },
         "ja": {
@@ -18122,7 +18122,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "SteamOS 디스크 %@이(가) 다른 FX Steam Launcher(또는 steamac-vm)에서 사용 중입니다. 먼저 종료하십시오: 두 개의 VM이 하나의 디스크에 쓰면 파일 시스템이 손상됩니다."
+            "value": "SteamOS 디스크 %@이(가) 다른 steamac Lite(또는 steamac-vm)에서 사용 중입니다. 먼저 종료하십시오: 두 개의 VM이 하나의 디스크에 쓰면 파일 시스템이 손상됩니다."
           }
         }
       }

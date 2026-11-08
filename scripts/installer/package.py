@@ -11,30 +11,30 @@ assert not subprocess.check_output(['git','status','--porcelain'],cwd=ROOT,env=e
 subprocess.run(['codesign','--verify','--deep','--strict',str(APP)],check=True)
 binary=(APP/'Contents/MacOS/steamac-installer').read_bytes()
 assert b'STEAMAC_INSTALLER_TEST_FEED' not in binary and b'STEAMAC_INSTALLER_TEST_DESTINATION' not in binary and b'open suppressed in installer tests' not in binary
-notice='''SteamAC Lite Online Installer
+notice='''steamac Lite Online Installer
 
 日本語
 Install SteamAC Lite.appを開き、「インストール」を押すとGitHubから最新版を取得します。
-完了後に「SteamAC Liteを開く」を押して初期設定を進めてください。
+完了後に「steamac Liteを開く」を押して初期設定を進めてください。
 すでに最新版が入っている場合はダウンロードしません。
 SteamOSのディスクと設定は引き継ぎます。通信環境が必要です。
 https://r-fallingstar.github.io/steamac-lite/?lang=ja
 
 English
 Open Install SteamAC Lite.app and choose Install to get the latest app from GitHub.
-When it finishes, choose Open SteamAC Lite to continue setup.
+When it finishes, choose Open steamac Lite to continue setup.
 Your SteamOS disk and settings are kept. Internet access is required.
 https://r-fallingstar.github.io/steamac-lite/en/
 
 한국어
 Install SteamAC Lite.app을 열고 “설치”를 누르면 GitHub에서 최신 앱을 다운로드합니다.
-완료되면 “SteamAC Lite 열기”를 눌러 초기 설정을 진행하세요.
+완료되면 “steamac Lite 열기”를 눌러 초기 설정을 진행하세요.
 SteamOS 디스크와 설정은 유지됩니다. 인터넷 연결이 필요합니다.
 https://r-fallingstar.github.io/steamac-lite/ko/
 
 简体中文
 打开 Install SteamAC Lite.app，点击「安装」即可从 GitHub 获取最新版应用。
-完成后点击「打开 SteamAC Lite」继续初始设置。
+完成后点击「打开 steamac Lite」继续初始设置。
 SteamOS 磁盘和设置会保留，需要互联网连接。
 https://r-fallingstar.github.io/steamac-lite/zh-CN/
 '''

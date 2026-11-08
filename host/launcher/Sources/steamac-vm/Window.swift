@@ -1158,7 +1158,7 @@ enum MainMenu {
         appMenu.addItem(.separator())
         // Lifecycle.applicationShouldTerminate decides (shut down; asks first while suspended).
         // While the VM window has the keyboard, Cmd+Q goes to the guest like every key.
-        appMenu.addItem(NSMenuItem(title: String(localized: "Quit FX Steam Launcher"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appMenu.addItem(NSMenuItem(title: String(localized: "Quit steamac Lite"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         addEditAndWindowMenus(main)
         let viewItem = NSMenuItem()
         main.insertItem(viewItem, at: 2)
@@ -1187,7 +1187,7 @@ enum MainMenu {
         let appMenu = NSMenu()
         appItem.submenu = appMenu
         if let (action, target) = settings { appMenu.addItem(item("Settings…", action, target, key: ",")) }
-        appMenu.addItem(NSMenuItem(title: String(localized: "Quit FX Steam Launcher"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appMenu.addItem(NSMenuItem(title: String(localized: "Quit steamac Lite"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         addEditAndWindowMenus(main)
         NSApp.mainMenu = main
     }

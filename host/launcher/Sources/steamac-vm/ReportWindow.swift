@@ -339,7 +339,7 @@ enum CrashOffer {
         let context = ReportContext(origin: "crash", options: options, runDir: runDir, exitSummary: summary)
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 150), styleMask: [.titled, .closable],
                          backing: .buffered, defer: false)
-        w.title = "FX Steam Launcher"
+        w.title = "steamac Lite"
         w.isReleasedWhenClosed = false
         w.delegate = delegate
         let view = OfferView(summary: CrashReporting.localizedExitSummary(status: status), report: {
@@ -403,7 +403,7 @@ enum CrashOffer {
             HStack(alignment: .top, spacing: 14) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 56, height: 56)
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("FX Steam Launcher stopped unexpectedly").font(.headline)
+                    Text("steamac Lite stopped unexpectedly").font(.headline)
                     Text("The virtual machine ended without being asked to (\(summary)).")
                         .font(.callout).fixedSize(horizontal: false, vertical: true)
                     Text("Report it with the logs of this session so the developers can look into it.")

@@ -37,7 +37,7 @@ with tempfile.TemporaryDirectory(prefix='lite-dmg-', dir=ROOT/'work') as tmp:
     (stage/'Applications').symlink_to('/Applications')
     (stage/'はじめに.txt').write_text((ROOT/'docs/quick-start.ja.md').read_text())
     (stage/'LICENSE.txt').write_bytes((ROOT/'LICENSE').read_bytes())
-    subprocess.run(['hdiutil', 'create', '-quiet', '-volname', 'SteamAC Lite '+version,
+    subprocess.run(['hdiutil', 'create', '-quiet', '-volname', 'steamac Lite '+version,
                     '-srcfolder', str(stage), '-fs', 'HFS+', '-format', 'UDZO', str(image)], check=True)
     subprocess.run(['hdiutil', 'verify', '-quiet', str(image)], check=True)
     mount = work/'mounted'

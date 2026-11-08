@@ -5,7 +5,7 @@ import Foundation
 enum InstallerCore {
     static let feedURL = URL(string: "https://api.github.com/repos/r-fallingstar/steamac-lite/releases?per_page=30")!
     static let releasesURL = URL(string: "https://github.com/r-fallingstar/steamac-lite/releases")!
-    static let installerVersion = "1.0.0"
+    static let installerVersion = "1.0.1"
 
     struct Release {
         let version: String

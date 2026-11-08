@@ -21,7 +21,7 @@ do {
     (options, settingsOverrides) = try Options.resolve(CommandLine.arguments, settings: settings)
 } catch {
     FileHandle.standardError.write("steamac-vm: \(error)\n\n\(Options.usage)\n".data(using: .utf8)!)
-    MainActor.assumeIsolated { AppBundle.alertIfLaunchedFromFinder("FX Steam Launcher cannot start", error.localizedDescription) }
+    MainActor.assumeIsolated { AppBundle.alertIfLaunchedFromFinder("steamac Lite cannot start", error.localizedDescription) }
     exit(2)
 }
 if Supervisor.isChild, let driver = Supervisor.profileDriver { options.vulkanDriver = driver }
@@ -131,7 +131,7 @@ if let f = Supervisor.windowFrame, !f.isEmpty, !options.headless {
 
 // MARK: VM process (one boot)
 
-let windowTitle = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "FX Steam Launcher"
+let windowTitle = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "steamac Lite"
 
 /// Graceful shutdown policy shared by window close, menu, signals and the console escape; window
 /// close / menu Suspend / Dock click / Quit while suspended (SuspendController).

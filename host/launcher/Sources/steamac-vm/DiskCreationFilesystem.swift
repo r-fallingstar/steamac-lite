@@ -47,7 +47,7 @@ enum DiskCreationFilesystem {
         let advice: String
         switch code {
         case EROFS:
-            advice = String(localized: "The location is read-only. Choose a writable folder, not the mounted FX Steam Launcher installer.")
+            advice = String(localized: "The location is read-only. Choose a writable folder, not the mounted steamac Lite installer.")
         case EACCES, EPERM:
             advice = String(localized: "There is no permission to write to the disk or download cache. Choose a writable folder or check Finder → Get Info → Sharing & Permissions.")
         case ENOSPC, EDQUOT:

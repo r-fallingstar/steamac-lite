@@ -227,7 +227,7 @@ final class OverlayView: NSView {
         sheen.position = CGPoint(x: -b.width, y: b.midY)
 
         let wmHeight = 64 * k
-        wordmark.string = attributed("FX Steam Launcher", size: 34 * k, weight: .semibold, color: OverlayView.color(0xe6ebef), kern: 0.5 * k)
+        wordmark.string = attributed("steamac Lite", size: 34 * k, weight: .semibold, color: OverlayView.color(0xe6ebef), kern: 0.5 * k)
         wordmark.frame = CGRect(x: 0, y: b.midY + 46 * k, width: b.width, height: wmHeight)
         titleLayer.frame = CGRect(x: 40 * k, y: b.midY + 4 * k, width: b.width - 80 * k, height: 28 * k)
         let barWidth = min(560 * k, b.width * 0.72)
