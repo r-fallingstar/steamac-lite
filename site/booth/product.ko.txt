@@ -1,4 +1,4 @@
-steamac Lite는 Apple Silicon Mac에서 SteamOS를 실행하는 무료 런처입니다. SteamAC를 포크하여 RAM 8 GB용 경량 설정, 일본어·중국어·한국어 입력과 VRChat용 설정을 추가했습니다.
+steamac Lite는 Apple Silicon Mac에서 SteamOS를 실행하는 무료 런처입니다. steamac를 포크하여 RAM 8 GB용 경량 설정, 일본어·중국어·한국어 입력과 VRChat용 설정을 추가했습니다.
 
 제 M1·RAM 8 GB Mac에서 VRChat이 동작하는 것을 직접 확인했습니다. 실험 버전이며 모든 월드와 Mac에서의 성능이나 장시간 안정성을 확인한 것은 아닙니다.
 
