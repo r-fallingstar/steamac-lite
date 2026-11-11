@@ -42,3 +42,11 @@ The `#booth` subsection is an alternative to the manual DMG install. It links to
 The Release Assets and Finder captures in `shared/` now show Lite.9. `build-guide-annotations.py` adds translated instructions around those unmodified captures. The direct download links and file labels also target Lite.9.
 
 The project display name is `steamac Lite`. Legacy release asset filenames, existing app bundle paths and bundle identifiers are retained for updater compatibility. Historical window captures show the names in the published Lite.9 build.
+
+## Lite.12 installation prompt captures
+
+The `dmg-install` scene now uses `media/guide/{ja,en,ko,zh-CN}/install-and-open-lite12.png`. Each image shows the native **Install and Open** alert in that page’s language, including both buttons. The portrait figure displays the whole window rather than cropping it into the old Finder ratio.
+
+`scripts/site/capture-dmg-install.swift` is the capture entry point. Compile it as main.swift with the unmodified `DmgInstall.swift`, `InstallerCore.swift` and `UpdateInstallSupport.swift` from tag `v1.9.4-lite.12` (commit `22553c7c10aa3b6458605823cfa6310437949a5a`). The isolated capture bundle uses the published app’s localization resources and icon, a different bundle ID and no VM code. Run it on a read-only disk image with `-AppleLanguages '(ja)'`, `(en)`, `(ko)` or `(zh-Hans)` and `STEAMAC_GUIDE_CAPTURE=/absolute/output.png`. It renders the native AppKit frame onto the native window background and exits without installing or opening the app. This captures the app’s controls directly, so neither a mouse pointer nor a computer-use cursor is included.
+
+The annotation builder now maintains only the GitHub download scene. The earlier Finder SVGs are historical captures and are no longer referenced by the guide.

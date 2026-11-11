@@ -1,0 +1,34 @@
+{
+  "source_tag": "v1.9.4-lite.12",
+  "source_commit": "22553c7c10aa3b6458605823cfa6310437949a5a",
+  "method": "Unmodified release DmgInstall dialog, native AppKit frame snapshot on opaque window background; isolated capture bundle without VM code",
+  "mouse_pointer_not_captured_by_design": true,
+  "assets": [
+    {
+      "language": "ja",
+      "asset": "docs/media/guide/ja/install-and-open-lite12.png",
+      "sha256": "906bcb193e3408d27b819c4d747269c3724a879d85e614c7ecc6dd5b16d69a33",
+      "cursor_included": false
+    },
+    {
+      "language": "en",
+      "asset": "docs/media/guide/en/install-and-open-lite12.png",
+      "sha256": "cdb53904e903ae566186f891a6f0128e8cb996200655b4521489f78608c552c0",
+      "cursor_included": false
+    },
+    {
+      "language": "ko",
+      "asset": "docs/media/guide/ko/install-and-open-lite12.png",
+      "sha256": "4bccad6e219954409cd41f4ecc8852485d90f9d44fd23b7b1aa4406f9696817c",
+      "cursor_included": false
+    },
+    {
+      "language": "zh-CN",
+      "asset": "docs/media/guide/zh-CN/install-and-open-lite12.png",
+      "sha256": "761297b434d5f192cb8b5eed1dd8a94118db8071ee87826c064106ac4796266f",
+      "cursor_included": false
+    }
+  ],
+  "captured_on": "2026-11-11",
+  "all_four_native_dialogs_visually_reviewed": true
+}

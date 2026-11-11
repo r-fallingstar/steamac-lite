@@ -173,6 +173,8 @@ details p { margin: 16px 16px 0 0; font-size: 13px; line-height: 2; color: var(-
 .download-alternative > p { margin-top: 16px; font-size: 14px; }
 .download-alternative > .small { font-size: 12px; }
 .installer-photo { max-width: 570px; margin: 20px auto 8px; }
+.install-prompt-photo { max-width: 380px; margin: 20px auto 8px; }
+.install-prompt-photo .zoom-label { position: static; display: block; width: max-content; margin: 0 12px 12px auto; }
 
 /* Photo viewer */
 dialog { width: min(1200px, calc(100vw - 40px)); max-width: none; max-height: 92vh; max-height: 92dvh; overflow: auto; padding: 0; border: 3px solid white; border-radius: 20px; background: white; color: var(--ink); box-shadow: 0 24px 90px #49305055; }
