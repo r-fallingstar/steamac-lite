@@ -19279,6 +19279,370 @@
           }
         }
       }
+    },
+    "Install steamac Lite on this Mac": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "steamac LiteをこのMacにインストール"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 Mac에 steamac Lite 설치"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在这台 Mac 上安装 steamac Lite"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установить steamac Lite на этот Mac"
+          }
+        }
+      }
+    },
+    "Choose Install and Open to copy the app to Applications and open it. Your SteamOS disk and settings are kept.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「インストールして開く」を押すと、アプリをアプリケーションフォルダへコピーして起動します。SteamOSのディスクと設定は引き継ぎます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“설치 후 열기”를 누르면 앱을 응용 프로그램 폴더에 복사하고 실행합니다. SteamOS 디스크와 설정은 유지됩니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击“安装并打开”，将应用复制到“应用程序”文件夹并启动。SteamOS 磁盘和设置会保留。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите «Установить и открыть», чтобы скопировать приложение в папку «Программы» и запустить его. Диск SteamOS и настройки сохранятся."
+          }
+        }
+      }
+    },
+    "Install and Open": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "インストールして開く"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설치 후 열기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装并打开"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установить и открыть"
+          }
+        }
+      }
+    },
+    "Installing steamac Lite…": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "steamac Liteをインストール中…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "steamac Lite 설치 중…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在安装 steamac Lite…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установка steamac Lite…"
+          }
+        }
+      }
+    },
+    "The installed app will open when the copy is complete.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "コピーが完了すると、インストールしたアプリが開きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "복사가 끝나면 설치된 앱이 열립니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制完成后会打开已安装的应用。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "После копирования установленное приложение откроется."
+          }
+        }
+      }
+    },
+    "Installed. Open steamac Lite from Applications.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "インストールが完了しました。アプリケーションから開いてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설치가 완료되었습니다. 응용 프로그램에서 steamac Lite를 여세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装完成。请从“应用程序”打开 steamac Lite。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установка завершена. Откройте steamac Lite из папки «Программы»."
+          }
+        }
+      }
+    },
+    "The app was copied successfully. Open it from Finder to continue.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリのコピーは完了しています。Finderから開くと、初回設定へ進めます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 복사가 완료되었습니다. Finder에서 열어 초기 설정을 진행하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用已复制完成。请从 Finder 打开，继续首次设置。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приложение скопировано. Откройте его в Finder, чтобы продолжить настройку."
+          }
+        }
+      }
+    },
+    "steamac Lite could not be installed": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "steamac Liteをインストールできませんでした"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "steamac Lite를 설치하지 못했습니다"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法安装 steamac Lite"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось установить steamac Lite"
+          }
+        }
+      }
+    },
+    "Quit the copy of steamac Lite already running from Applications, then try again.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリケーションから起動しているsteamac Liteを終了してから、もう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "응용 프로그램에서 실행 중인 steamac Lite를 종료한 후 다시 시도하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先退出从“应用程序”运行的 steamac Lite，然后重试。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закройте steamac Lite, запущенный из папки «Программы», и повторите попытку."
+          }
+        }
+      }
+    },
+    "At least 512 MB of free space is needed to install the app.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリのインストールには、512 MB以上の空き容量が必要です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱을 설치하려면 여유 공간이 512 MB 이상 필요합니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装应用需要至少 512 MB 可用空间。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для установки приложения требуется не менее 512 МБ свободного места."
+          }
+        }
+      }
+    },
+    "Check the free space and write permission for Applications. You can also drag the app into Applications in Finder.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "空き容量とアプリケーションフォルダへの書き込み権限を確認してください。Finderでアプリをアプリケーションへドラッグして入れることもできます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "여유 공간과 응용 프로그램 폴더의 쓰기 권한을 확인하세요. Finder에서 앱을 응용 프로그램 폴더로 드래그해 설치할 수도 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请检查可用空间和“应用程序”文件夹的写入权限。也可以在 Finder 中将应用拖入“应用程序”。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте свободное место и право записи в папку «Программы». Также можно перетащить приложение в эту папку через Finder."
+          }
+        }
+      }
+    },
+    "Show in Finder": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finderで表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finder에서 보기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Finder 中显示"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать в Finder"
+          }
+        }
+      }
+    },
+    "Try Again": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "もう一度試す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 시도"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторить попытку"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

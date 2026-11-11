@@ -90,6 +90,7 @@ enum UpdateInstallSupport {
                   let data = try? Data(contentsOf: directory.appendingPathComponent("owner.json")), data.count < 4096,
                   let owner = try? JSONDecoder().decode(StageOwner.self, from: data),
                   owner.destination == app.standardizedFileURL.path, owner.processID > 1,
+                  !fm.fileExists(atPath: directory.appendingPathComponent("previous.app").path),
                   kill(owner.processID, 0) == -1, errno == ESRCH else { continue }
             try? fm.removeItem(at: directory)
         }

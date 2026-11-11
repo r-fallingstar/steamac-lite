@@ -4,13 +4,13 @@
 
 **Illustrated setup guide:** [日本語](https://r-fallingstar.github.io/steamac-lite/?lang=ja) · [English](https://r-fallingstar.github.io/steamac-lite/en/) · [한국어](https://r-fallingstar.github.io/steamac-lite/ko/) · [简体中文](https://r-fallingstar.github.io/steamac-lite/zh-CN/)
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.11/SteamAC-Lite-1.9.4-lite.11-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.11) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.12/SteamAC-Lite-1.9.4-lite.12-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.12) · [はじめての導入手順](docs/quick-start.ja.md)
 
 Lite.9 adds in-app update notifications and verified downloads from this fork’s GitHub releases. Choose **Update**, then **Install and Relaunch**. The SteamOS disk and settings are kept. Lite.8 and older need one manual upgrade to Lite.9 or later first. [Update behavior and publishing](docs/in-app-updates.md).
 
 Lite.6 fixes silent microphone input in SteamOS. [Cause, fix and validation](docs/microphone-fix.md).
 
-Open the DMG and copy **SteamAC Lite.app** into **Applications**. No build tools are needed. This is an experimental, ad-hoc signed and unnotarized build; SteamOS and games are downloaded separately. The optional **VRChat setup** bundles the patched FEX and prepares Proton/EAC and launch options after Steam sign-in. Steam download confirmations remain user actions; no game is started. See [the setup flow](docs/vrchat-setup.ja.md).
+Open **SteamAC Lite.app** inside the DMG and choose **Install and Open**. The app copies itself into Applications and opens the installed copy. No build tools are needed. This is an experimental, ad-hoc signed and unnotarized build; SteamOS and games are downloaded separately. The optional **VRChat setup** bundles the patched FEX and prepares Proton/EAC and launch options after Steam sign-in. Steam download confirmations remain user actions; no game is started. See [the setup flow](docs/vrchat-setup.ja.md).
 
 This fork chooses VM RAM, vCPUs and initial resolution for the Mac, keeps a 3 GiB VM / 4 GiB guest disk-swap profile on 8 GB Macs, defaults to 60 Hz, detects physical US/JIS keyboards, and enables Japanese input through SteamOS's existing IBus/Anthy. Manual settings take priority. Game frame rates and compatibility are not guaranteed. See [automatic profiles](docs/performance-profiles.md), [8 GB limitations](docs/8gb-profile.md), and [keyboard / Japanese input](docs/japanese-input.md).
 

@@ -17,7 +17,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 swiftc -O -swift-version 5 -target arm64-apple-macosx15.5 \
     -debug-prefix-map "$ROOT=/src/steamac-lite" -file-prefix-map "$ROOT=/src/steamac-lite" \
     "${FLAGS[@]}" "$ROOT/host/launcher/Sources/steamac-vm/UpdateInstallSupport.swift" \
-    "$ROOT/host/installer/InstallerCore.swift" "$ROOT/host/installer/InstallerStrings.swift" "$ROOT/host/installer/main.swift" \
+    "$ROOT/host/launcher/Sources/steamac-vm/InstallerCore.swift" "$ROOT/host/installer/InstallerStrings.swift" "$ROOT/host/installer/main.swift" \
     -o "$APP/Contents/MacOS/steamac-installer"
 strip -S "$APP/Contents/MacOS/steamac-installer"
 python3 - "$ROOT" "$APP" "$MODE" <<'PY'

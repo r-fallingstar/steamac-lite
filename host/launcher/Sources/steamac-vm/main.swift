@@ -9,6 +9,9 @@ import Foundation
 // leaves an ignored SIGPIPE alone. The VM process gets it ignored from the supervisor too.
 signal(SIGPIPE, SIG_IGN)
 
+// Offer installation before language selection, disk setup, or any VM process starts.
+MainActor.assumeIsolated { DmgInstall.runIfNeeded(CommandLine.arguments) }
+
 // Finder / `open` launch of the .app: console + launcher log go to ~/Library/Logs/es.fxgam.steamac.
 if !Supervisor.isChild { AppBundle.redirectOutputIfLaunchedFromFinder() }
 

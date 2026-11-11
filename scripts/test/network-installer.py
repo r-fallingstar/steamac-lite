@@ -60,5 +60,5 @@ for name in ["fresh","upgrade","running","newer","rollback"] {
 print("network installer: PASS; no app or VM launched")
 '''.replace('\\(', '\\('))
  binary=root/'tests'
- subprocess.run(['swiftc',str(ROOT/'host/launcher/Sources/steamac-vm/UpdateInstallSupport.swift'),str(ROOT/'host/installer/InstallerCore.swift'),str(ROOT/'host/installer/InstallerStrings.swift'),str(main),'-o',str(binary)],env=ENV,check=True)
+ subprocess.run(['swiftc',str(ROOT/'host/launcher/Sources/steamac-vm/UpdateInstallSupport.swift'),str(ROOT/'host/launcher/Sources/steamac-vm/InstallerCore.swift'),str(ROOT/'host/installer/InstallerStrings.swift'),str(main),'-o',str(binary)],env=ENV,check=True)
  subprocess.run([str(binary),str(root)],env=ENV,check=True)
