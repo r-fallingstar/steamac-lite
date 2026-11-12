@@ -5,6 +5,63 @@
 `IVRCompositor_028` bootstrap test still depends on the M6 version adapters. No headset or VRChat game session has been
 run; the guest/FEX test and live host connection remain open.
 
+## Source-build sequence
+
+The Lite DMG is not a complete VR build. Keep an existing app and SteamOS disk separate
+from build outputs. You need the [Mac build requirements](upstream/requirements-and-building.md),
+including Go and Cargo on PATH, and a separate **x86_64 Linux** build environment with
+Podman or Docker. An OrbStack Ubuntu **amd64** machine with x86 translation was reported
+working in issue #6; the maintainer has not repeated that full build on that machine.
+An arm64 Linux VM is not equivalent. Allow about 4 GB for Proton sources and 14 GB for its build.
+
+1. On the Mac, build host libraries, DXMT and the VR server:
+
+   ```sh
+   STEAMAC_NO_BUNDLE=1 ./build.sh host
+   ./build.sh dxmt
+   ./build.sh vrhost
+   ```
+
+2. In the x86_64 Linux checkout, build both guest components. The sniper helper's
+   output path is relative to `guest/vr`:
+
+   ```sh
+   guest/vr/build-sniper.sh build-sniper
+   guest/proton-vrclient/build.sh "$HOME/proton-vrclient" "$PWD/work/out/vr"
+   mkdir -p work/out/vr/runtime
+   cp -a guest/vr/build-sniper/runtime/. work/out/vr/runtime/
+   ```
+
+   If this is a different checkout, copy the resulting `work/out/vr/` tree back to
+   the Mac checkout's `work/out/vr/`. It must contain all three files:
+   `runtime/bin/linux64/vrclient.so`, `x86_64-windows/vrclient_x64.dll`, and
+   `x86_64-unix/vrclient_x64.so`. See [the Proton build notes](../guest/proton-vrclient/README.md)
+   for interrupted submodules and rootless Podman prerequisites.
+
+3. On the Mac, build the guest artifacts **after** staging the VR files:
+
+   ```sh
+   guest/kernel/build.sh
+   scripts/build-image.sh builder rootfs
+   guest/mesa/build.sh
+   scripts/build-image.sh initramfs layer
+   host/launcher/licenses.sh --check-inputs
+   STEAMAC_REQUIRE_BUNDLE=1 host/launcher/build.sh
+   ```
+
+   The rootfs download is about 4 GB. Guest Mesa requires it; the VR layer requires
+   that Mesa output and DXMT's guest payload. Borrowing `Image` and initramfs from
+   a DMG, even with their receipts, cannot replace this sequence: the distributed
+   layer is not a VR layer and does not provide its build receipt. Never fabricate
+   `.inputs.json` files to bypass validation. These commands refresh build artifacts;
+   they do not recreate an existing SteamOS disk. For a new disk, also run
+   `scripts/build-image.sh disk check`.
+
+Keep all source/build trees and pinned archives until app bundling completes; the
+[license inventory](upstream/requirements-and-building.md#license-inputs) needs them.
+These steps describe assembly, not proof of hardware compatibility. Test pairing,
+tracking and game playback with your actual headset before distributing a VR build.
+
 ## How a frame gets out
 
 ```

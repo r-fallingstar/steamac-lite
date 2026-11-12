@@ -7,6 +7,12 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../.." && pwd)
 export STEAMAC_ROOT="$ROOT"
+case ${1:-} in
+    ""|--check-inputs) ;;
+    *) echo "usage: $0 [--check-inputs]" >&2; exit 64 ;;
+esac
+python3 "$HERE/license-inputs.py"
+[[ ${1:-} != --check-inputs ]] || exit 0
 python3 - <<'PY'
 import atexit
 import json

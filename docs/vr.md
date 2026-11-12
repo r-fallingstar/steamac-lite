@@ -1,5 +1,17 @@
 # VR (experimental)
 
+## Distribution and source builds
+
+The Lite DMG releases through Lite.13 do **not** include `steamac-vrhost` or the three
+guest VR artifacts. The VR checkbox alone cannot add them. Desktop VRChat setup and
+headset VR are separate features. To build headset support, follow the complete
+[VR source-build sequence](vr-guest.md#source-build-sequence), including DXMT, the host
+server, the x86_64 Linux guest components and a freshly generated guest layer.
+
+The hardware results below are inherited upstream results; they are not a new
+headset verification of this Lite release.
+
+
 Play a game in VR on a standalone headset streamed from the Mac. The Mac runs `steamac-vrhost`, a WiVRn-compatible
 server; the headset runs the stock **WiVRn v26.9** client. Inside SteamOS, the game talks to this fork's OpenVR runtime
 through a patched Proton `vrclient_x64`, and its eye images go over the DXMT path to the Mac, where they are encoded

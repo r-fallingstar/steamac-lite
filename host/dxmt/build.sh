@@ -64,10 +64,7 @@ jobs=${JOBS:-$(sysctl -n hw.ncpu 2>/dev/null || nproc)}
 log() { printf '\n=== %s\n' "$*"; }
 die() { echo "host/dxmt/build.sh: $*" >&2; exit 1; }
 
-fetch_file() { # url sha256 dest
-    [ -f "$3" ] || { mkdir -p "$(dirname "$3")"; curl -fsSL --retry 3 -o "$3.part" "$1" && mv "$3.part" "$3"; }
-    echo "$2  $3" | shasum -a 256 -c - >/dev/null || die "checksum mismatch: $3 (delete it to re-download)"
-}
+. "$here/download.sh"
 
 metal_opts() {
     if [ -n "${DXMT_PREBUILT_METAL:-}" ]; then

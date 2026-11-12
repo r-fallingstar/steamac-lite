@@ -18,7 +18,11 @@ host() {
     host/moltenvk/build.sh
     # KosmicKrisp needs Metal 4 (macOS 26+); without it the app offers MoltenVK only.
     if (($(sw_vers -productVersion | cut -d. -f1) >= 26)); then
-        host/kosmickrisp/build.sh
+        # Run in a child shell so its own set -e still stops at the first error.
+        if ! bash host/kosmickrisp/build.sh; then
+            echo "WARNING: optional KosmicKrisp build failed (check the SDK error above). Continuing with MoltenVK." >&2
+            [[ ${STEAMAC_REQUIRE_KOSMICKRISP:-0} != 1 ]] || return 1
+        fi
     else
         echo "KosmicKrisp skipped: needs macOS 26 or newer" >&2
     fi
@@ -39,7 +43,11 @@ case ${1:-all} in
     host) host ;;
     guest) guest ;;
     vrhost) host/vrhost/build.sh ;;
-    all) host; guest ;;
+    all)
+        STEAMAC_NO_BUNDLE=1 host
+        guest
+        host/launcher/build.sh  # guest artifacts now exist; finish the app
+        ;;
     dxmt) host/dxmt/build.sh ;;
     *) echo "usage: $0 [all|host|guest|vrhost|dxmt]" >&2; exit 64 ;;
 esac

@@ -10,12 +10,31 @@
   libkrun; all three use `MACOSX_DEPLOYMENT_TARGET=15.0`, including on macOS 26/27 build hosts.
   Bundling rejects Mach-O deployment targets above macOS 15.0 (KosmicKrisp alone may require 26.0).
 
+Homebrew's `rustup` is keg-only. Before building, expose its tools and your installed Rust toolchain:
+
+```sh
+export PATH="$(brew --prefix rustup)/bin:$HOME/.cargo/bin:$PATH"
+cargo --version
+go version
+```
+
+KosmicKrisp also needs an SDK matching its Metal APIs. If its optional build fails,
+`./build.sh host` warns and continues with the remaining host components. An already
+installed, validated driver is retained. Set `STEAMAC_REQUIRE_KOSMICKRISP=1` to make
+that failure fatal. The standard MoltenVK build remains mandatory.
+
 # Building and running
 
 ```sh
 ./build.sh          # everything: MoltenVK, virglrenderer, libkrun, launcher, kernel, Mesa, disk
 ./run.sh            # a window with SteamOS
 ```
+
+`./build.sh` finishes by assembling the app after building the guest artifacts.
+`./build.sh host` can build only the launcher binary when guest artifacts are absent;
+its final `BUILD RESULT` lists the missing files and the next step. Set
+`STEAMAC_REQUIRE_BUNDLE=1` to fail if a requested app cannot be assembled, or
+`STEAMAC_NO_BUNDLE=1` to explicitly request a binary-only build.
 
 Build parts separately: `./build.sh host`, `./build.sh guest`, or the scripts in the table below.
 The SteamOS image is downloaded from Valve's servers (a signed RAUC bundle); its signature and
@@ -190,3 +209,37 @@ Protocol references: [Valve's Remote Play network settings](https://help.steampo
 [Steam remote-client protobufs](https://github.com/SteamDatabase/Protobufs/blob/master/steam/steammessages_remoteclient_discovery.proto),
 and [discovery envelope framing](https://github.com/OpenSourceLAN/steam-discover/blob/master/listener.js).
 
+
+## License inputs
+
+Before assembling an app, run `host/launcher/licenses.sh --check-inputs`. It lists
+missing local tools, source notices and pinned archives together without changing
+an existing app or inventory. The normal inventory generation runs this check too;
+Cargo graph resolution and the content of each notice are still checked afterwards.
+Do not bypass this check or copy notices from a different binary version.
+
+The inventory needs `go`, `cargo`, `git` and `curl` on PATH, plus:
+
+- The source trees left by the host MoltenVK (including its external revisions),
+  libepoxy, virglrenderer and libkrun builds; libkrun's rutabaga notices and Cargo graph.
+- The launcher's resolved `sentry-cocoa` source, vendored zstd notices, guest progress-agent
+  Cargo graph and the built `work/out/host/bin/{gvproxy,desync}` binaries.
+- `work/cache/kernel/linux-7.2.9.tar.xz`, downloaded by `guest/kernel/build.sh`.
+- `work/cache/dosfstools/<version>/dosfstools-<version>.tar.gz`,
+  `work/cache/e2fsprogs/<version>/e2fsprogs-<version>.tar.xz`, and
+  `work/cache/btrfs-progs/<version>/btrfs-progs-v<version>.tar.xz`, downloaded by
+  `scripts/build-image.sh initramfs`. Versions and URLs are pinned in `scripts/config.env`.
+- Docker access to the pinned guest builder/toolchain images, or a matching
+  `work/out/guest-toolchain.json` generated with `scripts/guest-toolchain.sh` on the guest build host.
+- When included: KosmicKrisp's source notices; the DXMT and directx-header archives
+  cached by `host/dxmt/build.sh`; VRHOST.txt and the OpenSSL, Boost.PFR and OpenXR
+  source notices retained in the VR host build directory.
+
+Copying just a kernel/initramfs from a DMG does not supply these inputs. Use the full
+build steps above to obtain them at the pinned versions. For VR, also follow the
+[VR source-build sequence](../vr-guest.md#source-build-sequence).
+
+DXMT source and toolchain downloads display curl progress and retain `.part` files.
+Retrying resumes a partial transfer when the server supports HTTP range requests.
+A checksum must match before the download enters the completed cache. If a server
+refuses resuming, remove only the named `.part` file and retry from the start.

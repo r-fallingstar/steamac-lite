@@ -126,10 +126,11 @@ echo "built $OUT/steamac-vm"
 otool -L "$OUT/steamac-vm" | awk '/libkrun/'
 codesign -d --entitlements - "$OUT/steamac-vm" 2>&1 | grep -E 'hypervisor|library-validation' || true
 
-if [[ "${STEAMAC_NO_BUNDLE:-}" == 1 ]]; then
-    echo "STEAMAC_NO_BUNDLE=1: app bundle skipped"
-elif [[ -f "$OUT/Image" && -f "$OUT/initramfs.cpio.gz" && -f "$OUT/steamac-layer.img" ]]; then
+# Explicit summary even when this was only a host-binary build.
+. "$HERE/bundle-status.sh"
+if should_bundle "$OUT"; then
     KRUN_PREFIX="$KRUN_PREFIX" "$HERE/bundle.sh" "$OUT/steamac-vm"
 else
-    echo "app bundle skipped: build Image, initramfs.cpio.gz and steamac-layer.img first" >&2
+    status=$?
+    [[ $status == 2 ]] || exit "$status"
 fi
