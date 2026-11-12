@@ -64,8 +64,13 @@ if options.selftestLanguage {
     print(failures.isEmpty ? "language: PASS" : "language: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
+if options.selftestSettingsLayout {
+    let failures = SettingsWindowController.layoutSelfCheck()
+    print(failures.isEmpty ? "settings-layout: PASS" : "settings-layout: FAIL: " + failures.joined(separator: "; "))
+    exit(failures.isEmpty ? 0 : 1)
+}
 if options.selftestMicrophone {
-    let failures = MicrophonePermission.selfCheck()
+    let failures = MicrophonePermission.selfCheck() + SoundControl.inputSelectionSelfCheck()
     print(failures.isEmpty ? "microphone: PASS (no recording or permission changes)" : "microphone: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }

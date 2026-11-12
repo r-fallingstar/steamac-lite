@@ -20273,6 +20273,118 @@
           }
         }
       }
+    },
+    "Input device": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "入力マイク"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "입력 마이크"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入麦克风"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Входной микрофон"
+          }
+        }
+      }
+    },
+    "Microphone input for this app. macOS settings stay unchanged.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアプリで使うマイクを選びます。macOSの設定は変更しません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 앱에서 사용할 마이크를 선택합니다. macOS 설정은 변경하지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择此应用使用的麦克风。不会更改 macOS 设置。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите микрофон для этого приложения. Настройки macOS не меняются."
+          }
+        }
+      }
+    },
+    "Previously selected microphone (not connected)": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択したマイク（未接続）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 마이크(연결되지 않음)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已选麦克风（未连接）"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбранный микрофон (не подключён)"
+          }
+        }
+      }
+    },
+    "Disconnected microphones use the system default until they reconnect. A VR headset microphone takes priority when active.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクが未接続の間はMacの標準入力を使います。VRヘッドセットのマイクが有効な場合は、そちらを優先します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크가 연결되지 않은 동안은 Mac의 기본 입력을 사용합니다. VR 헤드셋 마이크가 활성화되어 있으면 우선 사용합니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "麦克风断开时会使用 Mac 的默认输入。VR 头显麦克风启用时优先使用。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если микрофон отключён, используется системный вход Mac. Активный микрофон VR-гарнитуры имеет приоритет."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

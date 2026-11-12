@@ -93,6 +93,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     static let width: CGFloat = 600
     let window: NSWindow
+    private var userContentSize: NSSize?
+    private var screenObserver: NSObjectProtocol?
     private let tabs: SettingsTabController
     let context: SettingsContext
 
@@ -112,7 +114,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             tabs.addTabViewItem(item)
         }
         window = NSWindow(contentViewController: tabs)
-        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.toolbarStyle = .preference
         window.isReleasedWhenClosed = false
         window.setFrameAutosaveName("FXSettings")
@@ -120,21 +122,69 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.delegate = self
         tabs.didSelect = { [weak self] tab in self?.fit(tab) }
         fit(.general)
+        screenObserver = NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
+                                                               object: nil, queue: .main) { [weak self] _ in
+            self?.fitCurrentTab()
+        }
+    }
+
+    deinit { if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) } }
+
+    func windowDidEndLiveResize(_ notification: Notification) { userContentSize = window.contentLayoutRect.size }
+    func windowDidChangeScreen(_ notification: Notification) { fitCurrentTab() }
+
+    private func fitCurrentTab() { fit(Tab(rawValue: tabs.selectedTabViewItemIndex) ?? .general) }
+
+    static func boundedFrame(_ requested: NSRect, within visible: NSRect) -> NSRect {
+        guard visible.width > 0, visible.height > 0 else { return requested }
+        let available = visible.insetBy(dx: min(8, visible.width / 10), dy: min(8, visible.height / 10))
+        var frame = requested
+        frame.size.width = min(max(1, frame.width), available.width)
+        frame.size.height = min(max(1, frame.height), available.height)
+        frame.origin.x = min(max(frame.minX, available.minX), available.maxX - frame.width)
+        frame.origin.y = min(max(frame.minY, available.minY), available.maxY - frame.height)
+        return frame
+    }
+
+    static func layoutSelfCheck() -> [String] {
+        var failures: [String] = []
+        for visible in [NSRect(x: 0, y: 25, width: 1280, height: 735),
+                        NSRect(x: -1024, y: 40, width: 1024, height: 520),
+                        NSRect(x: 1920, y: 0, width: 800, height: 480)] {
+            for requested in [NSRect(x: -1200, y: -300, width: 600, height: 950),
+                              NSRect(x: 9000, y: 9000, width: 1600, height: 1200),
+                              NSRect(x: visible.minX + 20, y: visible.minY + 20, width: 400, height: 300)] {
+                let result = boundedFrame(requested, within: visible)
+                if !visible.contains(result) { failures.append("settings frame outside visible screen") }
+                if result.width > requested.width || result.height > requested.height { failures.append("settings frame enlarged by clamp") }
+            }
+        }
+        return failures
     }
 
     private func fit(_ tab: Tab) {
-        let size = NSSize(width: SettingsWindowController.width, height: tab.height)
-        let frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: size))
+        let contentSize = userContentSize ?? NSSize(width: SettingsWindowController.width, height: tab.height)
+        let frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: contentSize))
         var f = window.frame
         f.origin.y += f.height - frame.height
         f.size = frame.size
-        window.setFrame(f, display: true, animate: window.isVisible)
+        let visible = (window.screen ?? NSScreen.main)?.visibleFrame
+        if let visible {
+            f = Self.boundedFrame(f, within: visible)
+            window.contentMinSize = NSSize(width: min(460, visible.width - 32), height: min(320, visible.height - 140))
+        }
+        window.setFrame(f, display: true, animate: false)
         window.title = tab.title
     }
 
     func show(tab: Tab? = nil) {
         if let tab { select(tab) }
-        if !window.isVisible { window.center() }
+        if !window.isVisible {
+            window.center()
+            if let visible = (window.screen ?? NSScreen.main)?.visibleFrame {
+                window.setFrame(Self.boundedFrame(window.frame, within: visible), display: false)
+            }
+        }
         window.makeKeyAndOrderFront(nil)
         NSApp.activate()
     }
@@ -195,7 +245,7 @@ private struct SettingsTabRoot: View {
             .formStyle(.grouped)
             RestartBar()
         }
-        .frame(width: SettingsWindowController.width, height: tab.height)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -831,6 +881,8 @@ private struct Dot: View {
 
 /// CoreAudio output devices, refreshed when devices or the default output change.
 final class AudioDeviceMonitor: ObservableObject {
+    @Published private(set) var inputs: [AudioDevices.Device] = []
+    @Published private(set) var defaultInputName: String?
     @Published private(set) var devices: [AudioDevices.Device] = []
     @Published private(set) var defaultName: String?
     private var listener: AudioObjectPropertyListenerBlock?
@@ -839,7 +891,7 @@ final class AudioDeviceMonitor: ObservableObject {
         reload()
         let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in self?.reload() }
         listener = block
-        for selector in [kAudioHardwarePropertyDevices, kAudioHardwarePropertyDefaultOutputDevice] {
+        for selector in [kAudioHardwarePropertyDevices, kAudioHardwarePropertyDefaultOutputDevice, kAudioHardwarePropertyDefaultInputDevice] {
             var addr = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal,
                                                   mElement: kAudioObjectPropertyElementMain)
             AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &addr, .main, block)
@@ -848,7 +900,7 @@ final class AudioDeviceMonitor: ObservableObject {
 
     deinit {
         guard let listener else { return }
-        for selector in [kAudioHardwarePropertyDevices, kAudioHardwarePropertyDefaultOutputDevice] {
+        for selector in [kAudioHardwarePropertyDevices, kAudioHardwarePropertyDefaultOutputDevice, kAudioHardwarePropertyDefaultInputDevice] {
             var addr = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal,
                                                   mElement: kAudioObjectPropertyElementMain)
             AudioObjectRemovePropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &addr, .main, listener)
@@ -856,6 +908,8 @@ final class AudioDeviceMonitor: ObservableObject {
     }
 
     private func reload() {
+        inputs = AudioDevices.inputs()
+        defaultInputName = AudioDevices.defaultInputName()
         devices = AudioDevices.outputs()
         defaultName = AudioDevices.defaultOutputName()
     }
@@ -886,6 +940,17 @@ private struct SoundTab: View {
                 }
             }
             Section {
+                Picker(selection: $settings.soundInputUID) {
+                    if let name = monitor.defaultInputName { Text("System default (\(name))").tag("") }
+                    else { Text("System default").tag("") }
+                    ForEach(monitor.inputs) { Text(verbatim: $0.name).tag($0.uid) }
+                    if !settings.soundInputUID.isEmpty, !monitor.inputs.contains(where: { $0.uid == settings.soundInputUID }) {
+                        Text("Previously selected microphone (not connected)").tag(settings.soundInputUID)
+                    }
+                } label: {
+                    Label2(title: "Input device", detail: String(localized: "Microphone input for this app. macOS settings stay unchanged."), now: true)
+                }
+                .disabled(!probe.canSelectInput)
                 Picker(selection: $settings.soundOutputUID) {
                     if let name = monitor.defaultName {
                         Text("System default (\(name))").tag("")
@@ -930,7 +995,7 @@ private struct SoundTab: View {
                         Label { Text(verbatim: p) } icon: { Image(systemName: "exclamationmark.triangle") }
                             .font(.caption).foregroundStyle(.orange)
                     }
-                    Text("The microphone uses the Mac's default input device. Check its input level in System Settings → Sound.")
+                    Text("Disconnected microphones use the system default until they reconnect. A VR headset microphone takes priority when active.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

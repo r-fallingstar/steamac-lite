@@ -30,7 +30,7 @@ final class LauncherSettings: ObservableObject {
         // Controller
         case virtualPad, padType, dualSensePassthrough, controllerID, additionalPads, swapABXY, stickDeadzone
         // Sound
-        case soundEnabled, soundOutputUID, soundVolume, soundMute, soundLatency
+        case soundEnabled, soundInputUID, soundOutputUID, soundVolume, soundMute, soundLatency
         // Advanced
         case cpus, memMiB, sshEnabled, sshPort, network, lanRemotePlay, diskImage, steamosBranch, steamClient, vulkanDriver,
              graphicsPath, frameLatency, wmtr, wmtrLibrary
@@ -442,6 +442,7 @@ final class LauncherSettings: ObservableObject {
     // Sound
     @Published var soundEnabled = true { didSet { save(.soundEnabled, soundEnabled) } }
     /// "" = system default output (follows changes), else a CoreAudio device UID.
+    @Published var soundInputUID = "" { didSet { save(.soundInputUID, soundInputUID) } }
     @Published var soundOutputUID = "" { didSet { save(.soundOutputUID, soundOutputUID) } }
     @Published var soundVolume = 1.0 { didSet { save(.soundVolume, soundVolume) } }
     @Published var soundMute = false { didSet { save(.soundMute, soundMute) } }
@@ -623,6 +624,7 @@ final class LauncherSettings: ObservableObject {
         int(.stickDeadzone, &stickDeadzone)
         bool(.soundEnabled, &soundEnabled)
         string(.soundOutputUID, &soundOutputUID)
+        string(.soundInputUID, &soundInputUID)
         if let v = d.object(forKey: Key.soundVolume.rawValue) as? Double { soundVolume = v }
         bool(.soundMute, &soundMute)
         if let s = d.string(forKey: Key.soundLatency.rawValue).flatMap(Latency.init(rawValue:)) { soundLatency = s }
@@ -767,6 +769,7 @@ final class LauncherSettings: ObservableObject {
         case .swapABXY: guard let b else { return false }; swapABXY = b
         case .stickDeadzone: guard let i else { return false }; stickDeadzone = i
         case .soundEnabled: guard let b else { return false }; soundEnabled = b
+        case .soundInputUID: soundInputUID = text == "default" ? "" : text
         case .soundOutputUID: soundOutputUID = text == "default" ? "" : text
         case .soundVolume: guard let d else { return false }; soundVolume = d
         case .soundMute: guard let b else { return false }; soundMute = b
@@ -834,7 +837,7 @@ final class LauncherSettings: ObservableObject {
         autoCaptureGames = fresh.autoCaptureGames
         virtualPad = fresh.virtualPad; padType = fresh.padType; dualSensePassthrough = fresh.dualSensePassthrough
         controllerID = fresh.controllerID; additionalPads = fresh.additionalPads; swapABXY = fresh.swapABXY
-        stickDeadzone = fresh.stickDeadzone; soundEnabled = fresh.soundEnabled; soundOutputUID = fresh.soundOutputUID
+        stickDeadzone = fresh.stickDeadzone; soundEnabled = fresh.soundEnabled; soundOutputUID = fresh.soundOutputUID; soundInputUID = fresh.soundInputUID
         soundVolume = fresh.soundVolume; soundMute = fresh.soundMute; soundLatency = fresh.soundLatency
         cpus = fresh.cpus; memMiB = fresh.memMiB; sshEnabled = fresh.sshEnabled; sshPort = fresh.sshPort; network = fresh.network
         lanRemotePlay = fresh.lanRemotePlay

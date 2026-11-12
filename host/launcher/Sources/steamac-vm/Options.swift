@@ -144,6 +144,7 @@ struct Options {
     var selftestOut: String?
     var inputSelftestDelay: Double?
     var resizeSelftestDelay: Double?
+    var selftestSettingsLayout = false
     var selftestSettings = false
     var perfStats = false
     /// Settings: enter fullscreen once the window is up.
@@ -562,6 +563,7 @@ struct Options {
             case "--selftest-overlay": o.selftestOverlay = true
             case "--selftest-stall": o.selftestStall = true
             case "--selftest-pill": o.selftestPill = true
+            case "--selftest-settings-layout": o.selftestSettingsLayout = true
             case "--selftest-settings": o.selftestSettings = true
             case "--selftest-remote-play": o.selftestRemotePlay = true
             case "--selftest-provision": o.selftestProvision = true
@@ -625,7 +627,7 @@ struct Options {
     }
 
     var isSelftest: Bool {
-        selftestDisplay || selftestOverlay || selftestStall || selftestPill || selftestSettings || selftestProvision || selftestRemotePlay
+        selftestDisplay || selftestOverlay || selftestStall || selftestPill || selftestSettings || selftestSettingsLayout || selftestProvision || selftestRemotePlay
             || selftestMetalCache || selftestPointer || selftestGameLayers || selftestVR || selftestL10n || createDisk != nil
             || growDisk != nil
             || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage || selftestMicrophone || previewMicrophone || selftestUpdate || previewUpdate

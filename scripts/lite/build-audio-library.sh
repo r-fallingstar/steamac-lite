@@ -58,7 +58,7 @@ PY
 )
 codesign --force --sign - --entitlements "$SRC/hvf-entitlements.plist" "$TEST"
 DYLD_LIBRARY_PATH="$WORK/lib" "$TEST" virtio::snd | tee "$WORK/audio-tests.log"
-cp target/release/libkrun.dylib "$OUT/libkrun.1.dylib.new"
+cp "${CARGO_TARGET_DIR:-$SRC/target}/release/libkrun.dylib" "$OUT/libkrun.1.dylib.new"
 strip -S "$OUT/libkrun.1.dylib.new"
 install_name_tool -id @rpath/libkrun.1.dylib "$OUT/libkrun.1.dylib.new"
 codesign --force --sign - "$OUT/libkrun.1.dylib.new"
@@ -73,11 +73,12 @@ library=out/'libkrun.1.dylib'
 assert b'/Users/' not in library.read_bytes(), 'Unmapped builder path in release library'
 tests=(work/'audio-tests.log').read_text()
 match=re.search(r'test result: ok\. (\d+) passed; 0 failed; (\d+) ignored',tests)
-assert match and int(match[1])>=32
+assert match and int(match[1])>=35
 digest=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
 receipt={'libkrun_commit':'227b2de6ed323fe180e02f871c5f325a90c13cc2',
          'patched_library_sha256':digest(library),
-         'patch_sha256':digest(root/'host/libkrun/patches/0030-virtio-snd-pace-capture-startup-and-own-converters.patch'),
+         'patch_sha256':hashlib.sha256(b''.join(p.read_bytes() for p in sorted((root/'host/libkrun/patches').glob('*.patch')))).hexdigest(),
+         'input_selection_patch_sha256':digest(root/'host/libkrun/patches/0031-snd-select-per-vm-input-device.patch'),
          'cargo_lock_sha256':digest(out/'libkrun-lite-Cargo.lock'),
          'features':['gpu','blk','net','input','snd'],'built_in_init_blob':False,
          'audio_regression_tests_passed':int(match[1]),'audio_regression_tests_ignored':int(match[2]),

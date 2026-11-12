@@ -46,11 +46,16 @@ enum SettingsSelfTest {
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         // Crash-report scrubbing: the user, host, computer and Bonjour names never leave the Mac.
         var failures = CrashReporting.scrubSelfCheck() + CrashReporting.scannerSelfCheck() + CrashReporting.exitSelfCheck()
-            + VMSizing.selfCheck()
+            + VMSizing.selfCheck() + SettingsWindowController.layoutSelfCheck()
             + UpdateChecker.selfCheck() + MacTime.selfCheck() + KeyboardLayoutSync.selfCheck() + ClipboardSync.selfCheck() + GameProfile.selfCheck()
         var tabs = SettingsWindowController.Tab.allCases[...]
 
         func capture(_ name: String, _ rep: NSBitmapImageRep?) {
+            if SettingsWindowController.Tab.allCases.contains(where: { $0.name == name }),
+               let visible = sw.window.screen?.visibleFrame {
+                if !visible.contains(sw.window.frame) { failures.append("settings frame outside screen: " + name) }
+                log("selftest-settings: \(name) frame=\(sw.window.frame) visible=\(visible)")
+            }
             let path = "\(dir)/settings-\(name).png"
             guard let rep, let png = rep.representation(using: .png, properties: [:]) else {
                 failures.append("\(name): no capture")

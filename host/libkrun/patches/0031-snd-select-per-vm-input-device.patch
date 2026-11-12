@@ -1,0 +1,275 @@
+Subject: [PATCH] snd: select and persist a per-VM CoreAudio microphone route
+
+Keep macOS input preferences unchanged. Follow device reconnects and recover
+from failed capture via the existing asynchronous start worker.
+
+diff --git a/src/devices/src/virtio/snd/mod.rs b/src/devices/src/virtio/snd/mod.rs
+--- a/src/devices/src/virtio/snd/mod.rs
++++ b/src/devices/src/virtio/snd/mod.rs
+@@ -30,6 +30,9 @@
+     playback_maps: std::sync::OnceLock<Vec<Vec<u8>>>,
+     /// CoreAudio device UID of the output, None = the system default (followed).
+     output_device: Mutex<Option<String>>,
++    /// Per-VM microphone UID; None follows the Mac default without changing it.
++    input_device: Mutex<Option<String>>,
++    input_generation: AtomicU64,
+     gain: AtomicU32,
+     mute: AtomicBool,
+     buffer_ms: AtomicU32,
+@@ -49,6 +52,8 @@
+             #[cfg(target_os = "macos")]
+             playback_maps: std::sync::OnceLock::new(),
+             output_device: Mutex::new(None),
++            input_device: Mutex::new(None),
++            input_generation: AtomicU64::new(0),
+             gain: AtomicU32::new(1.0f32.to_bits()),
+             mute: AtomicBool::new(false),
+             buffer_ms: AtomicU32::new(SndControl::DEFAULT_BUFFER_MS),
+@@ -81,6 +86,21 @@
+ 
+     pub fn output_device(&self) -> Option<String> {
+         self.output_device.lock().unwrap().clone()
++    }
++
++    pub fn set_input_device(&self, uid: Option<String>) {
++        *self.input_device.lock().unwrap() = uid;
++        // Reapplying the same UID can recover capture after permission was granted.
++        self.input_generation.fetch_add(1, Ordering::Release);
++        self.changed();
++    }
++
++    pub fn input_device(&self) -> Option<String> {
++        self.input_device.lock().unwrap().clone()
++    }
++
++    pub fn input_generation(&self) -> u64 {
++        self.input_generation.load(Ordering::Acquire)
+     }
+ 
+     /// `gain` must be within 0..=1.
+diff --git a/src/devices/src/virtio/snd/audio_backends/coreaudio.rs b/src/devices/src/virtio/snd/audio_backends/coreaudio.rs
+--- a/src/devices/src/virtio/snd/audio_backends/coreaudio.rs
++++ b/src/devices/src/virtio/snd/audio_backends/coreaudio.rs
+@@ -1232,7 +1232,7 @@
+ }
+ 
+ /// The output device with this CoreAudio UID, if it is present and has output streams.
+-fn resolve_output_device(uid: &str) -> Option<AudioObjectID> {
++fn resolve_audio_device(uid: &str, scope: u32) -> Option<AudioObjectID> {
+     let uid = std::ffi::CString::new(uid).ok()?;
+     // SAFETY: CFString created from a NUL-terminated UTF-8 string, released below; the
+     // property takes a CFStringRef qualifier and returns an AudioObjectID.
+@@ -1264,12 +1264,23 @@
+     if device == 0 {
+         return None;
+     }
+-    let addr = property_address(kAudioDevicePropertyStreams, kAudioObjectPropertyScopeOutput);
++    let addr = property_address(kAudioDevicePropertyStreams, scope);
+     let mut size = 0u32;
+     // SAFETY: size query of a valid property address.
+     let status =
+         unsafe { AudioObjectGetPropertyDataSize(device, &addr, 0, ptr::null(), &mut size) };
+     (status == 0 && size > 0).then_some(device)
++}
++
++fn resolve_output_device(uid: &str) -> Option<AudioObjectID> {
++    resolve_audio_device(uid, kAudioObjectPropertyScopeOutput)
++}
++
++fn select_input_route(
++    uid: Option<&str>, resolve: impl FnOnce(&str) -> Option<AudioObjectID>,
++    default: impl FnOnce() -> Option<AudioObjectID>,
++) -> Option<AudioObjectID> {
++    uid.and_then(resolve).or_else(default)
+ }
+ 
+ /// Whether a CoreAudio output device with this UID is present (krun_snd_set_output_device).
+@@ -1487,13 +1498,18 @@
+ }
+ 
+ /// The current default input device, if there is one.
+-fn input_device() -> Option<AudioObjectID> {
++fn default_input_device() -> Option<AudioObjectID> {
+     object_property(
+         kAudioObjectSystemObject,
+         kAudioHardwarePropertyDefaultInputDevice,
+         kAudioObjectPropertyScopeGlobal,
+     )
+     .filter(|d| *d != 0)
++}
++
++fn input_device(control: &SndControl) -> Option<AudioObjectID> {
++    select_input_route(control.input_device().as_deref(),
++        |uid| resolve_audio_device(uid, kAudioObjectPropertyScopeInput), default_input_device)
+ }
+ 
+ /// Wait until `ring` has been consumed up to `end` or a bounded deadline passes. Bounded by the
+@@ -1592,9 +1608,9 @@
+ }
+ 
+ /// Capture start worker thread: serves start requests until none is left.
+-fn capture_start_thread(shared: Arc<Shared>, id: usize) {
++fn capture_start_thread(shared: Arc<Shared>, id: usize, control: Arc<SndControl>) {
+     while let Some(fmt) = shared.start_gate.next(&shared.starting) {
+-        capture_start_worker(&shared, fmt, id);
++        capture_start_worker(&shared, fmt, id, &control);
+     }
+ }
+ 
+@@ -1604,7 +1620,7 @@
+ /// `shared.capture`; `shared.running` was already set by `CoreAudioBackend::start`. On failure
+ /// it logs once and leaves `shared.capture` empty, so the pump supplies clock-paced
+ /// capture silence until the next START.
+-fn capture_start_worker(shared: &Shared, fmt: Format, id: usize) {
++fn capture_start_worker(shared: &Shared, fmt: Format, id: usize, control: &SndControl) {
+     let result = (|| -> Result<()> {
+         // A stop that arrived before this request is served must take down a unit that was
+         // still running, and must not build a new one. A unit published by an earlier request
+@@ -1618,7 +1634,7 @@
+         if stop_requested {
+             return Ok(());
+         }
+-        let device: AudioObjectID = input_device()
++        let device: AudioObjectID = input_device(control)
+             .ok_or_else(|| Error::UnexpectedAudioBackendError("no input device".into()))?;
+         // Recorded before any AudioUnit call (which can block for seconds): the input-device
+         // check compares against it and must not see a stale device meanwhile.
+@@ -1975,6 +1991,7 @@
+     dump: Option<(Format, Dump)>,
+     dump_files: u32,
+     control: Arc<SndControl>,
++    input_generation: u64,
+     /// Control generation last applied.
+     seen_generation: u64,
+     /// Playback: a device switch interrupted a running unit; start it again once configured.
+@@ -2024,6 +2041,7 @@
+             dump: None,
+             dump_files: 0,
+             control,
++            input_generation: 0,
+             seen_generation: u64::MAX,
+             output_restart_pending: false,
+             suspended: false,
+@@ -2281,6 +2299,7 @@
+     /// guest's 1 s control timeout does not allow; queued I/O waits until the unit runs.
+     /// If opening fails, the pump supplies silence at the guest's sample rate.
+     fn start_capture(&mut self) -> Result<()> {
++        self.input_generation = self.control.input_generation();
+         self.capture_silence = None;
+         let fmt = self
+             .guest_format
+@@ -2312,10 +2331,11 @@
+             return Ok(());
+         }
+         let shared = Arc::clone(&self.shared);
++        let control = Arc::clone(&self.control);
+         let id = self.id;
+         if let Err(err) = std::thread::Builder::new()
+             .name(format!("virtio-snd capture {id}"))
+-            .spawn(move || capture_start_thread(shared, id))
++            .spawn(move || capture_start_thread(shared, id, control))
+         {
+             log::error!("snd: stream {id}: cannot spawn the capture start worker: {err}");
+             self.shared.start_gate.abandon(&self.shared.starting);
+@@ -2444,15 +2464,15 @@
+     /// by itself; START always picks the current default). The unit is checked through the
+     /// per-stream `Shared`, not `self.slot.unit` (which is playback's).
+     fn follow_input_device(&mut self) {
+-        if !self.shared.starting.load(Ordering::Acquire)
+-            && self.shared.capture.lock().unwrap().is_none()
+-        {
++        if !self.shared.running.load(Ordering::Acquire) || self.control.paused() || self.vr_mic.is_some() {
+             return;
+         }
+-        let default = input_device().unwrap_or(0);
+-        if default == 0 || default == self.shared.capture_device.load(Ordering::Acquire) {
+-            return;
+-        }
++        let changed = self.input_generation != self.control.input_generation();
++        if self.shared.starting.load(Ordering::Acquire) && !changed { return; }
++        let selected = input_device(&self.control).unwrap_or(0);
++        if !changed && selected == self.shared.capture_device.load(Ordering::Acquire) { return; }
++        // A zero route tears down a disconnected device and supplies paced fallback silence.
++        self.shared.capture_device.store(selected, Ordering::Release);
+         // A device switch rebuilds the unit; start_capture drops the old one and lets the worker
+         // build the new one so no AudioUnit call blocks the pump thread.
+         self.stop_unit();
+@@ -3642,6 +3662,31 @@
+         assert!(pcm.iter().all(|&sample| sample == 128));
+     }
+ 
++    #[test]
++    fn input_route_prefers_selected_microphone_and_recovers_after_reconnect() {
++        assert_eq!(select_input_route(Some("usb"), |_| Some(7), || panic!("default must not be used")), Some(7));
++        assert_eq!(select_input_route(None, |_| panic!("no UID to resolve"), || Some(2)), Some(2));
++        assert_eq!(select_input_route(Some("usb"), |_| None, || Some(2)), Some(2));
++        assert_eq!(select_input_route(Some("usb"), |_| None, || None), None);
++        assert_eq!(select_input_route(Some("usb"), |_| Some(8), || Some(2)), Some(8));
++    }
++
++    #[test]
++    fn input_selection_wakes_capture_without_changing_output() {
++        let control = SndControl::default();
++        control.set_output_device(Some("speaker".into()));
++        let generation = control.input_generation();
++        control.set_input_device(Some("mic".into()));
++        assert_eq!(control.input_device().as_deref(), Some("mic"));
++        assert!(control.input_generation() > generation);
++        let generation = control.input_generation();
++        control.set_input_device(Some("mic".into()));
++        assert!(control.input_generation() > generation, "same UID can retry a denied capture");
++        control.set_input_device(None);
++        assert_eq!(control.input_device(), None);
++        assert_eq!(control.output_device().as_deref(), Some("speaker"));
++    }
++
+     /// Holds `hosts` like a pump stuck in an AudioUnit call, until dropped.
+     struct StuckPump {
+         release: Option<mpsc::Sender<()>>,
+diff --git a/src/libkrun/src/lib.rs b/src/libkrun/src/lib.rs
+--- a/src/libkrun/src/lib.rs
++++ b/src/libkrun/src/lib.rs
+@@ -2119,6 +2119,25 @@
+     }
+ }
+ 
++/// Per-VM input route. A missing saved UID falls back to the system default until reconnect.
++#[allow(clippy::missing_safety_doc)]
++#[no_mangle]
++pub unsafe extern "C" fn krun_snd_set_input_device(ctx_id: u32, uid: *const c_char) -> i32 {
++    #[cfg(all(feature = "snd", target_os = "macos"))]
++    {
++        let uid = if uid.is_null() { None } else {
++            match CStr::from_ptr(uid).to_str() {
++                Ok("") => None,
++                Ok(value) => Some(value.to_owned()),
++                Err(_) => return -libc::EINVAL,
++            }
++        };
++        with_snd_control(ctx_id, |control| { control.set_input_device(uid); KRUN_SUCCESS })
++    }
++    #[cfg(not(all(feature = "snd", target_os = "macos")))]
++    { let _ = (ctx_id, uid); -libc::ENOTSUP }
++}
++
+ #[no_mangle]
+ pub extern "C" fn krun_snd_set_volume(ctx_id: u32, gain: f32, mute: bool) -> i32 {
+     #[cfg(all(feature = "snd", target_os = "macos"))]
+diff --git a/include/libkrun.h b/include/libkrun.h
+--- a/include/libkrun.h
++++ b/include/libkrun.h
+@@ -878,6 +878,14 @@
+  *                           default until it returns.
+  */
+ int32_t krun_snd_set_output_device(uint32_t ctx_id, const char *coreaudio_device_uid);
++
++/** Selects this VM's Mac microphone, or NULL/empty for the system default.
++ * Does not change macOS's default input. A disconnected UID falls back to the
++ * default and is selected again when it reconnects. A VR headset mic has priority.
++ * Takes effect while recording; reapplying also retries capture after authorization.
++ */
++int32_t krun_snd_set_input_device(uint32_t ctx_id, const char *coreaudio_device_uid);
++
+ 
+ /**
+  * Sets the host-side playback gain, applied on top of the guest's own volume.

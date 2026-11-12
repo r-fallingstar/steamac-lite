@@ -15,8 +15,10 @@ final class SoundControl {
     private typealias SetOutput = @convention(c) (UInt32, UnsafePointer<CChar>?) -> Int32
     private typealias SetVolumeC = @convention(c) (UInt32, Float, Bool) -> Int32
     private typealias SetBuffer = @convention(c) (UInt32, UInt32) -> Int32
+    typealias SetDevice = (UInt32, String?) -> Int32
     typealias SetVolume = (UInt32, Float, Bool) -> Int32
 
+    private let setInput: SetDevice?
     private let setOutput: SetOutput?
     private let setVolume: SetVolume?
     private let setBuffer: SetBuffer?
@@ -39,11 +41,16 @@ final class SoundControl {
     static let fadeDuration = 0.15
 
     /// `volumeShim` replaces krun_snd_set_volume (selftest).
-    init(volumeShim: SetVolume? = nil) {
+    init(volumeShim: SetVolume? = nil, inputShim: SetDevice? = nil) {
         func sym<T>(_ name: String, _: T.Type) -> T? {
             dlsym(UnsafeMutableRawPointer(bitPattern: -2), name).map { unsafeBitCast($0, to: T.self) }   // RTLD_DEFAULT
         }
         setOutput = sym("krun_snd_set_output_device", SetOutput.self)
+        if let inputShim { setInput = inputShim }
+        else if let f = sym("krun_snd_set_input_device", SetOutput.self) {
+            setInput = { ctx, uid in uid.map { value in value.withCString { f(ctx, $0) } } ?? f(ctx, nil) }
+        } else { setInput = nil }
+
         if let volumeShim {
             setVolume = volumeShim
         } else if let f = sym("krun_snd_set_volume", SetVolumeC.self) {
@@ -54,6 +61,7 @@ final class SoundControl {
         setBuffer = sym("krun_snd_set_buffer_ms", SetBuffer.self)
     }
 
+    var canSelectInput: Bool { setInput != nil }
     var canSelectDevice: Bool { setOutput != nil }
     var canSetVolume: Bool { setVolume != nil }
     var canSetBuffer: Bool { setBuffer != nil }
@@ -83,9 +91,14 @@ final class SoundControl {
     func attach(ctx: UInt32, settings: LauncherSettings) {
         attach(ctx: ctx, volume: settings.soundVolume, mute: settings.soundMute, muteInBackground: settings.muteInBackground)
         apply(outputUID: settings.soundOutputUID)
+        apply(inputUID: settings.soundInputUID)
         apply(latency: settings.soundLatency)
         // @Published emits the new value before it is stored: use the emitted values.
         subscriptions = [
+            settings.$soundInputUID.dropFirst().removeDuplicates().sink { [weak self] in self?.apply(inputUID: $0) },
+            MicrophonePermission.shared.$state.dropFirst().removeDuplicates().sink { [weak self, weak settings] state in
+                if state == .authorized, let settings { self?.apply(inputUID: settings.soundInputUID) }
+            },
             settings.$soundOutputUID.dropFirst().removeDuplicates().sink { [weak self] in self?.apply(outputUID: $0) },
             settings.$soundVolume.combineLatest(settings.$soundMute).dropFirst()
                 .debounce(for: .milliseconds(50), scheduler: DispatchQueue.main)
@@ -127,6 +140,29 @@ final class SoundControl {
         guard let ctx, let setOutput else { return }
         let r = outputUID.isEmpty ? setOutput(ctx, nil) : outputUID.withCString { setOutput(ctx, $0) }
         report("output device \(outputUID.isEmpty ? "system default" : outputUID)", r)
+    }
+
+    func apply(inputUID: String) {
+        guard let ctx, let setInput else { return }
+        report("input device \(inputUID.isEmpty ? "system default" : inputUID)", setInput(ctx, inputUID.isEmpty ? nil : inputUID))
+    }
+
+    static func inputSelectionSelfCheck() -> [String] {
+        var received: [String?] = []
+        let control = SoundControl(volumeShim: { _, _, _ in 0 }, inputShim: { _, uid in received.append(uid); return 0 })
+        control.attach(ctx: 1, volume: 1, mute: false, muteInBackground: false)
+        for uid in ["", "test-microphone", ""] { control.apply(inputUID: uid) }
+        guard received.count == 3, received[0] == nil, received[1] == "test-microphone", received[2] == nil else {
+            return ["microphone input UID dispatch"]
+        }
+        let domain = "steamac.lite.input-selection-selftest"
+        let defaults = UserDefaults(suiteName: domain)!
+        defaults.removePersistentDomain(forName: domain)
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let settings = LauncherSettings(defaults: defaults)
+        settings.soundInputUID = "test-microphone"
+        guard LauncherSettings(defaults: defaults).soundInputUID == "test-microphone" else { return ["microphone selection persistence"] }
+        return []
     }
 
     func setUser(volume: Double, mute: Bool) {
@@ -220,7 +256,10 @@ enum AudioDevices {
         var id: String { uid }
     }
 
-    static func outputs() -> [Device] {
+    static func outputs() -> [Device] { devices(scope: kAudioObjectPropertyScopeOutput) }
+    static func inputs() -> [Device] { devices(scope: kAudioObjectPropertyScopeInput) }
+
+    private static func devices(scope: AudioObjectPropertyScope) -> [Device] {
         var addr = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDevices,
                                               mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
         var size: UInt32 = 0
@@ -228,15 +267,17 @@ enum AudioDevices {
         var ids = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
         guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &addr, 0, nil, &size, &ids) == noErr else { return [] }
         return ids.compactMap { id in
-            guard hasOutput(id), let uid = string(id, kAudioDevicePropertyDeviceUID),
+            guard hasStreams(id, scope: scope), let uid = string(id, kAudioDevicePropertyDeviceUID),
                   let name = string(id, kAudioObjectPropertyName) else { return nil }
             return Device(uid: uid, name: name)
         }
     }
 
     /// Name of the current system default output device.
-    static func defaultOutputName() -> String? {
-        var addr = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+    static func defaultOutputName() -> String? { defaultName(kAudioHardwarePropertyDefaultOutputDevice) }
+    static func defaultInputName() -> String? { defaultName(kAudioHardwarePropertyDefaultInputDevice) }
+    private static func defaultName(_ selector: AudioObjectPropertySelector) -> String? {
+        var addr = AudioObjectPropertyAddress(mSelector: selector,
                                               mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
         var id = AudioObjectID(0)
         var size = UInt32(MemoryLayout<AudioObjectID>.size)
@@ -244,9 +285,9 @@ enum AudioDevices {
         return string(id, kAudioObjectPropertyName)
     }
 
-    private static func hasOutput(_ id: AudioObjectID) -> Bool {
+    private static func hasStreams(_ id: AudioObjectID, scope: AudioObjectPropertyScope) -> Bool {
         var addr = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyStreams,
-                                              mScope: kAudioObjectPropertyScopeOutput, mElement: kAudioObjectPropertyElementMain)
+                                              mScope: scope, mElement: kAudioObjectPropertyElementMain)
         var size: UInt32 = 0
         return AudioObjectGetPropertyDataSize(id, &addr, 0, nil, &size) == noErr && size > 0
     }
