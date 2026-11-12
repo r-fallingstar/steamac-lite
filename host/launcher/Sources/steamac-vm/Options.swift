@@ -26,6 +26,7 @@ struct Options {
     var selftestLowMemory = false
     var selftestKeyboard = false
     var selftestLanguage = false
+    var selftestMicrophone = false
     var selftestUpdate = false
     var previewUpdate = false
     /// nil follows the Mac's physical keyboard at each boot, not its input-source language.
@@ -348,6 +349,7 @@ struct Options {
     check), STEAMAC_FAKE_VERSION (the version this launcher compares as)
 
     Diagnostics:
+      --selftest-microphone  verify microphone permission handling without recording or changing access
       --perf-stats         every 5 s log frame pacing (also STEAMAC_PERF_STATS=1): guest flush and
                            on-screen frame intervals (p50/p95/p99/max, count > 25 / > 50 ms), libkrun's
                            per-flush copy, flush -> screen latency, dropped/replaced frames, upload time
@@ -425,6 +427,7 @@ struct Options {
             case "--selftest-low-memory": o.selftestLowMemory = true
             case "--selftest-keyboard": o.selftestKeyboard = true
             case "--selftest-language": o.selftestLanguage = true
+            case "--selftest-microphone": o.selftestMicrophone = true
             case "--selftest-update": o.selftestUpdate = true
             case "--preview-update": o.previewUpdate = true
             case "--keyboard-layout":
@@ -621,7 +624,7 @@ struct Options {
         selftestDisplay || selftestOverlay || selftestStall || selftestPill || selftestSettings || selftestProvision || selftestRemotePlay
             || selftestMetalCache || selftestPointer || selftestGameLayers || selftestVR || selftestL10n || createDisk != nil
             || growDisk != nil
-            || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage || selftestUpdate || previewUpdate
+            || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage || selftestMicrophone || selftestUpdate || previewUpdate
     }
 
     /// Command line + saved settings (+ app bundle resources): what this boot runs with, and which

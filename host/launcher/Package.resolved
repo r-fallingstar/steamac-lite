@@ -1,14 +1,6 @@
 {
-  "originHash" : "725981ca62875190f7b706705ebd762f5ad0ce92d7ad58c1cfd225460f6e84e7",
+  "originHash" : "7034065ea1fb894adf3f02352b54a6ad94e10d0123e82241db9a15f7c90cafcd",
   "pins" : [
-    {
-      "identity" : "kscrash",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/getsentry/KSCrash.git",
-      "state" : {
-        "revision" : "18a633dec20c265f03386294f9d82d208bb13094"
-      }
-    },
     {
       "identity" : "sentry-cocoa",
       "kind" : "remoteSourceControl",

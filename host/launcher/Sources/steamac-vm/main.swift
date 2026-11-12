@@ -53,6 +53,11 @@ if options.selftestLanguage {
     print(failures.isEmpty ? "language: PASS" : "language: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
+if options.selftestMicrophone {
+    let failures = MicrophonePermission.selfCheck()
+    print(failures.isEmpty ? "microphone: PASS (no recording or permission changes)" : "microphone: FAIL: " + failures.joined(separator: "; "))
+    exit(failures.isEmpty ? 0 : 1)
+}
 if options.selftestUpdate {
     let failures = UpdateChecker.selfCheck()
     print(failures.isEmpty ? "updates: PASS" : "updates: FAIL: " + failures.joined(separator: "; "))
@@ -575,8 +580,6 @@ do {
     if settings.showOverlay { wc.overlay.show() }
     if options.fullscreen && !wc.window.styleMask.contains(.fullScreen) { wc.window.toggleFullScreen(nil) }
     gamepad?.start()
-    // New-version check (first boot of this launch; Settings > General), after the window is up.
-    UpdateChecker.shared.start { [weak wc] in wc?.window }
     if let d = options.inputSelftestDelay { InputSelfTest.schedule(after: d, window: wc, gamepad: gamepad) }
     if let d = options.resizeSelftestDelay {
         ResizeSelfTest.start(after: d, window: wc, display: display, progress: progress,
@@ -586,7 +589,15 @@ do {
         DebugControl.start(path: path, window: wc, progress: progress, settingsWindow: settingsWindow, gamepad: gamepad) { dumpFrames(to: $0) }
     }
     console.start()
-    vm.start()
+    // Resolve microphone access before the guest can open a capture stream.
+    DispatchQueue.main.async { [wc] in
+        MicrophonePermission.shared.prepareForBoot(on: wc.window, enabled: vm.hasSound,
+            boot: Supervisor.bootNumber, defaults: settings.defaults,
+            version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development") {
+                vm.start()
+                UpdateChecker.shared.start { [weak wc] in wc?.window }
+            }
+    }
     // VR boots: "Start in VR" / the headset's app list reach the guest agent; the pairing PIN shows on the window.
     var vrRelay: VRRelay?
     if options.vr {

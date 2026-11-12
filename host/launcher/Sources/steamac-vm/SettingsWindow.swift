@@ -83,7 +83,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             case .display: return 600
             case .mouse: return 470
             case .controller: return 620
-            case .sound: return 440
+            case .sound: return 670
             case .games: return 620
             case .vr: return 800
             case .advanced: return 720
@@ -860,6 +860,7 @@ private struct SoundTab: View {
     @EnvironmentObject var settings: LauncherSettings
     @EnvironmentObject var context: SettingsContext
     @StateObject private var monitor = AudioDeviceMonitor()
+    @StateObject private var microphone = MicrophonePermission.shared
 
     private var probe: SoundControl { context.sound ?? SoundControl() }
 
@@ -924,11 +925,28 @@ private struct SoundTab: View {
                         Label { Text(verbatim: p) } icon: { Image(systemName: "exclamationmark.triangle") }
                             .font(.caption).foregroundStyle(.orange)
                     }
-                    Text("Microphone: the guest records from the macOS default input; macOS asks for permission the first time.")
+                    Text("The microphone uses the Mac's default input device. Check its input level in System Settings → Sound.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            Section {
+                Text(verbatim: microphone.state.description)
+                if microphone.state == .notDetermined {
+                    Button("Allow Microphone…") { microphone.requestAccess() }
+                        .disabled(microphone.requesting)
+                } else if microphone.state == .denied {
+                    Text("If access is already on, turn this app's microphone switch off and on again after an update.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                HStack {
+                    Button("Open Microphone Settings…") { microphone.openSettings() }
+                    Button("Check Again") { microphone.refresh() }
+                }
+            } header: {
+                Text("Microphone access")
+            }
         }
+        .onAppear { microphone.refresh() }
     }
 }
 

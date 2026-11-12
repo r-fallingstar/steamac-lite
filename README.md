@@ -4,7 +4,9 @@
 
 **Illustrated setup guide:** [日本語](https://r-fallingstar.github.io/steamac-lite/?lang=ja) · [English](https://r-fallingstar.github.io/steamac-lite/en/) · [한국어](https://r-fallingstar.github.io/steamac-lite/ko/) · [简体中文](https://r-fallingstar.github.io/steamac-lite/zh-CN/)
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.12/SteamAC-Lite-1.9.4-lite.12-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.12) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.13/SteamAC-Lite-1.9.4-lite.13-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.13) · [はじめての導入手順](docs/quick-start.ja.md)
+
+Lite.13 checks microphone access before starting SteamOS. When needed, it offers the macOS permission prompt or a link to Microphone settings. Access status is also available in Settings → Sound. Ad-hoc builds may need permission again after an update.
 
 Lite.9 adds in-app update notifications and verified downloads from this fork’s GitHub releases. Choose **Update**, then **Install and Relaunch**. The SteamOS disk and settings are kept. Lite.8 and older need one manual upgrade to Lite.9 or later first. [Update behavior and publishing](docs/in-app-updates.md).
 

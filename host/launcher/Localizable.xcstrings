@@ -7478,34 +7478,6 @@
         }
       }
     },
-    "Microphone: the guest records from the macOS default input; macOS asks for permission the first time.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Микрофон: гостевая система записывает звук с устройства ввода macOS по умолчанию; при первом использовании macOS запросит разрешение."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "麦克风：客户机使用 macOS 的默认输入设备录音；首次使用时 macOS 会请求权限。"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "マイクはmacOSの既定の入力を使います。初回はmacOSがアクセス許可を求めます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "마이크: 게스트는 macOS 기본 입력을 통해 녹음하며, macOS가 처음에 권한을 요청합니다."
-          }
-        }
-      }
-    },
     "Minimize": {
       "localizations": {
         "ru": {
@@ -19640,6 +19612,496 @@
           "stringUnit": {
             "state": "translated",
             "value": "Повторить попытку"
+          }
+        }
+      }
+    },
+    "Allow Microphone…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Microphone…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクを許可…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 허용…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许使用麦克风…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешить микрофон…"
+          }
+        }
+      }
+    },
+    "Allow microphone access for voice chat in SteamOS games? macOS will ask you to confirm. After an app update, permission may be needed again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow microphone access for voice chat in SteamOS games? macOS will ask you to confirm. After an app update, permission may be needed again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOSのゲームでボイスチャットを使うためにマイクを許可しますか？ このあとmacOSの確認画面が開きます。アプリの更新後は再び許可が必要になることがあります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOS 게임의 음성 채팅에 마이크 사용을 허용할까요? 다음으로 macOS 확인 창이 열립니다. 앱 업데이트 후에는 권한을 다시 허용해야 할 수 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是否允许 SteamOS 游戏使用麦克风进行语音聊天？接下来 macOS 会请求确认。应用更新后可能需要再次授权。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешить доступ к микрофону для голосового чата в играх SteamOS? Затем macOS запросит подтверждение. После обновления приложения разрешение может потребоваться снова."
+          }
+        }
+      }
+    },
+    "Check Again": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check Again"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "もう一度確認"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 확인"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新检查"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить снова"
+          }
+        }
+      }
+    },
+    "Continue Without Microphone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue Without Microphone"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクを使わずに続ける"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 없이 계속"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不使用麦克风并继续"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продолжить без микрофона"
+          }
+        }
+      }
+    },
+    "If access is already on, turn this app's microphone switch off and on again after an update.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If access is already on, turn this app's microphone switch off and on again after an update."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すでに許可がオンの場合も、更新後はこのアプリのマイク許可を一度オフにしてからオンにしてみてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이미 허용된 상태라도 업데이트 후에는 이 앱의 마이크 권한을 껐다가 다시 켜 보세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如果权限已开启，更新后也可尝试将此应用的麦克风权限关闭后重新开启。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если доступ уже включён, после обновления попробуйте выключить и снова включить разрешение для этого приложения."
+          }
+        }
+      }
+    },
+    "If the microphone stopped working after an update, turn this app's microphone switch off and on again in System Settings. You can also check access in Settings → Sound.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If the microphone stopped working after an update, turn this app's microphone switch off and on again in System Settings. You can also check access in Settings → Sound."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新後にマイクが使えなくなった場合は、システム設定でこのアプリのマイク許可を一度オフにしてからオンにしてみてください。アプリの「設定 → 音声」でも許可の状態を確認できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업데이트 후 마이크가 작동하지 않으면 시스템 설정에서 이 앱의 마이크 권한을 껐다가 다시 켜 보세요. 앱의 설정 → 사운드에서도 권한 상태를 확인할 수 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如果更新后麦克风无法使用，请在系统设置中将此应用的麦克风权限关闭后重新开启。也可以在应用的“设置 → 声音”中查看权限状态。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если микрофон перестал работать после обновления, попробуйте выключить и снова включить доступ для этого приложения в Системных настройках. Статус разрешения также можно проверить в разделе «Настройки → Звук» приложения."
+          }
+        }
+      }
+    },
+    "Microphone access": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone access"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクへのアクセス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 접근"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "麦克风访问权限"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к микрофону"
+          }
+        }
+      }
+    },
+    "Microphone access has not been requested.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone access has not been requested."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクの使用許可はまだ確認していません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 마이크 사용 권한을 요청하지 않았습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未请求麦克风使用权限。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешение на использование микрофона ещё не запрашивалось."
+          }
+        }
+      }
+    },
+    "Microphone access is allowed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone access is allowed."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクの使用が許可されています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 사용이 허용되어 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已允许使用麦克风。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к микрофону разрешён."
+          }
+        }
+      }
+    },
+    "Microphone access is not allowed. Check Microphone in System Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone access is not allowed. Check Microphone in System Settings."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクの使用が許可されていません。システム設定の「マイク」を確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 사용이 허용되지 않았습니다. 시스템 설정에서 마이크를 확인해 주세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未获准使用麦克风。请检查系统设置中的“麦克风”。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к микрофону не разрешён. Проверьте раздел «Микрофон» в Системных настройках."
+          }
+        }
+      }
+    },
+    "Microphone access is restricted by this Mac's settings or administrator.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone access is restricted by this Mac's settings or administrator."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このMacの設定または管理者によってマイクの使用が制限されています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 Mac의 설정 또는 관리자에 의해 마이크 사용이 제한되어 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 Mac 的设置或管理员限制了麦克风访问。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к микрофону ограничен настройками этого Mac или администратором."
+          }
+        }
+      }
+    },
+    "Open Microphone Settings…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Microphone Settings…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクの設定を開く…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 설정 열기…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开麦克风设置…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть настройки микрофона…"
+          }
+        }
+      }
+    },
+    "The microphone uses the Mac's default input device. Check its input level in System Settings → Sound.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The microphone uses the Mac's default input device. Check its input level in System Settings → Sound."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクにはMacの標準入力デバイスを使います。入力音量は「システム設定 → サウンド」で確認できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크는 Mac의 기본 입력 기기를 사용합니다. 입력 레벨은 시스템 설정 → 사운드에서 확인할 수 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "麦克风使用 Mac 的默认输入设备。请在“系统设置 → 声音”中检查输入电平。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Микрофон использует устройство ввода Mac по умолчанию. Уровень входного сигнала можно проверить в разделе «Системные настройки → Звук»."
+          }
+        }
+      }
+    },
+    "You can use SteamOS without a microphone. To allow it later, open Settings → Sound.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can use SteamOS without a microphone. To allow it later, open Settings → Sound."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクを使わずにSteamOSを利用できます。あとから許可する場合は「設定 → 音声」を開いてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 없이 SteamOS를 사용할 수 있습니다. 나중에 허용하려면 설정 → 사운드를 열어 주세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可以不使用麦克风继续运行 SteamOS。如需稍后授权，请打开“设置 → 声音”。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SteamOS можно использовать без микрофона. Чтобы разрешить доступ позже, откройте «Настройки → Звук»."
           }
         }
       }

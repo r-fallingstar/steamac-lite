@@ -1,5 +1,17 @@
 # マイク入力の修正
 
+## Lite.13: 更新後のマイク許可
+
+Lite.9〜12には下記の録音処理の修正が含まれています。一方、ad-hoc署名では更新ごとにアプリの署名要件が変わるため、以前のマイク許可が継続しない場合があります。このMacでも、Lite.12に対するTCCの事前確認で以前の署名要件との不一致が記録されました。システム設定の許可スイッチはオンのままでした。報告者の環境で同じ原因かは未確定です。
+
+Lite.13は公開APIでマイクの許可を確認します。未確認ならユーザー操作でOSの許可画面を開き、拒否・制限時はシステム設定へ案内します。「設定 → 音声」でも状態を確認できます。起動時の確認が終わるまでVMを起動せず、OSの確認待ちでゲストの録音要求がタイムアウトすることを避けます。マイクを使わず続行することもできます。許可を自動変更したり、TCCをリセットしたりはしません。
+
+正式なDeveloper ID署名への移行は含みません。更新をまたぐ許可の継続は保証されず、再許可が必要になる場合があります。
+
+参考: [Apple: コード署名とマイク許可の同一性](https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements)、[macOSのメディア取得の許可](https://developer.apple.com/documentation/bundleresources/requesting-authorization-for-media-capture-on-macos)。
+
+## Lite.6: 録音処理
+
 macOSのマイク権限が許可済みでもSteamOSの録音が無音になる問題を修正するlibkrunパッチです。
 
 対象: `host/libkrun/patches/0029-snd-wait-for-capture-start-and-microphone-readiness.patch`

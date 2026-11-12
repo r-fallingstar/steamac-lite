@@ -9,7 +9,7 @@
   "top.p2": "steamac Lite 다운로드부터 VRChat용 설정까지 화면 사진과 함께 안내합니다.",
   "top.a1": "Mac용 앱 다운로드 <span aria-hidden=\"true\">↓</span>",
   "top.a2": "설치 안내 보기 →",
-  "top.p3": "v1.9.4-lite.12 · 약 100 MB · Apple Silicon용 실험 버전",
+  "top.p3": "v1.9.4-lite.13 · 약 100 MB · Apple Silicon용 실험 버전",
   "top.figcaption1": "VRChat 설치 후의 한국어 Steam 화면",
   "top.p4": "시작하기 전에",
   "top.h21": "준비 사항",
@@ -101,7 +101,7 @@
   "footer.a2": "릴리스",
   "footer.a3": "라이선스",
   "footer.a4": "원본 프로젝트",
-  "footer.p2": "안내 버전: v1.9.4-lite.12. 앱과 Steam은 각 페이지의 언어로 촬영했습니다. GitHub 화면에는 번역된 안내를 추가했습니다. Mac과 버전에 따라 화면이 다를 수 있습니다. 프로젝트 이름 표기를 “steamac Lite”로 통일했습니다. 업데이트 호환성을 위해 기존 다운로드 파일명과 앱 저장 이름은 유지합니다.",
+  "footer.p2": "안내 버전: v1.9.4-lite.13. 앱과 Steam은 각 페이지의 언어로 촬영했습니다. GitHub 화면에는 번역된 안내를 추가했습니다. Mac과 버전에 따라 화면이 다를 수 있습니다. 프로젝트 이름 표기를 “steamac Lite”로 통일했습니다. 업데이트 호환성을 위해 기존 다운로드 파일명과 앱 저장 이름은 유지합니다.",
   "photo-dialog.p1": "화면 사진",
   "photo-dialog.button2": "닫기 <span aria-hidden=\"true\">×</span>",
   "attr.content1": "steamac Lite 다운로드부터 SteamOS 초기 설정, VRChat용 설정, 일본어 입력까지 화면 사진으로 설명하는 설치 가이드입니다.",
@@ -153,5 +153,7 @@
   "booth.step4.text": "앱이 열리면 아래의 표시 언어 설정으로 진행하세요. SteamOS와 게임은 이후 앱에서 다운로드합니다.",
   "booth.current": "최신 버전이 이미 설치되어 있으면 다시 다운로드하지 않고 앱을 열 수 있습니다. 기존 SteamOS 디스크와 설정은 유지됩니다.",
   "booth.next": "03 표시 언어 설정으로 이동 →",
-  "download.route": "GitHub에서 직접 다운로드할 때는 아래의 DMG를 사용하세요. BOOTH에서 다운로드하는 경우에는 아래 항목의 절차를 따르세요."
+  "download.route": "GitHub에서 직접 다운로드할 때는 아래의 DMG를 사용하세요. BOOTH에서 다운로드하는 경우에는 아래 항목의 절차를 따르세요.",
+  "microphone.title": "마이크 사용",
+  "microphone.text": "안내가 나오면 마이크 허용…을 누르고 macOS 확인 창에서도 허용해 주세요. 권한이 없으면 마이크 설정 열기…에서 확인할 수 있습니다. 업데이트 후 작동하지 않으면 이 앱의 마이크 권한을 껐다가 다시 켜 보세요. 앱의 설정 → 사운드에서도 권한 상태를 확인할 수 있습니다."
 }

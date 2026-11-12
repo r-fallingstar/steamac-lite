@@ -35,7 +35,10 @@ enum SettingsSelfTest {
         // Manual localization review uses the real settings controls without starting a VM.
         // This mode keeps the window open for an accessibility client or a human reviewer.
         if ProcessInfo.processInfo.environment["STEAMAC_SETTINGS_REVIEW"] == "1" {
-            DispatchQueue.main.async { app.activate(); sw.show(tab: .general) }
+            DispatchQueue.main.async {
+                let tab = SettingsWindowController.Tab.allCases.first { $0.name == ProcessInfo.processInfo.environment["STEAMAC_SETTINGS_REVIEW_TAB"] } ?? .general
+                app.activate(); sw.show(tab: tab)
+            }
             app.run()
             exit(0)
         }

@@ -26,6 +26,7 @@ let package = Package(
                 .linkedFramework("ImageIO"),
                 .linkedFramework("Carbon"),
                 .linkedFramework("CoreAudio"),
+                .linkedFramework("AVFoundation"),
                 .linkedFramework("SwiftUI"),
                 .linkedFramework("Security"),
             ]
