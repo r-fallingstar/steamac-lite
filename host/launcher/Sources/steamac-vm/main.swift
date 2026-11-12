@@ -16,6 +16,10 @@ if CommandLine.arguments.contains(where: { $0.hasPrefix("--selftest-") }), geten
     setenv("STEAMAC_DEFAULTS_DOMAIN", domain, 1)
 }
 
+if CommandLine.arguments.contains(where: { $0.hasPrefix("--selftest-") }), getenv("STEAMAC_GAME_STATS_FILE") == nil {
+    setenv("STEAMAC_GAME_STATS_FILE", NSTemporaryDirectory() + "steamac-selftest-stats-\(getpid()).json", 1)
+}
+
 // Offer installation before language selection, disk setup, or any VM process starts.
 MainActor.assumeIsolated { DmgInstall.runIfNeeded(CommandLine.arguments) }
 
