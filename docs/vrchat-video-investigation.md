@@ -1,12 +1,15 @@
 # VRChat video investigation (issue #1)
 
-Status: open; reported by multiple users. The H.264 initialization failure and
-N-times-speed audio are separate problems. Neither has been reproduced by the
-maintainer in the reported M3 Pro / FEX / custom VR build. Do not treat the reporter's Steam-client licensing
+Status: open for reporter confirmation. The maintainer confirmed AVPro and Unity
+playback in Tokyo Sky Home on an M1 / 8 GB test clone after the private decoder
+priority fix. The separate N-times-speed audio report has not been reproduced in
+an actual multiple-AudioSource player; no dedicated audio-speed patch is claimed.
+Do not treat the reporter's Steam-client licensing
 hypothesis as an established cause. An unsuccessful `avcodec_open2` does not by itself
 identify why the decoder failed.
 
-The Lite layer does not replace Steam's `libavcodec` or contain AVPro's AudioSource
+The candidate supplies private FFmpeg libraries without replacing Steam's
+`libavcodec` and does not contain AVPro's AudioSource
 buffer manager. The report's read counts suggest that audio is being consumed more
 than once, but they do not establish whether AVPro, Wine's source reader or timing
 under FEX causes that behavior. The OpenVR pose runtime has no AudioSource count
@@ -64,8 +67,10 @@ and configure EAC/Proton launch options; they do not install a codec or set
 GStreamer decoder options. `audio-layout` configures physical VirtIO channels and
 scheduling, not world AudioSource consumers. `guest/vr/runtime` supplies OpenVR
 poses, rendering and frame timing, not Media Foundation source-reader buffers.
-There is no evidence supporting a production codec swap, a global CPU/thread
-setting, a playback-rate change or a pose-runtime audio fix here.
+At that stage, no actual FEX decoder comparison supported a production codec
+change. The later comparison below provides that missing evidence for the private
+codec candidate. A global CPU/thread setting, playback-rate change or pose-runtime
+audio fix is still unsupported.
 
 ### Decoder experiment
 
@@ -178,3 +183,159 @@ test clone after preserving the required EAC integration and existing prefix.
 Review logs before sharing: omit account identifiers, local personal paths,
 private-world links, expiring media URLs and authentication data. Keep the issue
 open until an actual playback test verifies the fix.
+
+## Actual FEX decoder comparison (2026-11-12)
+
+The test used an independent copy of the stopped normal SteamOS disk on the
+maintainer's M1 / 8 GB Mac, with macOS 27.2, FEX `eac-2610.5`, Proton
+`experimental-11.0-20261105c-x86_64` (Wine `e8ca5806`), and Steam Runtime
+`4.0.20261021.265997`. The original disk and normal preferences were retained.
+No game, physical camera, or microphone was opened during these decoder tests.
+
+The x86 probe ran inside the actual Steam Runtime / FEX filesystem view.
+Steam's `ubuntu12_64/libavcodec.so.58` SHA-256 was
+`2f8494ad8dff5846b082441b83ae16bcd2e100eea17d5fcc18fbf13eebd6b3a0`.
+The loaded versions were avcodec 58.91.100 and avutil 56.51.100. Both `h264` and
+`valve_h264` returned **-1 (Operation not permitted)** from `avcodec_open2`.
+One thread, two threads, and two threads with runtime CPU flags disabled all
+failed identically. This establishes the failure in this library/environment;
+it does not establish the internal reason for the denial.
+
+A source-built FFmpeg 4.3.6 control opened H.264 and decoded the public Wine test
+MP4 through the same Proton Source Reader, synchronously and asynchronously.
+The maintained ABI-compatible [FFmpeg 4.4.8 release](https://ffmpeg.org/download.html)
+was then built in the pinned x86 Steam Runtime SDK. The four libraries keep the
+same major SONAMEs: avcodec 58, avformat 58, avfilter 7, avutil 56. Its source pin,
+configuration and build steps are in `guest/video/ffmpeg-source.json` and
+`guest/video/build-codecs.sh`.
+
+The candidate installs them into the existing **private** compatibility tool,
+not Steam's installed libraries or original Proton. The actual guest test
+upgraded a schema-1 camera snapshot to schema 2, kept the camera module and
+Steam tool identity, validated the new manifest, and checked that original
+Steam decoder and Proton camera hashes stayed unchanged. The migration has
+104 fixture checks, including the 38 existing camera checks, rollback/recovery,
+unknown stock updates, custom selections and file isolation. The follow-up fault
+injections cover a changed/disappeared published target and interrupted backup
+cleanup. Cleanup revalidates the successor and retains a directory-identity-bound
+transaction marker until backup deletion completes, allowing a later stopped
+startup to resume without treating arbitrary replacement directories as owned.
+
+### Playback evidence and limits
+
+`guest/diagnostics/mf-video-probe.c` is a standalone Source Reader client. It
+logs types, HRESULTs, valid buffer lengths versus capacity, payload hashes,
+sample timestamps/durations and completed totals. It has independent process,
+read-count and time bounds. It neither renders video nor drives an audio device.
+`--timeline-order` requests the stream whose delivered timeline is behind;
+`--pace-audio` schedules audio-only reads by valid PCM frames and sample rate.
+Neither changes the Source Reader or the game's playback speed.
+
+The canonical fixture is eight seconds of public Wine test imagery rendered to
+a continuous H.264 stream, with synthetic stereo tones encoded as AAC. Native
+AVFoundation verification produced 200 decoded frames at 25 fps and 352800
+44.1-kHz audio frames (eight seconds). A passthrough concatenation with edit lists
+was rejected as a timing reference after it produced repeated timestamps under
+GStreamer; successful API exit alone is insufficient validation.
+
+With the private 4.4.8 runtime, local sync and async reads reached EOS with all
+200 video frames, exactly eight seconds of video duration, and no backward video
+timestamps. AAC returned about 8.057 seconds of valid PCM; one startup timestamp
+regression/priming discrepancy remains visible. An eight-second PCM WAV control
+returned about 7.999 seconds of PCM in about 8.3 seconds with audio pacing enabled.
+These tests do **not** reproduce the reported N-times-speed AudioSource behavior.
+
+A range-capable loopback HTTP fixture allows successful opening and decoded
+samples, including the complete short Wine MP4. The eight-second HTTP case still
+returns only **150/200 video frames**, even with video-only or timeline-ordered
+reads. It must not be recorded as a full playback pass or used to close the issue.
+The next check is actual YamaPlayer playback in the user-supplied
+[Tokyo Sky Home](https://vrchat.com/home/world/wrld_09f7ceb5-2d4f-4dc4-a2cf-2a32a7af35df/info),
+for both AVPro and Unity backends and multiple speaker outputs.
+
+The owner then tested the first candidate in Tokyo Sky Home with YamaPlayer.
+Both AVPro and Unity remained black. Inspection of that test clone confirmed
+the schema-2 receipt, the four candidate codec hashes, and the `steamac_camera`
+selection. The game log showed successful YouTube URL resolution, but did not
+establish which decoder library was mapped at playback time. This is an actual
+failed game test; the standalone decoder success must not be described as a
+fix for the world's playback. A subsequent clone-only diagnostic records mapped
+library file paths/hashes, without attaching to or reading game process memory.
+
+A first attempt to run the standalone probe through Proton's full `run` verb
+timed out before the probe banner. It had reached `steam.exe` in a headless boot;
+the exact blocking function is unknown. Its wrapper initially discarded status
+124 and reported VM exit zero, so that run is explicitly a failed harness test.
+Further comparisons separate prefix setup, the `runinprefix` verb, architecture
+choice and GStreamer registry forking rather than infer a codec regression.
+
+The second GUI test recorded the actual game's library metadata. Although its
+GStreamer plugin came from the private compatibility tool, the game mapped all
+four FFmpeg libraries from Steam's `ubuntu12_64` directory. The mapped avcodec
+SHA-256 was **2f8494ad8dff5846b082441b83ae16bcd2e100eea17d5fcc18fbf13eebd6b3a0**,
+identical to the library that returned EPERM in the standalone reproduction.
+Its inherited search path put Steam's three video directories ahead of the
+private tool directories. This establishes that the actual game did not use
+the candidate codecs; the earlier explicit-path diagnostic had masked that
+launch-path difference. A pinned private-launcher priority policy now prepends
+the private codec directory immediately after Proton adds Steam's video paths.
+Its exact source anchor uses `steam_linux_path`; the original launcher SHA-256 is
+`6d0cd1d4196d73a970ed4ce2e569f3a2003beae3beb0c7951fa08c22cd2772a1`.
+The schema-3 upgrade succeeded on the isolated test clone and verified that
+Steam's original files remained unchanged. The patched private launcher hash is
+`1f1e18d4045a4e247ab73cb7f923de7ce219d0c76a60974cb3b388d0e744f33f`.
+The phased headless Proton harness then exited 255 before container entry, so it
+is not a playback pass.
+
+The third GUI run then recorded all four actual game mappings in the private
+tool, matching the verified build: avcodec `e82ac2ca…`, avutil `59c790c3…`,
+avformat `20db0db1…`, and avfilter `0f4badeb…`. On November 13, 2026 (JST), the
+maintainer tested the requested AVPro → Unity sequence in Tokyo Sky Home and
+reported “動きました！すべて大丈夫そうです！” in response to the video, audio and
+playback-speed check. This is an owner-confirmed game playback pass on that
+machine/world, not a claim that every stream or the original reporter's separate
+multiple-AudioSource speed issue is resolved. Keep issue #1 open pending the
+reporter's retest.
+
+The packaged synthetic camera regression also passed all five cases after this
+change (stock RGB32 negative control, private RGB24 capture, RGB24/RGB32 preview,
+and a second bound filter). The test did not open a physical camera or request
+camera permission and verified that the original Proton camera module was
+unchanged.
+
+The initial native-probe launcher incorrectly replaced the runtime's library
+search path and prevented the ARM FEX loader from finding libstdc++. Prepending
+the selected x86 codec path while preserving the runtime-provided paths fixed
+the diagnostic launch. This was a harness error, not the H.264 root cause.
+
+No game-wide CPU flags, speaker-count rate division, arbitrary timestamp sleeps,
+or untested GE patch set is enabled by the candidate. Audio-source lifetime,
+seek ordering, callback ordering and buffer capacity are research candidates;
+none is a demonstrated fix for the reported audio problem yet.
+
+### Reusing the standalone decoder probe
+
+Build with the cached MinGW-w64 x86 compiler, only while the SteamOS VM is
+stopped. Run inside the same Steam Runtime/FEX environment as the comparison
+above, with an independent diagnostic Wine prefix:
+
+```sh
+x86_64-w64-mingw32-gcc -std=c11 -O2 -Wall -Wextra -Werror -municode \
+  guest/diagnostics/mf-video-probe.c -o mf-video-probe.exe \
+  -lmfreadwrite -lmfplat -lmfuuid -lole32 -lpropsys -luuid
+wine mf-video-probe.exe --async --timeline-order --expect-video-frames=200 \
+  --max-samples=1200 --max-ms=20000 'Z:\\tmp\\canonical-8s.mp4'
+```
+
+`--expect-video-frames` makes premature EOS or a sample/time limit fail the
+known-frame-count fixture rather than accept a partially decoded video. It
+counts nonempty video samples, so use fixtures with one decoded frame per sample.
+The ordinary exit-zero result only establishes nonempty data for each requested
+stream and successful teardown. Check actual frame counts, EOS, durations and
+timestamps before describing a file as completely decoded.
+
+Only local Windows paths and public or loopback HTTP(S) URLs are accepted.
+Preserve the Steam Runtime's library search paths when prepending private codec
+paths. Drain both output streams and enforce an external process timeout in
+addition to the probe's own deadline. No game process inspection, camera access
+or audio-device access is involved.

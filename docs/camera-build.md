@@ -63,12 +63,12 @@ Proton update. Copy-on-write is used where supported. On ext4, preparation makes
 
 Run the camera and setup fixture tests, native camera/permission/render tests,
 and strict localization checks. For the actual guest test, prepare a copy of a
-stopped SteamOS disk and set `DISK` in `scripts/camera/test-bridge.py` to that
+stopped SteamOS disk and set `STEAMAC_CAMERA_TEST_DISK` to that
 copy; never use the user's original disk. After building the standard app:
 
 ```sh
 python3 scripts/camera/prepare-production-test.py
-python3 scripts/camera/test-bridge.py --production
+STEAMAC_CAMERA_TEST_DISK=/absolute/path/to/test-clone.img python3 scripts/camera/test-bridge.py --production
 ```
 
 This boots the standard binary with synthetic frames, prepares the private tool

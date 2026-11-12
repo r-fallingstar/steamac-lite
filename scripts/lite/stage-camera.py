@@ -35,10 +35,10 @@ def stage(layer, app):
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(INPUT / name, target)
         target.chmod(0o755 if name == 'camera-agent' else 0o644)
-    for name in ('start-camera', 'prepare-proton.py', 'init-home.py', 'proton-camera.json'):
+    for name in ('start-camera', 'prepare-proton.py', 'init-home.py', 'proton-camera.json', 'video-launcher.json'):
         target = lib / name
         shutil.copyfile(ROOT / 'guest/camera' / name, target)
-        target.chmod(0o755 if name != 'proton-camera.json' else 0o644)
+        target.chmod(0o644 if name.endswith('.json') else 0o755)
     units = layer / 'usr/lib/systemd/system'
     (units / 'steamac-camera.service').write_text('''[Unit]
 Description=steamac built-in camera bridge

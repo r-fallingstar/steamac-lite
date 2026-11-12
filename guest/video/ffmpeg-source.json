@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/FFmpeg/FFmpeg",
+  "tag": "n4.4.8",
+  "commit": "209fceb8783e7996d04f35503d62fae0c42f2575",
+  "archive_sha256": "05fbd455963f7346fbf6fab7076a49a9e69c06eb1a29d9b4a8ce24cd171a1764",
+  "sdk_image": "registry.gitlab.steamos.cloud/steamrt/sniper/sdk@sha256:bb30053d3cd19d35c76ae69b2790dbaa1430448006f8240cb6d7e723f2d1940e",
+  "nasm_package": "2.15.05-1",
+  "sonames": [
+    "libavcodec.so.58",
+    "libavformat.so.58",
+    "libavfilter.so.7",
+    "libavutil.so.56"
+  ]
+}

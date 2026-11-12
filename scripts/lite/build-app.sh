@@ -63,9 +63,9 @@ import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='steamac Lite',
-         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.8-lite.3',
+         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.8-lite.4',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='198004', SteamacCameraSupport=True,
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='198005', SteamacCameraSupport=True,
          NSCameraUsageDescription='The built-in camera is sent to games in the SteamOS virtual machine only while a game uses it or a manual preview is open. Video is not saved.',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
          LSMinimumSystemVersion='15.5')
@@ -81,8 +81,11 @@ FLAGS=(--package-path host/launcher --build-system native --sdk "$SDK" -c releas
     -Xcc "-I$HOST/include" -Xcc "-I$ROOT/host/vrhost/include"
     -Xlinker "-L$HOST/lib" -Xlinker -rpath -Xlinker "$HOST/lib"
     -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker "$PLIST")
-swift build "${FLAGS[@]}"
 BIN=$(swift build "${FLAGS[@]}" --show-bin-path)/steamac-vm
+# Swift does not track the contents of the plist passed through -sectcreate.
+# Relink the generated executable so crash reports carry this build's identity.
+rm -f "$BIN"
+swift build "${FLAGS[@]}"
 
 if [[ "$REUSE_LAYER" != 1 ]]; then
 # EROFS tools can be supplied by MacPorts/Homebrew, or built from upstream erofs-utils.
@@ -156,7 +159,8 @@ VRPY
 install -m644 "$VR_RUNTIME" "$LAYER/usr/lib/steamac/vr/runtime/bin/linux64/vrclient.so"
 cp "$VR_MANIFEST" "$APP/Contents/Resources/steamac-vr-build.json"
 python3 scripts/lite/stage-camera.py "$LAYER" "$APP"
-echo 'steamac-lite v1.9.8-lite.3 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
+python3 scripts/lite/stage-video.py "$LAYER" "$APP"
+echo 'steamac-lite v1.9.8-lite.4 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz private-video-codecs' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"

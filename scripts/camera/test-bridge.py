@@ -3,6 +3,8 @@
 from pathlib import Path
 import json,os,signal,subprocess,time,sys
 ROOT=Path(__file__).resolve().parents[2];W=ROOT/'work/camera-experiment';APP=W/'steamac Lite Camera Test.app';DISK=W/'steamos-camera.img'
+DISK=Path(os.environ.get('STEAMAC_CAMERA_TEST_DISK',str(DISK))).expanduser().resolve()
+assert DISK.is_file(),'Provide an existing isolated test clone with STEAMAC_CAMERA_TEST_DISK'
 MF='--mf' in sys.argv
 LAYOUT='--layout' in sys.argv
 DSHOW='--dshow' in sys.argv

@@ -8,15 +8,23 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.8-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.3/SteamAC-Lite-1.9.8-lite.3-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.4/SteamAC-Lite-1.9.8-lite.4-macos-arm64.dmg)**
 
 初回の案内ではマイクとカメラの許可を確認します。許可が残っていれば聞き直さず、更新などで以前の許可が外れた場合は再案内します。自動使用をオフにした選択や許可しなかった機能も聞き直しません。Lite.6の録音処理の修正も含みます。[原因と確認内容](docs/microphone-fix.md)。
 
-DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.3)
+DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.4)
 
 macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 
 Lite.9以降は新しいReleaseをアプリ内で通知します。「アップデート」で取得し、「更新して開き直す」で反映します。SteamOSのディスクと設定は引き継ぎます。Lite.8以前は最初の1回だけ手動でLite.9以降へ更新してください。[更新のしくみ](docs/in-app-updates.md)。
+
+## v1.9.8-lite.4
+
+VRChatの動画再生で、固定した専用Protonランチャーから専用のFFmpeg 4.4.8を優先して使うようにしました。従来はゲームがSteam標準のFFmpeg avcodec58を読み込み、EPERMで失敗していました。Steam・Proton本体のファイルは変更しません。
+
+作者のM1・RAM 8 GBのMacで、Tokyo Sky HomeのYamaPlayer（AVPro）とUnityの動画再生について、映像・音声・再生速度を確認しました。音声速度専用の修正はありません。[Issue #1](https://github.com/r-fallingstar/steamac-lite/issues/1)を報告した方は、この版で再確認をお願いします。Issueは未解決のまま継続します。
+
+同じアプリの標準アップデートです。カメラ転送・入力マイクの選択・レンダリング解像度（px）、既存のSteamOSディスク・ゲーム・設定を引き継ぎます。カメラの自動テスト5項目も通過しました。「アップデートを確認…」、またはDMGの「インストールして開く」で更新できます。既存の自動更新とBOOTHのネットインストーラーも最新版を取得します。[更新内容](docs/release-notes-1.9.8-lite.4.md)。
 
 ## v1.9.8-lite.3
 
@@ -64,6 +72,8 @@ macOSの仮想メモリ設定は変更しません。スワップはRAM不足に
 
 Lite用の組み立てには、`scripts/lite/base-release.json`で固定した`FX Steam Launcher.app` 1.9.8-eac.1、Swift 6、SDK、Git、Python 3、erofs-utils、Rust 1.90.0が必要です。`BASE_APP`で指定する本体は同ファイルのハッシュで検証します。
 
+動画ライブラリは`guest/video/build-codecs.sh`で、固定したFFmpeg 4.4.8のソースとSDKから作成します。Dockerを使用するビルド中はSteamOSを停止してください。[動画の検証内容](docs/vrchat-video-investigation.md)も参照してください。
+
 先に`guest/vr`をx86_64 LinuxのSteam Runtime sniper環境でビルドし、`make check`を完了してください。`work/out/vr/runtime/bin/linux64/`には`vrclient.so`と`runtime-build.json`が必要です。記録は`source_tree`（`git rev-parse HEAD:guest/vr`）、`sha256`、`unit_tests_passed`、`end_to_end_tests_passed`を含み、実際の成果物と試験結果に対応させます。ソースや試験が不一致の場合、組み立ては停止します。
 
 ```sh
@@ -71,6 +81,7 @@ export BASE_APP="/path/to/FX Steam Launcher.app"
 python3 scripts/test/low-memory-swap.py
 python3 scripts/test/keyboard-setup.py
 bash scripts/lite/build-audio-library.sh
+bash guest/video/build-codecs.sh
 LIBKRUN_OVERRIDE="$PWD/work/out/host/lib/libkrun.1.dylib" bash scripts/lite/build-app.sh
 ```
 

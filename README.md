@@ -6,7 +6,15 @@
 
 [Update support](https://r-fallingstar.github.io/steamac-lite/en/support/) covers in-app and DMG updates, microphone access, and troubleshooting.
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.3/SteamAC-Lite-1.9.8-lite.3-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.3) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.4/SteamAC-Lite-1.9.8-lite.4-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.4) · [はじめての導入手順](docs/quick-start.ja.md)
+
+## v1.9.8-lite.4
+
+VRChat video playback now gives private FFmpeg 4.4.8 priority through a pinned private Proton launcher. The game previously loaded Steam’s stock FFmpeg avcodec58 and returned EPERM. Steam and Proton’s own files are unchanged.
+
+On an M1 Mac with 8 GB RAM, the owner confirmed video, audio and playback speed in Tokyo Sky Home’s YamaPlayer (AVPro) and Unity video playback. There is no dedicated audio-speed patch. The original [Issue #1](https://github.com/r-fallingstar/steamac-lite/issues/1) reporter is asked to retest; the issue stays open.
+
+This is a standard update to the same app, keeping camera forwarding, microphone selection, rendering resolution (px), SteamOS disks, games and settings. All five automated camera regression cases passed. Use **Check for Updates…**, or open the DMG and choose **Install and Open**. The existing updater and BOOTH online installer obtain the latest release. See [release notes](docs/release-notes-1.9.8-lite.4.md).
 
 ## v1.9.8-lite.3
 

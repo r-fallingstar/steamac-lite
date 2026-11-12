@@ -1,0 +1,10 @@
+steamac Lite video compatibility libraries
+
+FFmpeg 4.4.8: Copyright (c) the FFmpeg developers.
+Source: https://github.com/FFmpeg/FFmpeg/tree/n4.4.8
+This build is configured under the GNU Lesser General Public License 2.1 or later,
+without GPL or nonfree components. See COPYING.LGPLv2.1 and LICENSE.md.
+Complete corresponding source and build instructions accompany the release.
+
+The libraries are installed only in steamac Lite's managed private compatibility
+tool. The installed Steam libraries and original Proton files are not replaced.
