@@ -20969,7 +20969,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ゲームが要求したときだけカメラを使う"
+            "value": "ゲームで使うときだけカメラを起動"
           }
         },
         "ko": {
@@ -21133,31 +21133,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Camera permission alone does not start capture. Games start and stop it automatically. Start can be used for a preview."
+            "value": "Permission alone does not start capture. The camera runs while a game uses it. Choose “Allow and start camera” for a preview."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "カメラを許可するだけでは撮影は始まりません。ゲームの要求に応じて自動で開始・停止します。「開始」でプレビューできます。"
+            "value": "許可だけでは撮影を始めません。ゲームで使う間だけ自動で撮影します。プレビューは「許可してカメラを使う」で確認できます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "카메라 접근을 허용하는 것만으로 촬영이 시작되지는 않습니다. 게임이 자동으로 시작하고 중지합니다. 미리 보려면 시작을 누르세요."
+            "value": "권한을 허용하는 것만으로 촬영이 시작되지는 않습니다. 게임에서 사용할 때만 자동으로 촬영합니다. 미리 보려면 “허용하고 카메라 사용”를 누르세요."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "仅授予摄像头权限不会开始拍摄。游戏会自动开始和停止拍摄。点击“开始”可预览画面。"
+            "value": "仅授予权限不会开始拍摄。摄像头只在游戏使用时自动开启。点击“允许并启动摄像头”可预览画面。"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Само разрешение доступа к камере не запускает съёмку. Игры запускают и останавливают её автоматически. Для предпросмотра нажмите «Начать»."
+            "value": "Разрешение доступа само по себе не запускает съёмку. Камера работает, пока игра её использует. Для предпросмотра нажмите «Разрешить и включить камеру»."
           }
         }
       }
