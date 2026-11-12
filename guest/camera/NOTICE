@@ -2,6 +2,10 @@ steamac Lite camera support
 
 The camera bridge (camera-agent.c and camera-colors.h) is distributed under
 this repository's GPL-3.0 license.
+Its static C runtime is Debian glibc 2.41-12+deb13u4, LGPL-2.1-or-later, built
+with GCC 14.2.0-19. The corresponding glibc source and Debian patches accompany
+the camera source archive. GCC runtime components carry the GCC Runtime Library
+Exception. Their copyright and license notices are included in this directory.
 
 v4l2loopback is Copyright its contributors, licensed under GPL-2.0.
 Source: https://github.com/v4l2loopback/v4l2loopback

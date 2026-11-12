@@ -70,6 +70,8 @@ WantedBy=multi-user.target
     shutil.copyfile(ROOT / 'guest/camera/NOTICE', licenses / 'NOTICE')
     shutil.copyfile(ROOT / 'work/camera-release/wine-source/COPYING.LIB', licenses / 'Wine-LGPL-2.1.txt')
     shutil.copyfile(ROOT / 'work/camera-experiment/v4l2loopback/COPYING', licenses / 'v4l2loopback-GPL-2.0.txt')
+    for source, name in (('glibc-COPYING', 'glibc-COPYING.txt'), ('gcc-COPYING', 'GCC-runtime-COPYING.txt')):
+        shutil.copyfile(ROOT / 'work/camera-release' / source, licenses / name)
     print('Staged camera bridge and isolated Proton support; no test observer or original-file overlay')
 
 
