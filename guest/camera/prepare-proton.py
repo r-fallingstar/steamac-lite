@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Prepare an independent, reflink-only camera Proton snapshot before Steam starts.
+"""Prepare an independent, independent camera Proton snapshot before Steam starts.
 
 Installed Proton is read-only input. A published tool is never updated in place:
 its receipt validates the private snapshot even after Steam updates the source.
@@ -71,14 +71,18 @@ def processes_busy():
 
 
 def clone_reflink(source, destination):
-    """No copy fallback, hardlinks, mounts, or writes through the installed tree."""
+    """Prefer shared extents; ext4 gets a bounded, independent ordinary copy."""
     if source.stat().st_dev != destination.stat().st_dev:
         raise ValueError("stock Proton and private staging are on different filesystems")
+    total = sum(path.stat().st_size for path in source.rglob("*")
+                if not path.is_symlink() and path.is_file())
+    if total > 4 * 1024**3 or shutil.disk_usage(destination).free < total + 512 * 1024**2:
+        raise ValueError("not enough space for the camera runtime")
     try:
-        subprocess.run(["cp", "-a", "--reflink=always", str(source) + "/.", str(destination)],
+        subprocess.run(["cp", "-a", "--reflink=auto", str(source) + "/.", str(destination)],
                        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError as error:
-        raise ValueError("reflink clone unavailable; no copy fallback") from error
+        raise ValueError("independent camera runtime copy failed") from error
 
 
 def contained(root, relative):

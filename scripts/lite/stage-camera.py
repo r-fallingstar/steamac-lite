@@ -63,7 +63,7 @@ WantedBy=multi-user.target
     dropin.write_text('[Service]\nExecStartPre=-/usr/bin/python3 /usr/lib/steamac/camera/prepare-proton.py --auto\n')
     # Read-only provenance contains hashes and public pins, never local disk paths.
     receipt['proton'] = pins
-    receipt['deployment'] = 'private copy-on-write Proton tool; installed Steam Proton is untouched'
+    receipt['deployment'] = 'private independent Proton tool; installed Steam Proton is untouched'
     (app / 'Contents/Resources/steamac-camera-build.json').write_text(json.dumps(receipt, indent=2) + '\n')
     licenses = app / 'Contents/Resources/licenses/Camera'
     licenses.mkdir(parents=True, exist_ok=True)

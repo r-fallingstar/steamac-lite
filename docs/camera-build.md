@@ -57,7 +57,7 @@ Steam and games are stopped. No additional user selection is required.
 The installed Steam Proton files are never changed. Unknown Proton revisions,
 unfinished downloads and custom compatibility selections are left alone. A
 validated private snapshot can keep working independently of a later Steam
-Proton update. Unsupported filesystems do not trigger a full-copy fallback.
+Proton update. Copy-on-write is used where supported. On ext4, preparation makes an independent copy after checking available space, with a 4 GiB source-size ceiling.
 
 ## Verification
 

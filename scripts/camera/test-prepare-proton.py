@@ -251,14 +251,25 @@ class PreparationTest(unittest.TestCase):
         self.assertTrue(any("reflink unsupported" in message for message in self.messages))
         self.assertEqual(self.prepare(), m.NAME)  # Clean retry works.
 
-    def test_no_mass_copy_fallback(self):
+    def test_failed_independent_copy_is_not_retried(self):
         stage = self.base / "empty-stage"
         stage.mkdir()
         with patch.object(m.subprocess, "run", side_effect=subprocess.CalledProcessError(1, "cp")) as run:
-            with self.assertRaisesRegex(ValueError, "reflink clone unavailable"):
+            with self.assertRaisesRegex(ValueError, "independent camera runtime copy failed"):
                 m.clone_reflink(self.stock, stage)
         self.assertEqual(run.call_count, 1)
-        self.assertEqual(run.call_args.args[0], ["cp", "-a", "--reflink=always", str(self.stock) + "/.", str(stage)])
+        self.assertEqual(run.call_args.args[0], ["cp", "-a", "--reflink=auto", str(self.stock) + "/.", str(stage)])
+
+    def test_low_space_does_not_start_copy(self):
+        stage = self.base / "empty-stage"
+        stage.mkdir()
+        from types import SimpleNamespace
+        with patch.object(m.shutil, "disk_usage", return_value=SimpleNamespace(free=0)), \
+             patch.object(m.subprocess, "run") as run:
+            with self.assertRaisesRegex(ValueError, "not enough space"):
+                m.clone_reflink(self.stock, stage)
+        run.assert_not_called()
+        self.assert_source_unchanged()
 
     def test_cross_filesystem_is_refused_before_clone(self):
         real_stat = Path.stat
