@@ -29,16 +29,46 @@ ln -s i386-linux-gnu/ld-linux.so.2 "$root/lib/ld-linux.so.2"
 ln -s usr/lib/x86_64-linux-gnu "$root/lib64"
 cp /usr/lib/steamac/camera/dshow-camera-test.exe "$prefix/dshow-camera-test.exe"
 chown -R 1000:1000 "$prefix"
-echo CAMERA_DSHOW_LAUNCH
-setpriv --reuid=1000 --regid=1000 --init-groups env \
+run_dshow() {
+ local tool=$1 area=$2
+ mkdir -p "$area/fex-config" "$area/cache"
+ cp /usr/lib/steamac/camera/dshow-camera-test.exe "$area/dshow-camera-test.exe"
+ chown -R 1000:1000 "$area"
+ echo "CAMERA_DSHOW_TOOL $tool"
+ setpriv --reuid=1000 --regid=1000 --init-groups env \
     HOME=/home/steamos USER=steamos LOGNAME=steamos XDG_RUNTIME_DIR=/run/user/1000 \
-    FEX_ROOTFS="$root" FEX_PORTABLE=1 FEX_APP_CONFIG_LOCATION="$prefix/fex-config/" \
-    XDG_CACHE_HOME="$prefix/cache" WINEPREFIX="$prefix/pfx" \
+    FEX_ROOTFS="$root" FEX_PORTABLE=1 FEX_APP_CONFIG_LOCATION="$area/fex-config/" \
+    XDG_CACHE_HOME="$area/cache" WINEPREFIX="$area/pfx" \
     WINEDEBUG=-all WINEDLLOVERRIDES=winemenubuilder.exe=d WINEESYNC=0 WINEFSYNC=0 \
-    timeout 75s "$fex/usr/bin/FEX" "$proton/files/bin/wine" "$prefix/dshow-camera-test.exe"
+    timeout 75s "$fex/usr/bin/FEX" "$tool/files/bin/wine" "$area/dshow-camera-test.exe" --fps=15
+}
+echo CAMERA_DSHOW_LAUNCH
+run_dshow "$proton" "$prefix"
 windows=$?
 echo CAMERA_DSHOW_EXIT=$windows
-if ((native==0 && windows==0)); then echo CAMERA_TEST_EXIT=0; else echo CAMERA_TEST_EXIT=1; fi
+comparison=0
+archive=/usr/lib/steamac/camera/proton-rtsp-11.0-20260609-4.tar.gz
+if [[ -f $archive ]]; then
+ tools="$steam/compatibilitytools.d"
+ expected=b52f231a116e9d0f1f9d19f4e870ff84392f35daae02391a6f79fdf9ca583415
+ rtsp="$tools/proton-rtsp-11.0-20260609-4"
+ if [[ $(sha256sum "$archive" | cut -d' ' -f1) != "$expected" ]]; then
+  echo CAMERA_RTSP_ARCHIVE_INVALID; comparison=1
+ elif [[ -e $rtsp && ! -f $rtsp/.steamac-camera-verified-source ]]; then
+  echo CAMERA_RTSP_EXISTING_TOOL_NOT_REPLACED; comparison=1
+ else
+  if [[ ! -e $rtsp ]]; then
+   mkdir -p "$tools"
+   tar --no-same-owner -xzf "$archive" -C "$tools"
+   printf '%s\n' "$expected" > "$rtsp/.steamac-camera-verified-source"
+   chown -R 1000:1000 "$rtsp"
+  fi
+  run_dshow "$rtsp" "$prefix-rtsp"
+  comparison=$?
+  echo CAMERA_RTSP_DSHOW_EXIT=$comparison
+ fi
+fi
+if ((native==0 && windows==0 && comparison==0)); then echo CAMERA_TEST_EXIT=0; else echo CAMERA_TEST_EXIT=1; fi
 umount "$root/usr"
 trap - EXIT
 systemctl poweroff

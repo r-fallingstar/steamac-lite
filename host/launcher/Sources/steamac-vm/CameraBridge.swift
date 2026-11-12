@@ -157,6 +157,7 @@ final class CameraBridge: ObservableObject {
     }
     private var patternTimer: DispatchSourceTimer?
     private var patternWanted = false
+    private var syntheticOnly = false
     @Published private(set) var ready = false
     @Published private(set) var running = false
     @Published private(set) var busy = false
@@ -181,7 +182,7 @@ final class CameraBridge: ObservableObject {
         automaticCaptureEnabled = CapturePermissionNotice.automaticCaptureDefault(in: LauncherSettings.shared.defaults)
     }
     private func reconcileCapture() {
-        guard !patternWanted else { return }
+        guard !syntheticOnly else { return }
         let requested = CameraCapturePolicy.requested(ready: ready, preview: manualPreview,
             automatic: automaticCaptureEnabled, demand: guestDemand)
         guard requested else {
@@ -199,7 +200,7 @@ final class CameraBridge: ObservableObject {
         wanted = true
         if !busy && !running { startAuthorized() }
     }
-    func startPattern() { patternWanted = true; if ready { beginPattern() } }
+    func startPattern() { syntheticOnly = true; patternWanted = true; if ready { beginPattern() } }
     private func beginPattern() {
         guard patternTimer == nil else { return }; port.enable()
         let timer = DispatchSource.makeTimerSource(queue: frameQueue); var sequence: UInt64 = 0
@@ -217,7 +218,7 @@ final class CameraBridge: ObservableObject {
         if !devices.contains(where: { $0.id == selectedDeviceID }) { selectedDeviceID = devices.first?.id ?? "" }
     }
     func start() {
-        guard ready, !busy, !running else { return }; manualPreview = true; wanted = true
+        guard !syntheticOnly, ready, !busy, !running else { return }; manualPreview = true; wanted = true
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: startAuthorized()
         case .notDetermined:

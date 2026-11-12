@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <dshow.h>
 #include <dvdmedia.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -185,20 +186,222 @@ static void print_media_type(const AM_MEDIA_TYPE *type) {
     if (IsEqualGUID(&type->subtype, &MEDIASUBTYPE_RGB24)) printf(" (RGB24/BGR-bytes)");
     if (IsEqualGUID(&type->subtype, &MEDIASUBTYPE_RGB32)) printf(" (RGB32)");
     if (bitmap) {
-        printf(" width=%ld height=%ld bits=%u image_bytes=%lu fps=%.3f",
+        printf(" width=%ld height=%ld bits=%u image_bytes=%lu AvgTimePerFrame=%lld fps=%.3f",
                (long)bitmap->biWidth, (long)bitmap->biHeight, (unsigned)bitmap->biBitCount,
-               (unsigned long)bitmap->biSizeImage,
+               (unsigned long)bitmap->biSizeImage, (long long)interval,
                interval > 0 ? 10000000.0 / (double)interval : 0.0);
     } else {
         printf(" dimensions=unknown format=");
         print_guid(&type->formattype);
-        printf(" format_bytes=%lu", (unsigned long)type->cbFormat);
     }
-    printf(" sample_bytes=%lu\n", (unsigned long)type->lSampleSize);
+    printf(" sample_bytes=%lu format_bytes=%lu format_null=%u\n",
+           (unsigned long)type->lSampleSize, (unsigned long)type->cbFormat,
+           type->pbFormat == NULL);
+}
+
+/* These records are observations, not capture failures. Append method outputs
+ * even on failure so untouched sentinels and success-with-NULL are visible. */
+static void diagnostic_hr(const char *method, HRESULT hr) {
+    const char *status = hr == S_OK ? "S_OK" : hr == S_FALSE ? "S_FALSE" :
+        hr == E_NOTIMPL ? "E_NOTIMPL" : hr == E_NOINTERFACE ? "E_NOINTERFACE" :
+        FAILED(hr) ? "FAILED" : "SUCCEEDED";
+    printf("DS_CAMERA_DIAG method=%s hr=0x%08lx status=%s", method, (unsigned long)hr, status);
+}
+
+static void delete_media_type(AM_MEDIA_TYPE *type) {
+    if (type) { free_media_type(type); CoTaskMemFree(type); }
+}
+
+static REFERENCE_TIME *media_interval(AM_MEDIA_TYPE *type, SIZE *dimensions) {
+    BITMAPINFOHEADER *bitmap;
+    REFERENCE_TIME *interval;
+    if (!type->pbFormat) return NULL;
+    if (IsEqualGUID(&type->formattype, &FORMAT_VideoInfo) &&
+        type->cbFormat >= sizeof(VIDEOINFOHEADER)) {
+        VIDEOINFOHEADER *video = (VIDEOINFOHEADER *)type->pbFormat;
+        bitmap = &video->bmiHeader;
+        interval = &video->AvgTimePerFrame;
+    } else if (IsEqualGUID(&type->formattype, &FORMAT_VideoInfo2) &&
+               type->cbFormat >= sizeof(VIDEOINFOHEADER2)) {
+        VIDEOINFOHEADER2 *video = (VIDEOINFOHEADER2 *)type->pbFormat;
+        bitmap = &video->bmiHeader;
+        interval = &video->AvgTimePerFrame;
+    } else return NULL;
+    dimensions->cx = bitmap->biWidth;
+    /* A top-down DIB still has positive image dimensions for rate queries. */
+    if (bitmap->biHeight == (LONG)(-2147483647L - 1)) return NULL;
+    dimensions->cy = bitmap->biHeight < 0 ? -bitmap->biHeight : bitmap->biHeight;
+    return interval;
+}
+
+static void diagnose_frame_rates(IAMVideoControl *control, IPin *pin, int index,
+                                 AM_MEDIA_TYPE *type) {
+    SIZE dimensions = {0, 0};
+    LONGLONG *intervals = NULL, maximum = -1;
+    LONG count = -1, i;
+    HRESULT hr;
+    if (!media_interval(type, &dimensions) || dimensions.cx <= 0 || dimensions.cy <= 0) {
+        printf("DS_CAMERA_DIAG_RATE index=%d skipped=invalid-video-header-or-dimensions\n", index);
+        return;
+    }
+    hr = IAMVideoControl_GetFrameRateList(control, pin, index, dimensions, &count, &intervals);
+    diagnostic_hr("IAMVideoControl.GetFrameRateList", hr);
+    printf(" index=%d width=%ld height=%ld count=%ld list_null=%u outputs_valid=%u\n",
+           index, (long)dimensions.cx, (long)dimensions.cy, (long)count, intervals == NULL, hr == S_OK);
+    if (hr == S_OK && intervals && count > 0) {
+        for (i = 0; i < count; ++i)
+            printf("DS_CAMERA_DIAG_RATE index=%d entry=%ld interval_100ns=%lld fps=%.6f\n",
+                   index, (long)i, (long long)intervals[i],
+                   intervals[i] > 0 ? 10000000.0 / (double)intervals[i] : 0.0);
+    }
+    CoTaskMemFree(intervals);
+    hr = IAMVideoControl_GetMaxAvailableFrameRate(control, pin, index, dimensions, &maximum);
+    diagnostic_hr("IAMVideoControl.GetMaxAvailableFrameRate", hr);
+    printf(" index=%d width=%ld height=%ld interval_100ns=%lld fps=%.6f outputs_valid=%u\n",
+           index, (long)dimensions.cx, (long)dimensions.cy, (long long)maximum,
+           hr == S_OK && maximum > 0 ? 10000000.0 / (double)maximum : 0.0, hr == S_OK);
+}
+
+static void test_frame_rate(IAMStreamConfig *config, const AM_MEDIA_TYPE *original, unsigned fps) {
+    AM_MEDIA_TYPE clone, *actual = NULL;
+    SIZE dimensions = {0, 0};
+    REFERENCE_TIME *interval;
+    HRESULT hr;
+    memset(&clone, 0, sizeof clone);
+    if (!original || !original->pbFormat || !original->cbFormat) {
+        puts("DS_CAMERA_DIAG_SET_FORMAT skipped=no-default-format");
+        return;
+    }
+    clone = *original;
+    clone.pbFormat = CoTaskMemAlloc(original->cbFormat);
+    if (!clone.pbFormat) {
+        diagnostic_hr("clone-default-format", E_OUTOFMEMORY); puts("");
+        return;
+    }
+    memcpy(clone.pbFormat, original->pbFormat, original->cbFormat);
+    if (clone.pUnk) IUnknown_AddRef(clone.pUnk);
+    interval = media_interval(&clone, &dimensions);
+    if (!interval) {
+        puts("DS_CAMERA_DIAG_SET_FORMAT skipped=unsupported-default-format");
+        free_media_type(&clone);
+        return;
+    }
+    *interval = (10000000LL + fps / 2) / fps;
+    printf("DS_CAMERA_DIAG_SET_FORMAT requested_fps=%u requested_interval_100ns=%lld base=GetFormat-clone\n",
+           fps, (long long)*interval);
+    print_media_type(&clone);
+    hr = IAMStreamConfig_SetFormat(config, &clone);
+    diagnostic_hr("IAMStreamConfig.SetFormat", hr); puts("");
+    /* Read back even on failure: S_OK alone does not prove the interval stuck. */
+    hr = IAMStreamConfig_GetFormat(config, &actual);
+    diagnostic_hr("IAMStreamConfig.GetFormat-after-SetFormat", hr);
+    printf(" media_type_null=%u\n", actual == NULL);
+    if (hr == S_OK && actual) {
+        print_media_type(actual);
+        delete_media_type(actual);
+    }
+    free_media_type(&clone);
+}
+
+/* Query the source and its capture pin before a graph exists. A Unity-like
+ * capability probe can fail even when Sample Grabber receives valid frames. */
+static void diagnose_camera(IBaseFilter *source, ICaptureGraphBuilder2 *builder, unsigned fps) {
+    IPin *pin = NULL;
+    IAMVideoControl *control = NULL, *pin_control = NULL;
+    IAMStreamConfig *config = NULL;
+    AM_MEDIA_TYPE *original = NULL;
+    BYTE *caps_buffer = NULL;
+    int count = -1, size = -1, index;
+    LONG flags = -1;
+    HRESULT hr;
+    puts("DS_CAMERA_DIAG_BEGIN phase=before-graph intervals_unit=100ns");
+    hr = IBaseFilter_QueryInterface(source, &IID_IAMVideoControl, (void **)&control);
+    diagnostic_hr("filter.QueryInterface(IAMVideoControl)", hr);
+    printf(" interface_null=%u\n", control == NULL);
+    hr = ICaptureGraphBuilder2_FindPin(builder, (IUnknown *)source, PINDIR_OUTPUT,
+                                      &PIN_CATEGORY_CAPTURE, &MEDIATYPE_Video, TRUE, 0, &pin);
+    diagnostic_hr("FindPin(capture-video-output)", hr);
+    printf(" pin_null=%u\n", pin == NULL);
+    if (hr != S_OK || !pin) goto cleanup;
+    hr = IPin_QueryInterface(pin, &IID_IAMVideoControl, (void **)&pin_control);
+    diagnostic_hr("capture-pin.QueryInterface(IAMVideoControl)", hr);
+    printf(" interface_null=%u\n", pin_control == NULL);
+    /* IAMVideoControl normally lives on the filter, not its IPin. */
+    if (!control && hr == S_OK && pin_control) {
+        control = pin_control;
+        IAMVideoControl_AddRef(control);
+        puts("DS_CAMERA_DIAG_VIDEO_CONTROL owner=capture-pin");
+    } else if (control) puts("DS_CAMERA_DIAG_VIDEO_CONTROL owner=filter");
+    if (control) {
+        hr = IAMVideoControl_GetCaps(control, pin, &flags);
+        diagnostic_hr("IAMVideoControl.GetCaps", hr);
+        printf(" flags_raw=0x%08lx outputs_valid=%u\n", (unsigned long)flags, hr == S_OK);
+    } else puts("DS_CAMERA_DIAG_VIDEO_CONTROL methods_skipped=interface-unavailable");
+    hr = IPin_QueryInterface(pin, &IID_IAMStreamConfig, (void **)&config);
+    diagnostic_hr("capture-pin.QueryInterface(IAMStreamConfig)", hr);
+    printf(" interface_null=%u\n", config == NULL);
+    if (hr != S_OK || !config) goto cleanup;
+    hr = IAMStreamConfig_GetFormat(config, &original);
+    diagnostic_hr("IAMStreamConfig.GetFormat-default", hr);
+    printf(" media_type_null=%u\n", original == NULL);
+    if (hr == S_OK && original) print_media_type(original);
+    /* Some Wine failure paths free *ppmt without clearing it. Do not take
+     * ownership of, dereference, or free an output from a failed GetFormat. */
+    else original = NULL;
+    hr = IAMStreamConfig_GetNumberOfCapabilities(config, &count, &size);
+    diagnostic_hr("IAMStreamConfig.GetNumberOfCapabilities", hr);
+    printf(" count=%d caps_bytes=%d expected_video_caps_bytes=%u outputs_valid=%u\n",
+           count, size, (unsigned)sizeof(VIDEO_STREAM_CONFIG_CAPS), hr == S_OK);
+    if (hr != S_OK) goto set_format;
+    /* Reject corrupt allocation/count metadata, without suppressing capture. */
+    if (count < 0 || count > 4096 || size <= 0 || size > 1024 * 1024) {
+        puts("DS_CAMERA_DIAG_STREAM_CAPS skipped=invalid-count-or-size");
+        goto set_format;
+    }
+    caps_buffer = CoTaskMemAlloc((SIZE_T)size);
+    if (!caps_buffer) {
+        diagnostic_hr("allocate-stream-caps", E_OUTOFMEMORY); puts("");
+        goto set_format;
+    }
+    for (index = 0; index < count; ++index) {
+        AM_MEDIA_TYPE *type = NULL;
+        memset(caps_buffer, 0, (size_t)size);
+        hr = IAMStreamConfig_GetStreamCaps(config, index, &type, caps_buffer);
+        diagnostic_hr("IAMStreamConfig.GetStreamCaps", hr);
+        printf(" index=%d media_type_null=%u\n", index, type == NULL);
+        if (hr == S_OK) {
+            if ((size_t)size >= sizeof(VIDEO_STREAM_CONFIG_CAPS)) {
+                VIDEO_STREAM_CONFIG_CAPS caps;
+                memcpy(&caps, caps_buffer, sizeof caps);
+                printf("DS_CAMERA_DIAG_STREAM_CAPS index=%d guid=", index);
+                print_guid(&caps.guid);
+                printf(" MinFrameInterval=%lld MaxFrameInterval=%lld min_fps=%.6f max_fps=%.6f\n",
+                       (long long)caps.MinFrameInterval, (long long)caps.MaxFrameInterval,
+                       caps.MaxFrameInterval > 0 ? 10000000.0 / (double)caps.MaxFrameInterval : 0.0,
+                       caps.MinFrameInterval > 0 ? 10000000.0 / (double)caps.MinFrameInterval : 0.0);
+            } else printf("DS_CAMERA_DIAG_STREAM_CAPS index=%d metadata=short-buffer\n", index);
+            if (type) {
+                print_media_type(type);
+                if (control) diagnose_frame_rates(control, pin, index, type);
+            }
+        }
+        delete_media_type(type);
+    }
+set_format:
+    if (fps) test_frame_rate(config, original, fps);
+    else puts("DS_CAMERA_DIAG_SET_FORMAT skipped=no-fps-option");
+cleanup:
+    CoTaskMemFree(caps_buffer);
+    delete_media_type(original);
+    if (config) IAMStreamConfig_Release(config);
+    if (pin_control) IAMVideoControl_Release(pin_control);
+    if (control) IAMVideoControl_Release(control);
+    if (pin) IPin_Release(pin);
+    puts("DS_CAMERA_DIAG_END");
 }
 
 /* Each device gets a fresh graph and at most eight seconds of sample waiting. */
-static int capture_frames(IBaseFilter *source) {
+static int capture_frames(IBaseFilter *source, unsigned fps) {
     IGraphBuilder *graph = NULL;
     ICaptureGraphBuilder2 *builder = NULL;
     IBaseFilter *grabber_filter = NULL, *renderer = NULL;
@@ -217,10 +420,11 @@ static int capture_frames(IBaseFilter *source) {
 #define CHECK_HR(label, expression) do { \
     stage = (label); hr = (expression); if (FAILED(hr)) goto failure; \
 } while (0)
-    CHECK_HR("create-graph", CoCreateInstance(&CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER,
-                                               &IID_IGraphBuilder, (void **)&graph));
     CHECK_HR("create-capture-builder", CoCreateInstance(&CLSID_CaptureGraphBuilder2, NULL,
              CLSCTX_INPROC_SERVER, &IID_ICaptureGraphBuilder2, (void **)&builder));
+    diagnose_camera(source, builder, fps);
+    CHECK_HR("create-graph", CoCreateInstance(&CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER,
+                                               &IID_IGraphBuilder, (void **)&graph));
     CHECK_HR("set-filter-graph", ICaptureGraphBuilder2_SetFiltergraph(builder, graph));
     CHECK_HR("add-camera", IGraphBuilder_AddFilter(graph, source, L"Camera"));
     CHECK_HR("create-sample-grabber", CoCreateInstance(&grabber_clsid, NULL,
@@ -325,13 +529,34 @@ cleanup:
 }
 
 /* No game attachment, window, or saved frames: camera -> grabber -> null renderer. */
-int main(void) {
+int main(int argc, char **argv) {
     ICreateDevEnum *devices = NULL;
     IEnumMoniker *items = NULL;
     IMoniker *item = NULL;
-    unsigned count = 0, bound = 0, captured = 0;
-    int enum_ok = 0;
-    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    unsigned count = 0, bound = 0, captured = 0, fps = 0;
+    int enum_ok = 0, arg;
+    HRESULT hr;
+    for (arg = 1; arg < argc; ++arg) {
+        char *end = NULL;
+        unsigned long value;
+        if (!strcmp(argv[arg], "--help")) {
+            puts("Usage: dshow-camera-test.exe [--fps=INTEGER]\n"
+                 "Default: read-only capability diagnostics, then sample capture.\n"
+                 "--fps=15: clone GetFormat, request 15 fps with SetFormat, read back, then capture.");
+            return 0;
+        }
+        if (strncmp(argv[arg], "--fps=", 6) || fps || argv[arg][6] < '0' || argv[arg][6] > '9') {
+            fprintf(stderr, "Invalid option: %s (use --help)\n", argv[arg]);
+            return 2;
+        }
+        value = strtoul(argv[arg] + 6, &end, 10);
+        if (*end || !value || value > 1000) {
+            fprintf(stderr, "Invalid fps: %s (expected integer 1..1000)\n", argv[arg] + 6);
+            return 2;
+        }
+        fps = (unsigned)value;
+    }
+    hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(hr)) { report_hr("initialize-com", hr); return 1; }
     setvbuf(stdout, NULL, _IONBF, 0);
     hr = CoCreateInstance(&CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
@@ -362,7 +587,7 @@ int main(void) {
         printf("DS_CAMERA_BIND 0x%08lx\n", (unsigned long)hr);
         if (SUCCEEDED(hr)) {
             ++bound;
-            if (capture_frames(filter)) ++captured;
+            if (capture_frames(filter, fps)) ++captured;
             IBaseFilter_Release(filter);
         } else report_hr("bind-camera", hr);
         IMoniker_Release(item);
