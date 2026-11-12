@@ -90,9 +90,15 @@ final class CameraPort {
 
 private final class CameraFrameSink: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     let port: CameraPort
+    private var loggedFormat = false
     init(port: CameraPort) { self.port = port }
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard let pixel = CMSampleBufferGetImageBuffer(sampleBuffer),
+        guard let pixel = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        if !loggedFormat {
+            loggedFormat = true
+            log("camera capture: \(CVPixelBufferGetWidth(pixel))x\(CVPixelBufferGetHeight(pixel)) format=\(String(CVPixelBufferGetPixelFormatType(pixel), radix: 16)) planes=\(CVPixelBufferGetPlaneCount(pixel))")
+        }
+        guard
               CVPixelBufferGetWidth(pixel) == CameraWire.width, CVPixelBufferGetHeight(pixel) == CameraWire.height,
               CVPixelBufferGetPixelFormatType(pixel) == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
               CVPixelBufferGetPlaneCount(pixel) == 2 else { return }
@@ -184,9 +190,13 @@ final class CameraBridge: ObservableObject {
                     guard session.canSetSessionPreset(.vga640x480), session.canAddInput(input) else { throw OptionError("640x480 camera input is unavailable") }
                     session.sessionPreset = .vga640x480; session.addInput(input)
                     let output = AVCaptureVideoDataOutput(); output.alwaysDiscardsLateVideoFrames = true
-                    output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange]
                     output.setSampleBufferDelegate(sink, queue: frameQueue)
                     guard session.canAddOutput(output) else { throw OptionError("Camera output is unavailable") }; session.addOutput(output)
+                    // Frame-duration changes can select a different device format on macOS.
+                    // Pin the delivered buffers as well as the session's preview preset.
+                    output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
+                                            kCVPixelBufferWidthKey as String: CameraWire.width,
+                                            kCVPixelBufferHeightKey as String: CameraWire.height]
                     try device.lockForConfiguration()
                     if device.activeFormat.videoSupportedFrameRateRanges.contains(where: { $0.minFrameRate <= 15 && $0.maxFrameRate >= 15 }) {
                         device.activeVideoMinFrameDuration = CMTime(value: 1, timescale: 15)
