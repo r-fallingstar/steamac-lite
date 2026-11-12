@@ -64,6 +64,11 @@ if options.selftestLanguage {
     print(failures.isEmpty ? "language: PASS" : "language: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
+if options.selftestCamera {
+    let failures = CameraWire.selfCheck()
+    print(failures.isEmpty ? "camera: PASS (no device opened)" : "camera: FAIL")
+    exit(failures.isEmpty ? 0 : 1)
+}
 if options.selftestSettingsLayout {
     let failures = SettingsWindowController.layoutSelfCheck()
     print(failures.isEmpty ? "settings-layout: PASS" : "settings-layout: FAIL: " + failures.joined(separator: "; "))
@@ -166,6 +171,7 @@ let windowTitle = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? S
 final class Lifecycle: NSObject, NSApplicationDelegate {
     /// Restored on our own exit() paths (libkrun's _exit skips atexit; the supervisor restores then).
     nonisolated(unsafe) static var console: Console?
+    var camera: CameraBridge?
     var vm: VM?
     var progress: BootProgress?
     weak var window: WindowController?
@@ -188,6 +194,7 @@ final class Lifecycle: NSObject, NSApplicationDelegate {
     }
 
     func requestShutdown(force: Bool = false) {
+        camera?.stop()
         UpdateChecker.shared.cancelPendingDownload()
         CrashReporting.noteUserExit()
         if let at = requestedAt {
@@ -417,9 +424,13 @@ do {
     let padPorts = options.headless || !options.gamepad ? [] : try (0..<GamepadBridge.maxPads).map { try PadPort(player: $0) }
     // Clipboard sharing follows the app's activation (ClipboardSync): window only.
     let clipboardPort = options.headless ? nil : try ClipboardPort()
+    let cameraPort = options.experimentalCamera ? try CameraPort() : nil
+    let camera = cameraPort.map { CameraBridge(port: $0) }
+    lifecycle.camera = camera
+    if options.cameraTestPattern { camera?.startPattern() }
     let vm = try VM(options: options, display: display, console: console, progressPort: progressPort,
                     clockPort: clockPort, sleepPort: sleepPort, padPorts: padPorts, clipboardPort: clipboardPort,
-                    inputs: inputs, netSocket: Supervisor.netSocket)
+                    inputs: inputs, netSocket: Supervisor.netSocket, cameraPort: cameraPort)
     lifecycle.vm = vm
     let gamepad = padPorts.isEmpty ? nil : GamepadBridge(ports: padPorts, settings: settings, typeOverride: options.padType)
     let sound = SoundControl()
@@ -566,6 +577,7 @@ do {
         noPicture.vmPaused = paused
         gamepad?.vmPaused(paused)
         clipboard?.vmPaused = paused
+        if paused { camera?.stop() }
         gameStats.vmPaused = paused
         if paused {
             activity.map(ProcessInfo.processInfo.endActivity)
@@ -581,6 +593,7 @@ do {
     let settingsContext = SettingsContext(settings: settings, sound: sound, restart: { lifecycle.requestRestart() },
                                           vmHasPad: gamepad != nil, vmHasSound: vm.hasSound,
                                           diskPath: options.disks.first?.path)
+    settingsContext.camera = camera
     let settingsWindow = SettingsWindowController(context: settingsContext)
     lifecycle.settingsContext = settingsContext
     lifecycle.settingsWindow = settingsWindow
@@ -635,6 +648,7 @@ do {
             boot: Supervisor.bootNumber, defaults: settings.defaults,
             version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development") {
                 vm.start()
+                if !options.cameraTestPattern { camera?.show() }
                 UpdateChecker.shared.start { [weak wc] in wc?.window }
             }
     }

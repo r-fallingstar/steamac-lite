@@ -182,7 +182,7 @@ STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-keybo
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-language
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-update
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-microphone
-DEST=$OUT/SteamAC\ Lite.app
+DEST=${LITE_APP_DEST:-$OUT/SteamAC\ Lite.app}
 if [[ -e "$DEST" ]]; then mv "$DEST" "$OUT/SteamAC Lite.previous.$(date +%Y%m%d%H%M%S).app"; fi
 mv "$APP" "$DEST"
 echo "Built: $DEST"

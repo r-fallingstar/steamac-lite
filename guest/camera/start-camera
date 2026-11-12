@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+for ((i=0;i<60;i++)); do [[ ! -e /dev/virtio-ports/fx.camera ]] || break; sleep 1; done
+[[ -e /dev/virtio-ports/fx.camera ]] || exit 0
+if [[ ! -d /sys/module/v4l2loopback ]]; then
+    insmod /usr/lib/steamac/camera/v4l2loopback.ko devices=1 video_nr=20 card_label='steamac Built-in Camera Test' exclusive_caps=1
+fi
+for ((i=0;i<30;i++)); do [[ ! -e /dev/video20 ]] || break; sleep .1; done
+chown 1000:1000 /dev/video20
+chmod 0600 /dev/video20
+exec /usr/lib/steamac/camera/camera-agent

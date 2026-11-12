@@ -38,7 +38,7 @@ final class VM {
 
     init(options o: Options, display: DisplayBackend, console: Console, progressPort: ProgressPort?,
          clockPort: ClockPort?, sleepPort: SleepPort?, padPorts: [PadPort], clipboardPort: ClipboardPort?,
-         inputs: VMInputs?, netSocket: String?) throws {
+         inputs: VMInputs?, netSocket: String?, cameraPort: CameraPort? = nil) throws {
         VM.raiseFileLimit()
         try krun("krun_init_log", krun_init_log(KRUN_LOG_TARGET_DEFAULT, o.krunLogLevel, UInt32(KRUN_LOG_STYLE_AUTO), 0))
         ctx = UInt32(try krun("krun_create_ctx", krun_create_ctx()))
@@ -75,6 +75,11 @@ final class VM {
         if let c = clipboardPort {
             try krun("krun_add_console_port_inout(\(ClipboardPort.name))",
                      krun_add_console_port_inout(ctx, UInt32(con), ClipboardPort.name, c.guestInputFd, c.guestOutputFd))
+        }
+
+        if let c = cameraPort {
+            try krun("krun_add_console_port_inout(camera)",
+                     krun_add_console_port_inout(ctx, UInt32(con), CameraPort.name, c.guestInputFd, c.guestOutputFd))
         }
 
         try krun("krun_set_kernel", krun_set_kernel(ctx, o.kernel, STEAMAC_KERNEL_FORMAT_RAW, o.initrd, o.cmdline))

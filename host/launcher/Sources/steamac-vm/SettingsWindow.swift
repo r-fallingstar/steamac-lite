@@ -7,6 +7,7 @@ import SwiftUI
 /// What the Settings window needs from the running VM process (all optional: --selftest-settings
 /// and the first-run sheet have no VM).
 final class SettingsContext: ObservableObject {
+    var camera: CameraBridge?
     let settings: LauncherSettings
     /// Live audio controls; nil without a VM.
     let sound: SoundControl?
@@ -348,6 +349,12 @@ private struct GeneralTab: View {
 
     var body: some View {
         Form {
+            if let camera = context.camera {
+                Section {
+                    Button("Built-in camera (experimental)") { camera.show() }
+                    Text("Open camera controls to allow and start capture.").font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Section {
                 Picker(selection: $settings.applicationLanguage) {
                     ForEach(ApplicationLanguage.allCases) { Text(verbatim: $0.title).tag($0) }

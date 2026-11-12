@@ -1,0 +1,11 @@
+[Unit]
+Description=steamac experimental camera bridge
+After=systemd-udevd.service
+[Service]
+ExecStart=/usr/lib/steamac/camera/start-camera
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal+console
+StandardError=journal+console
+[Install]
+WantedBy=multi-user.target

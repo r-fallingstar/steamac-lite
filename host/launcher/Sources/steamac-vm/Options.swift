@@ -29,6 +29,9 @@ struct Options {
     var selftestMicrophone = false
     var previewMicrophone = false
     var selftestUpdate = false
+    var experimentalCamera = false
+    var cameraTestPattern = false
+    var selftestCamera = false
     var previewUpdate = false
     var previewStartupUpdate = false
     /// nil follows the Mac's physical keyboard at each boot, not its input-source language.
@@ -434,6 +437,9 @@ struct Options {
             case "--selftest-language": o.selftestLanguage = true
             case "--selftest-microphone": o.selftestMicrophone = true
             case "--selftest-microphone-ui": o.previewMicrophone = true
+            case "--experimental-camera": o.experimentalCamera = true
+            case "--camera-test-pattern": o.experimentalCamera = true; o.cameraTestPattern = true
+            case "--selftest-camera": o.selftestCamera = true
             case "--selftest-update": o.selftestUpdate = true
             case "--preview-update": o.previewUpdate = true
             case "--preview-startup-update": o.previewUpdate = true; o.previewStartupUpdate = true
@@ -632,7 +638,7 @@ struct Options {
         selftestDisplay || selftestOverlay || selftestStall || selftestPill || selftestSettings || selftestSettingsLayout || selftestProvision || selftestRemotePlay
             || selftestMetalCache || selftestPointer || selftestGameLayers || selftestVR || selftestL10n || createDisk != nil
             || growDisk != nil
-            || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage || selftestMicrophone || previewMicrophone || selftestUpdate || previewUpdate
+            || selftestCamera || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage || selftestMicrophone || previewMicrophone || selftestUpdate || previewUpdate
     }
 
     /// Command line + saved settings (+ app bundle resources): what this boot runs with, and which
