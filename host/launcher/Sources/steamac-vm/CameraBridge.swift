@@ -146,9 +146,12 @@ final class CameraBridge: ObservableObject {
     private var wanted = false
     private var manualPreview = false
     private var guestDemand = false
-    @Published var automaticCaptureEnabled = false {
+    @Published var automaticCaptureEnabled = true {
         didSet {
             LauncherSettings.shared.defaults.set(automaticCaptureEnabled, forKey: "cameraAutomaticCapture")
+            if !automaticCaptureEnabled || AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+                LauncherSettings.shared.defaults.set(automaticCaptureEnabled, forKey: CapturePermissionNotice.cameraGrantedKey)
+            }
             reconcileCapture()
         }
     }
@@ -175,7 +178,7 @@ final class CameraBridge: ObservableObject {
         }
     }
     func applyBootPermissions() {
-        automaticCaptureEnabled = LauncherSettings.shared.defaults.bool(forKey: "cameraAutomaticCapture")
+        automaticCaptureEnabled = CapturePermissionNotice.automaticCaptureDefault(in: LauncherSettings.shared.defaults)
     }
     private func reconcileCapture() {
         guard !patternWanted else { return }

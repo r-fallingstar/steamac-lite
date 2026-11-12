@@ -5,6 +5,13 @@ import AVFoundation
 final class CapturePermissionNotice: NSObject {
     static let noticeKey = "capturePermissionsNoticeVersion"
     static let cameraKey = "cameraAutomaticCapture"
+    static let cameraGrantedKey = "cameraCaptureWasAuthorized"
+    static let microphoneSelectedKey = "microphonePermissionSelected"
+    static let microphoneGrantedKey = "microphoneWasAuthorized"
+
+    static func automaticCaptureDefault(in defaults: UserDefaults) -> Bool {
+        defaults.object(forKey: cameraKey) == nil ? true : defaults.bool(forKey: cameraKey)
+    }
 
     struct Selection {
         var microphone: Bool
@@ -16,8 +23,14 @@ final class CapturePermissionNotice: NSObject {
         }
     }
 
-    static func needsNotice(boot: Int, version: String, lastNotice: String?) -> Bool {
-        boot == 1 && lastNotice != version
+    static func needsNotice(boot: Int, version: String, lastNotice: String?,
+                            microphoneSelected: Bool, microphoneWasAuthorized: Bool, microphoneStatus: AVAuthorizationStatus,
+                            cameraSelected: Bool, cameraWasAuthorized: Bool, cameraStatus: AVAuthorizationStatus) -> Bool {
+        guard boot == 1 else { return false }
+        guard let lastNotice else { return true }
+        guard lastNotice != version else { return false }
+        return (microphoneSelected && microphoneWasAuthorized && microphoneStatus != .authorized)
+            || (cameraSelected && cameraWasAuthorized && cameraStatus != .authorized)
     }
 
     /// Injected requests keep the self-check independent of TCC and capture devices.
@@ -92,13 +105,30 @@ final class CapturePermissionNotice: NSObject {
 
     static func prepareForBoot(on window: NSWindow, boot: Int, defaults: UserDefaults,
                                version: String, completion: @escaping () -> Void) {
-        guard needsNotice(boot: boot, version: version, lastNotice: defaults.string(forKey: noticeKey)) else {
+        let microphoneSelected = defaults.object(forKey: microphoneSelectedKey) == nil ? true : defaults.bool(forKey: microphoneSelectedKey)
+        let cameraSelected = automaticCaptureDefault(in: defaults)
+        let show = needsNotice(boot: boot, version: version, lastNotice: defaults.string(forKey: noticeKey),
+            microphoneSelected: microphoneSelected, microphoneWasAuthorized: defaults.bool(forKey: microphoneGrantedKey),
+            microphoneStatus: AVCaptureDevice.authorizationStatus(for: .audio), cameraSelected: cameraSelected,
+            cameraWasAuthorized: defaults.bool(forKey: cameraGrantedKey), cameraStatus: AVCaptureDevice.authorizationStatus(for: .video))
+        MicrophonePermission.shared.trackAuthorization(in: defaults)
+        let remember = { (selectedMicrophone: Bool, selectedCamera: Bool) in
+            guard boot == 1 else { return }
+            defaults.set(version, forKey: noticeKey)
+            defaults.set(selectedMicrophone, forKey: microphoneSelectedKey)
+            defaults.set(selectedMicrophone && AVCaptureDevice.authorizationStatus(for: .audio) == .authorized, forKey: microphoneGrantedKey)
+            defaults.set(selectedCamera && AVCaptureDevice.authorizationStatus(for: .video) == .authorized, forKey: cameraGrantedKey)
+        }
+        guard show else {
+            remember(microphoneSelected, cameraSelected)
             completion()
             return
         }
-        let notice = CapturePermissionNotice(selection: Selection(
+        var initialSelection = Selection(
             microphoneStatus: AVCaptureDevice.authorizationStatus(for: .audio),
-            cameraAutomaticCapture: defaults.bool(forKey: cameraKey)))
+            cameraAutomaticCapture: cameraSelected)
+        initialSelection.microphone = microphoneSelected
+        let notice = CapturePermissionNotice(selection: initialSelection)
         let alert = NSAlert()
         alert.messageText = String(localized: "Microphone and camera access")
         alert.informativeText = String(localized: "Choose which access to allow. macOS will ask for confirmation if needed. Camera permission alone does not start capture.")
@@ -123,13 +153,18 @@ final class CapturePermissionNotice: NSObject {
         alert.beginSheetModal(for: window) { [notice] response in
             if let observer = notice.observer { NotificationCenter.default.removeObserver(observer) }
             notice.observer = nil
-            guard response == .alertFirstButtonReturn else { completion(); return }
+            guard response == .alertFirstButtonReturn else {
+                defaults.set(false, forKey: cameraKey)
+                remember(false, false)
+                completion()
+                return
+            }
             var selection = Selection(microphoneStatus: .notDetermined, cameraAutomaticCapture: false)
             selection.microphone = notice.microphone.state == .on
             selection.camera = notice.camera.state == .on
             resolve(selection) { automaticCamera in
                 defaults.set(automaticCamera, forKey: cameraKey)
-                defaults.set(version, forKey: noticeKey)
+                remember(selection.microphone, automaticCamera)
                 notice.refresh()
                 // A decided denial cannot trigger another system prompt. Offer the real settings pane.
                 let microphoneBlocked = selection.microphone && blocked(AVCaptureDevice.authorizationStatus(for: .audio))
@@ -155,10 +190,28 @@ final class CapturePermissionNotice: NSObject {
     /// No windows, capture sessions, OS requests, or production preferences.
     static func selfCheck() -> [String] {
         var failures: [String] = []
-        if !needsNotice(boot: 1, version: "new", lastNotice: "old")
-            || !needsNotice(boot: 1, version: "new", lastNotice: nil)
-            || needsNotice(boot: 2, version: "new", lastNotice: "old")
-            || needsNotice(boot: 1, version: "new", lastNotice: "new") { failures.append("capture notice version") }
+        let domain = "steamac.capture-default-test." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain) }
+        if !automaticCaptureDefault(in: defaults) { failures.append("new install automatic default") }
+        defaults.set(false, forKey: cameraKey)
+        if automaticCaptureDefault(in: defaults) { failures.append("explicit camera opt-out") }
+        defaults.set(true, forKey: cameraKey)
+        if !automaticCaptureDefault(in: defaults) { failures.append("saved automatic capture") }
+        func notice(_ last: String?, boot: Int = 1, micSelected: Bool = true, micWas: Bool = true,
+                    mic: AVAuthorizationStatus = .authorized, camSelected: Bool = true, camWas: Bool = true,
+                    cam: AVAuthorizationStatus = .authorized) -> Bool {
+            needsNotice(boot: boot, version: "new", lastNotice: last,
+                microphoneSelected: micSelected, microphoneWasAuthorized: micWas, microphoneStatus: mic,
+                cameraSelected: camSelected, cameraWasAuthorized: camWas, cameraStatus: cam)
+        }
+        if !notice(nil) || notice("old") || notice("new", mic: .denied, cam: .denied)
+            || notice("old", boot: 2, mic: .denied) || !notice("old", mic: .notDetermined)
+            || !notice("old", cam: .denied) || notice("old", micSelected: false, mic: .denied)
+            || notice("old", camSelected: false, cam: .denied)
+            || notice("old", micWas: false, mic: .denied, camWas: false, cam: .notDetermined) {
+            failures.append("capture permission update policy")
+        }
         let states: [AVAuthorizationStatus] = [.notDetermined, .authorized, .denied, .restricted]
         for microphoneState in states {
             for cameraState in states {

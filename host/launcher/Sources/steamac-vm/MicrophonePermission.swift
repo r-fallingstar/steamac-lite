@@ -20,12 +20,15 @@ final class MicrophonePermission: ObservableObject {
 
     static let shared = MicrophonePermission()
     private static let noticeKey = "microphoneNoticeVersion"
+    private static let authorizedKey = "microphoneWasAuthorized"
+    private static let selectedKey = "microphonePermissionSelected"
     @Published private(set) var state: State
     @Published private(set) var requesting = false
     private let readStatus: () -> State
     private let request: (@escaping (Bool) -> Void) -> Void
     private var pending: [() -> Void] = []
     private var observer: NSObjectProtocol?
+    private var historyDefaults: UserDefaults?
 
     init(readStatus: @escaping () -> State = MicrophonePermission.systemStatus,
          request: @escaping (@escaping (Bool) -> Void) -> Void = { AVCaptureDevice.requestAccess(for: .audio, completionHandler: $0) },
@@ -53,11 +56,18 @@ final class MicrophonePermission: ObservableObject {
         }
     }
 
-    func refresh() { state = readStatus() }
+    /// Register only after startup has compared the saved grant baseline.
+    func trackAuthorization(in defaults: UserDefaults) { historyDefaults = defaults }
+
+    func refresh() {
+        state = readStatus()
+        if state == .authorized { historyDefaults?.set(true, forKey: Self.authorizedKey) }
+    }
 
     /// Only a user action requests OS permission. Already decided states never re-prompt.
     func requestAccess(completion: @escaping () -> Void = {}) {
         refresh()
+        if state == .authorized { historyDefaults?.set(true, forKey: Self.selectedKey) }
         if requesting { pending.append(completion); return }
         guard state == .notDetermined else { completion(); return }
         pending.append(completion)
@@ -65,6 +75,7 @@ final class MicrophonePermission: ObservableObject {
         request { [weak self] _ in
             let finish = {
                 self?.refresh()
+                if self?.state == .authorized { self?.historyDefaults?.set(true, forKey: Self.selectedKey) }
                 self?.requesting = false
                 let completions = self?.pending ?? []
                 self?.pending.removeAll()
@@ -80,20 +91,48 @@ final class MicrophonePermission: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
-    static func needsNotice(boot: Int, version: String, lastNotice: String?) -> Bool {
-        boot == 1 && lastNotice != version
+    static func needsNotice(boot: Int, version: String, lastNotice: String?,
+                            wasAuthorized: Bool?, selected: Bool, state: State) -> Bool {
+        guard boot == 1, lastNotice != version, selected else { return false }
+        // An already authorized installation needs only a baseline, even without history.
+        guard state != .authorized else { return false }
+        if lastNotice == nil { return true }
+        return wasAuthorized == true
+    }
+
+    /// Quiet checks still advance the version and snapshot actual OS access. Missing
+    /// selection history defaults to enabled; missing grant history never implies a grant.
+    private func reviewForBoot(boot: Int, defaults: UserDefaults, version: String) -> Bool {
+        guard boot == 1 else { return false }
+        // Read without tracking: the saved baseline belongs to the previous check.
+        state = readStatus()
+        let selected = defaults.object(forKey: Self.selectedKey) == nil || defaults.bool(forKey: Self.selectedKey)
+        let show = Self.needsNotice(boot: boot, version: version,
+            lastNotice: defaults.string(forKey: Self.noticeKey),
+            wasAuthorized: defaults.object(forKey: Self.authorizedKey) as? Bool,
+            selected: selected, state: state)
+        if !show { recordReview(defaults: defaults, version: version, selected: selected) }
+        return show
+    }
+
+    private func recordReview(defaults: UserDefaults, version: String, selected: Bool) {
+        refresh()
+        defaults.set(version, forKey: Self.noticeKey)
+        defaults.set(state == .authorized, forKey: Self.authorizedKey)
+        defaults.set(selected, forKey: Self.selectedKey)
     }
 
     /// Before the first VM boot, so a permission alert cannot make the guest's capture
     /// request time out. A dismissed notice is not repeated for every VM restart.
     func prepareForBoot(on window: NSWindow, boot: Int, defaults: UserDefaults,
                         version: String, completion: @escaping () -> Void) {
-        refresh()
+        state = readStatus()
         log("microphone: macOS authorization \(state.rawValue)")
-        guard Self.needsNotice(boot: boot, version: version,
-                               lastNotice: defaults.string(forKey: Self.noticeKey)) else { completion(); return }
-        let finish = {
-            defaults.set(version, forKey: Self.noticeKey)
+        let show = reviewForBoot(boot: boot, defaults: defaults, version: version)
+        trackAuthorization(in: defaults)
+        guard show else { completion(); return }
+        let finish = { (selected: Bool) in
+            self.recordReview(defaults: defaults, version: version, selected: selected)
             completion()
         }
         let displayedState = state
@@ -116,10 +155,10 @@ final class MicrophonePermission: ObservableObject {
         alert.beginSheetModal(for: window) { [self] response in
             if displayedState == .authorized {
                 if response == .alertSecondButtonReturn { openSettings() }
-                finish()
+                finish(response == .alertFirstButtonReturn || response == .alertSecondButtonReturn)
                 return
             }
-            guard response == .alertFirstButtonReturn else { finish(); return }
+            guard response == .alertFirstButtonReturn else { finish(false); return }
             if displayedState == .notDetermined {
                 requestAccess {
                     if self.state == .denied || self.state == .restricted {
@@ -127,12 +166,12 @@ final class MicrophonePermission: ObservableObject {
                         denied.messageText = String(localized: "Microphone access")
                         denied.informativeText = self.state.description + "\n\n" + String(localized: "You can use SteamOS without a microphone. To allow it later, open Settings → Sound.")
                         denied.addButton(withTitle: String(localized: "Continue"))
-                        denied.beginSheetModal(for: window) { _ in finish() }
-                    } else { finish() }
+                        denied.beginSheetModal(for: window) { _ in finish(true) }
+                    } else { finish(true) }
                 }
             } else {
                 if state != .authorized { openSettings() }
-                finish()
+                finish(true)
             }
         }
     }
@@ -163,15 +202,44 @@ final class MicrophonePermission: ObservableObject {
     /// or reading/changing the user's TCC decisions.
     static func selfCheck() -> [String] {
         var failures: [String] = []
-        for state in State.allCases {
-            if !needsNotice(boot: 1, version: "new", lastNotice: "old") {
-                failures.append("update notice: \(state)")
+        let domain = "steamac.microphone-history-test." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain) }
+        func checkReview(_ name: String, state: State, boot: Int = 1, lastVersion: String? = "old",
+                         wasAuthorized: Bool? = true, selected: Bool? = true, expected: Bool) {
+            defaults.removePersistentDomain(forName: domain)
+            if let lastVersion { defaults.set(lastVersion, forKey: noticeKey) }
+            if let wasAuthorized { defaults.set(wasAuthorized, forKey: authorizedKey) }
+            if let selected { defaults.set(selected, forKey: selectedKey) }
+            let before = defaults.persistentDomain(forName: domain) ?? [:]
+            let permission = MicrophonePermission(readStatus: { state }, request: { _ in
+                failures.append("\(name): unexpected OS request")
+            }, observeChanges: false)
+            if permission.reviewForBoot(boot: boot, defaults: defaults, version: "new") != expected {
+                failures.append("\(name): notice decision")
             }
-            for (boot, last) in [(2, "old"), (1, "new")] {
-                if needsNotice(boot: boot, version: "new", lastNotice: last) {
-                    failures.append("unexpected notice: \(state)")
+            if boot != 1 || expected {
+                if !NSDictionary(dictionary: before).isEqual(NSDictionary(dictionary: defaults.persistentDomain(forName: domain) ?? [:])) {
+                    failures.append("\(name): history changed before review")
                 }
+            } else if defaults.string(forKey: noticeKey) != "new"
+                || (defaults.object(forKey: authorizedKey) as? Bool) != (state == .authorized)
+                || (defaults.object(forKey: selectedKey) as? Bool) != (selected ?? true) {
+                failures.append("\(name): quiet baseline not saved")
             }
+        }
+        for state in State.allCases {
+            checkReview("first startup: \(state)", state: state, lastVersion: nil,
+                        wasAuthorized: nil, selected: nil, expected: state != .authorized)
+            checkReview("update retained/lost: \(state)", state: state, expected: state != .authorized)
+            checkReview("previous denial: \(state)", state: state, wasAuthorized: false, expected: false)
+            checkReview("opt-out: \(state)", state: state, selected: false, expected: false)
+            checkReview("legacy without grant history: \(state)", state: state,
+                        wasAuthorized: nil, selected: nil, expected: false)
+            checkReview("same version: \(state)", state: state, lastVersion: "new", expected: false)
+            checkReview("VM restart: \(state)", state: state, boot: 2, expected: false)
+            checkReview("VM restart without history: \(state)", state: state, boot: 2,
+                        lastVersion: nil, wasAuthorized: nil, selected: nil, expected: false)
             var osState = state
             var requests = 0
             var callback: ((Bool) -> Void)?
@@ -196,6 +264,57 @@ final class MicrophonePermission: ObservableObject {
         let permission = MicrophonePermission(readStatus: { denied }, request: { done in denied = .denied; done(false) }, observeChanges: false)
         permission.requestAccess()
         if permission.state != .denied || permission.requesting { failures.append("denial result") }
+
+        // Later remains an opt-out even if access happens to be authorized; an OS denial
+        // after choosing Allow records intent but cannot become a prior-grant baseline.
+        for selected in [false, true] {
+            var osState: State = .authorized
+            let permission = MicrophonePermission(readStatus: { osState }, request: { _ in
+                failures.append("history must not request OS access")
+            }, observeChanges: false)
+            permission.recordReview(defaults: defaults, version: "first", selected: selected)
+            osState = .notDetermined
+            if permission.reviewForBoot(boot: 1, defaults: defaults, version: "second") != selected {
+                failures.append("Later/Allow selection on update")
+            }
+            permission.recordReview(defaults: defaults, version: "second", selected: selected)
+            if permission.reviewForBoot(boot: 1, defaults: defaults, version: "third") {
+                failures.append("repeated notice after loss or opt-out")
+            }
+        }
+        permission.recordReview(defaults: defaults, version: "denied", selected: true)
+        if defaults.bool(forKey: authorizedKey)
+            || permission.reviewForBoot(boot: 1, defaults: defaults, version: "after-denial") {
+            failures.append("denial inferred as a previous grant")
+        }
+
+        defaults.removePersistentDomain(forName: domain)
+        defaults.set(false, forKey: authorizedKey)
+        defaults.set(false, forKey: selectedKey)
+        var manualState: State = .authorized
+        var manualRequests = 0
+        let manual = MicrophonePermission(readStatus: { manualState }, request: { done in
+            manualRequests += 1; manualState = .authorized; done(true)
+        }, observeChanges: false)
+        manual.trackAuthorization(in: defaults)
+        if defaults.bool(forKey: authorizedKey) { failures.append("tracking changed the prior baseline") }
+        manual.refresh()
+        if !defaults.bool(forKey: authorizedKey) || defaults.bool(forKey: selectedKey) {
+            failures.append("refresh did not track only the grant")
+        }
+        manualState = .denied
+        manual.refresh()
+        if !defaults.bool(forKey: authorizedKey) { failures.append("revocation erased the prior grant") }
+        manualState = .notDetermined
+        manual.requestAccess()
+        if manualRequests != 1 || !defaults.bool(forKey: authorizedKey) || !defaults.bool(forKey: selectedKey) {
+            failures.append("manual Sound permission did not record grant and selection")
+        }
+        defaults.set("manual-grant", forKey: noticeKey)
+        manualState = .restricted
+        if !manual.reviewForBoot(boot: 1, defaults: defaults, version: "after-manual-grant") {
+            failures.append("manual grant loss not detected on update")
+        }
         return failures
     }
 }
