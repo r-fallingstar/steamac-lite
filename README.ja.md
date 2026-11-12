@@ -2,7 +2,7 @@
 
 [English](README.md) · **日本語**
 
-**[写真付きの導入ガイド](https://r-fallingstar.github.io/steamac-lite/)** — ダウンロードからVRChat向け設定まで、実画面で案内します。
+**[写真付きの導入ガイド](https://r-fallingstar.github.io/steamac-lite/)** · [更新サポート](https://r-fallingstar.github.io/steamac-lite/support/?lang=ja) — ダウンロードからVRChat向け設定まで、実画面で案内します。
 
 [日本語](https://r-fallingstar.github.io/steamac-lite/?lang=ja) · [English](https://r-fallingstar.github.io/steamac-lite/en/) · [한국어](https://r-fallingstar.github.io/steamac-lite/ko/) · [简体中文](https://r-fallingstar.github.io/steamac-lite/zh-CN/)
 

@@ -2,6 +2,19 @@
 
 The published files are `docs/index.html`, `docs/en/index.html`, `docs/ko/index.html` and `docs/zh-CN/index.html`.
 
+## Update support
+
+The header links to `support/`, `en/support/`, `ko/support/` and `zh-CN/support/`.
+Edit `support.template.html` and the four JSON files under `support/`. The same
+`build-guide.py` command builds and checks both the guides and support pages.
+The support page covers in-app updates, manual DMG updates, microphone permissions,
+failed updates and contacting support. Its DMG and Release links follow the guide
+template, and its install image uses the existing cursor-free capture in each language.
+
+Language selection preserves the support route and section anchor. Japanese links
+include `?lang=ja` so they also work with blocked local storage. The support pages
+use the existing stylesheet, photo viewer and Cloudflare Web Analytics configuration.
+
 Edit `guide.template.html` and the four JSON files in `locales/`. Then run:
 
 ```sh

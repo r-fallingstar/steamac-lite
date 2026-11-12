@@ -17,7 +17,9 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--check', action='store_true')
 args = parser.parse_args()
 template = (ROOT/'site/guide.template.html').read_text()
+support_template = (ROOT/'site/support.template.html').read_text()
 source = json.loads((ROOT/'site/locales/ja.json').read_text())
+support_source = json.loads((ROOT/'site/support/ja.json').read_text())
 screenshots = json.loads((ROOT/'site/screenshots.json').read_text())
 assert set(screenshots) == set(LANGUAGES), 'Every guide language needs screenshots'
 
@@ -81,12 +83,13 @@ for locale,(name,language,path) in LANGUAGES.items():
     selector = (f'<details class="language-picker"><summary aria-label="{label}: {name}">{name}</summary>'
                 f'<nav aria-label="{label}">'+''.join(links)+'</nav></details>')
     values = {**copy, **images, 'html_lang':language, 'root_prefix':prefix,
+              'support_href': 'support/?lang=ja' if locale == 'ja' else 'support/',
               'canonical':SITE+path, 'alternates':alternatives,'language_selector':selector,
               'og_image':SITE+f'media/social/guide-{locale}-v3.jpg'}
     def substitute(match):
         key = match[1]
         assert key in values, ('unknown template key',key)
-        return html.escape(values[key],quote=True) if key.startswith(('attr.','photo.','image.')) else values[key]
+        return html.escape(values[key],quote=True) if key.startswith(('attr.','photo.','image.')) or key in {'support.page_title', 'support.description'} else values[key]
     page = re.sub(r'@@([\w.-]+)@@',substitute,template)
     # Asset URLs also occur inside translated HTML fragments.
     page = page.replace('src="media/','src="'+prefix+'media/').replace('href="media/','href="'+prefix+'media/')
@@ -96,5 +99,42 @@ for locale,(name,language,path) in LANGUAGES.items():
         assert destination.read_text() == page, f'Outdated generated page: {destination}'
     else:
         destination.parent.mkdir(parents=True,exist_ok=True)
+        destination.write_text(page)
+    print(('Checked' if args.check else 'Built')+': '+str(destination.relative_to(ROOT)))
+
+    # The update help keeps its section and language when switching between locales.
+    support = json.loads((ROOT/f'site/support/{locale}.json').read_text())
+    assert set(support) == set(support_source), (locale, 'missing support translation keys')
+    for key, value in support.items():
+        assert isinstance(value, str) and value.strip(), (locale, key, 'empty support translation')
+        Fragment().feed(value)
+    support_prefix = '../' if not path else '../../'
+    links = []
+    for code, (label, tag, route) in LANGUAGES.items():
+        target = support_prefix + route + 'support/' + ('?lang=ja' if code == 'ja' else '')
+        current = ' aria-current="page"' if code == locale else ''
+        links.append(f'<a href="{target}" lang="{tag}" hreflang="{code}" data-language="{code}"{current}>{label}</a>')
+    selector = (f'<details class="language-picker"><summary aria-label="{html.escape(copy["language.label"], quote=True)}: {name}">{name}</summary>'
+                f'<nav aria-label="{html.escape(copy["language.label"], quote=True)}">'+''.join(links)+'</nav></details>')
+    alternatives = '\n'.join(f'<link rel="alternate" hreflang="{code}" href="{SITE}{route}support/">'
+                             for code, (_, _, route) in LANGUAGES.items())
+    alternatives += f'\n<link rel="alternate" hreflang="x-default" href="{SITE}support/">'
+    values = {**copy, **support, 'html_lang': language, 'root_prefix': support_prefix,
+              'support_href': './?lang=ja' if locale == 'ja' else './',
+              'guide_href': '../?lang=ja' if locale == 'ja' else '../',
+              'canonical': SITE+path+'support/', 'alternates': alternatives, 'language_selector': selector,
+              'og_image': SITE+f'media/social/guide-{locale}-v3.jpg',
+              'image.dmg-install.src': support_prefix+screenshots[locale]['dmg-install'],
+              'image.dmg-install.width': images['image.dmg-install.width'],
+              'image.dmg-install.height': images['image.dmg-install.height'],
+              'release.download': re.search(r'href="(https://github.com/r-fallingstar/steamac-lite/releases/download/[^"]+)"', template)[1],
+              'release.page': re.search(r'href="(https://github.com/r-fallingstar/steamac-lite/releases/tag/[^"]+)"', template)[1]}
+    page = re.sub(r'@@([\w.-]+)@@', substitute, support_template)
+    assert '@@' not in page
+    destination = ROOT/'docs'/path/'support/index.html'
+    if args.check:
+        assert destination.read_text() == page, f'Outdated generated support: {destination}'
+    else:
+        destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(page)
     print(('Checked' if args.check else 'Built')+': '+str(destination.relative_to(ROOT)))

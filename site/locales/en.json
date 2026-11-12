@@ -155,5 +155,6 @@
   "booth.next": "Continue to 03: Choose a language →",
   "download.route": "Use the DMG below to download directly from GitHub. If you use BOOTH, follow the subsection below instead.",
   "microphone.title": "Using a microphone",
-  "microphone.text": "If prompted, choose Allow Microphone… and allow access in the macOS dialog. If access is denied, choose Open Microphone Settings…. If the microphone stops working after an update, try turning this app’s microphone permission off and on again. You can also check access in the app’s Settings → Sound."
+  "microphone.text": "If prompted, choose Allow Microphone… and allow access in the macOS dialog. If access is denied, choose Open Microphone Settings…. If the microphone stops working after an update, try turning this app’s microphone permission off and on again. You can also check access in the app’s Settings → Sound.",
+  "header.support": "Update support"
 }

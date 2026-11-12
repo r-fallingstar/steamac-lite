@@ -2,6 +2,7 @@
   const root = new URL('../', document.currentScript.src);
   const routes = {ja: '', en: 'en/', ko: 'ko/', 'zh-CN': 'zh-CN/'};
   const storageKey = 'steamac-guide-language';
+  const section = document.documentElement.dataset?.page === 'support' ? 'support/' : '';
   const normalize = value => {
     const language = String(value || '').toLowerCase();
     if (/^ja(?:-|$)/.test(language)) return 'ja';
@@ -13,7 +14,8 @@
   const remember = language => {
     try { localStorage.setItem(storageKey, language); } catch { /* Private/storage-disabled browsing. */ }
   };
-  const atRoot = location.pathname === root.pathname || location.pathname === root.pathname + 'index.html';
+  const pageRoot = new URL(section, root);
+  const atRoot = location.pathname === pageRoot.pathname || location.pathname === pageRoot.pathname + 'index.html';
   if (atRoot) {
     const requested = normalize(new URLSearchParams(location.search).get('lang'));
     let saved = null;
@@ -21,7 +23,7 @@
     const preferred = requested || saved || (navigator.languages || [navigator.language]).map(normalize).find(Boolean) || 'en';
     if (requested) remember(requested);
     if (preferred !== 'ja') {
-      location.replace(new URL(routes[preferred] + location.hash, root).href);
+      location.replace(new URL(routes[preferred] + section + location.hash, root).href);
       return;
     }
   } else {
