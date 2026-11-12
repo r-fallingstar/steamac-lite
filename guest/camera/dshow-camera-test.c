@@ -51,7 +51,7 @@ typedef struct FrameCallback {
     HANDLE ready;
     ULONG callbacks, frames, nonzero_frames, errors;
     ULONGLONG bytes;
-    LONG last_length;
+    LONG last_length, expected_length;
     HRESULT first_error;
 } FrameCallback;
 
@@ -103,6 +103,8 @@ static HRESULT STDMETHODCALLTYPE callback_sample(GrabberCallback *iface, double 
         length = IMediaSample_GetActualDataLength(sample);
         hr = IMediaSample_GetPointer(sample, &data);
         if (SUCCEEDED(hr) && (!data || length <= 0 || length > IMediaSample_GetSize(sample)))
+            hr = E_UNEXPECTED;
+        if (SUCCEEDED(hr) && cb->expected_length && length != cb->expected_length)
             hr = E_UNEXPECTED;
         if (SUCCEEDED(hr)) {
             LONG i;
@@ -167,6 +169,14 @@ static void print_guid(const GUID *id) {
            id->Data4[4], id->Data4[5], id->Data4[6], id->Data4[7]);
 }
 
+static const char *subtype_name(const GUID *subtype) {
+    if (!subtype) return "any";
+    if (IsEqualGUID(subtype, &MEDIASUBTYPE_RGB24)) return "RGB24";
+    if (IsEqualGUID(subtype, &MEDIASUBTYPE_RGB32)) return "RGB32";
+    if (IsEqualGUID(subtype, &MEDIASUBTYPE_ARGB32)) return "ARGB32";
+    return "other";
+}
+
 static void print_media_type(const AM_MEDIA_TYPE *type) {
     const BITMAPINFOHEADER *bitmap = NULL;
     REFERENCE_TIME interval = 0;
@@ -185,6 +195,7 @@ static void print_media_type(const AM_MEDIA_TYPE *type) {
     print_guid(&type->subtype);
     if (IsEqualGUID(&type->subtype, &MEDIASUBTYPE_RGB24)) printf(" (RGB24/BGR-bytes)");
     if (IsEqualGUID(&type->subtype, &MEDIASUBTYPE_RGB32)) printf(" (RGB32)");
+    if (IsEqualGUID(&type->subtype, &MEDIASUBTYPE_ARGB32)) printf(" (ARGB32)");
     if (bitmap) {
         printf(" width=%ld height=%ld bits=%u image_bytes=%lu AvgTimePerFrame=%lld fps=%.3f",
                (long)bitmap->biWidth, (long)bitmap->biHeight, (unsigned)bitmap->biBitCount,
@@ -194,9 +205,43 @@ static void print_media_type(const AM_MEDIA_TYPE *type) {
         printf(" dimensions=unknown format=");
         print_guid(&type->formattype);
     }
-    printf(" sample_bytes=%lu format_bytes=%lu format_null=%u\n",
+    printf(" sample_bytes=%lu format_bytes=%lu format_null=%u subtype_name=%s\n",
            (unsigned long)type->lSampleSize, (unsigned long)type->cbFormat,
-           type->pbFormat == NULL);
+           type->pbFormat == NULL, subtype_name(&type->subtype));
+}
+
+/* Only forced formats add size assertions; the default capture stays unchanged. */
+static HRESULT forced_sample_length(const AM_MEDIA_TYPE *type, const GUID *subtype,
+                                     LONG *length) {
+    const BITMAPINFOHEADER *bitmap = NULL;
+    ULONGLONG height, minimum, dib_bytes, expected;
+    unsigned bits;
+    if (!subtype) return S_OK;
+    if (!IsEqualGUID(&type->majortype, &MEDIATYPE_Video) ||
+        !IsEqualGUID(&type->subtype, subtype)) return VFW_E_TYPE_NOT_ACCEPTED;
+    if (type->pbFormat && IsEqualGUID(&type->formattype, &FORMAT_VideoInfo) &&
+        type->cbFormat >= sizeof(VIDEOINFOHEADER))
+        bitmap = &((const VIDEOINFOHEADER *)type->pbFormat)->bmiHeader;
+    else if (type->pbFormat && IsEqualGUID(&type->formattype, &FORMAT_VideoInfo2) &&
+             type->cbFormat >= sizeof(VIDEOINFOHEADER2))
+        bitmap = &((const VIDEOINFOHEADER2 *)type->pbFormat)->bmiHeader;
+    bits = IsEqualGUID(subtype, &MEDIASUBTYPE_RGB24) ? 24 : 32;
+    if (!bitmap || bitmap->biWidth <= 0 || !bitmap->biHeight || bitmap->biBitCount != bits)
+        return E_UNEXPECTED;
+    height = bitmap->biHeight < 0 ? (ULONGLONG)-(LONGLONG)bitmap->biHeight :
+                                  (ULONGLONG)bitmap->biHeight;
+    minimum = (ULONGLONG)bitmap->biWidth * height * (bits / 8);
+    dib_bytes = (((ULONGLONG)bitmap->biWidth * bits + 31) / 32) * 4 * height;
+    expected = type->lSampleSize ? type->lSampleSize :
+               bitmap->biSizeImage ? bitmap->biSizeImage : dib_bytes;
+    printf("DS_CAMERA_BUFFER minimum_bytes=%llu dib_bytes=%llu expected_sample_bytes=%llu "
+           "length_source=%s\n", (unsigned long long)minimum, (unsigned long long)dib_bytes,
+           (unsigned long long)expected, type->lSampleSize ? "lSampleSize" :
+           bitmap->biSizeImage ? "biSizeImage" : "DIB-stride");
+    if (expected < minimum || expected < dib_bytes || expected > 0x7fffffffULL)
+        return E_UNEXPECTED;
+    *length = (LONG)expected;
+    return S_OK;
 }
 
 /* These records are observations, not capture failures. Append method outputs
@@ -401,7 +446,7 @@ cleanup:
 }
 
 /* Each device gets a fresh graph and at most eight seconds of sample waiting. */
-static int capture_frames(IBaseFilter *source, unsigned fps) {
+static int capture_frames(IBaseFilter *source, unsigned fps, const GUID *subtype, BOOL preview) {
     IGraphBuilder *graph = NULL;
     ICaptureGraphBuilder2 *builder = NULL;
     IBaseFilter *grabber_filter = NULL, *renderer = NULL;
@@ -414,11 +459,15 @@ static int capture_frames(IBaseFilter *source, unsigned fps) {
     const char *stage = "create-graph";
     int passed = 0, run_attempted = 0;
     BOOL callback_set = FALSE;
+    const GUID *category = preview ? &PIN_CATEGORY_PREVIEW : &PIN_CATEGORY_CAPTURE;
     DWORD started;
     memset(&type, 0, sizeof type);
 
 #define CHECK_HR(label, expression) do { \
-    stage = (label); hr = (expression); if (FAILED(hr)) goto failure; \
+    stage = (label); hr = (expression); \
+    printf("DS_CAMERA_STAGE stage=%s hr=0x%08lx requested_subtype=%s category=%s\n", \
+           stage, (unsigned long)hr, subtype_name(subtype), preview ? "preview" : "capture"); \
+    if (FAILED(hr)) goto failure; \
 } while (0)
     CHECK_HR("create-capture-builder", CoCreateInstance(&CLSID_CaptureGraphBuilder2, NULL,
              CLSCTX_INPROC_SERVER, &IID_ICaptureGraphBuilder2, (void **)&builder));
@@ -433,6 +482,7 @@ static int capture_frames(IBaseFilter *source, unsigned fps) {
                                                                &grabber_iid, (void **)&grabber));
     CHECK_HR("add-sample-grabber", IGraphBuilder_AddFilter(graph, grabber_filter, L"Sample Grabber"));
     type.majortype = MEDIATYPE_Video;
+    if (subtype) type.subtype = *subtype;
     CHECK_HR("set-video-media-type", grabber->lpVtbl->SetMediaType(grabber, &type));
     CHECK_HR("disable-one-shot", grabber->lpVtbl->SetOneShot(grabber, FALSE));
     CHECK_HR("disable-sample-copy", grabber->lpVtbl->SetBufferSamples(grabber, FALSE));
@@ -443,11 +493,15 @@ static int capture_frames(IBaseFilter *source, unsigned fps) {
     if (!cb) goto cleanup;
     CHECK_HR("set-sample-callback", grabber->lpVtbl->SetCallback(grabber, &cb->iface, 0));
     callback_set = TRUE;
-    CHECK_HR("render-capture-stream", ICaptureGraphBuilder2_RenderStream(builder,
-             &PIN_CATEGORY_CAPTURE, &MEDIATYPE_Video, (IUnknown *)source, grabber_filter, renderer));
+    CHECK_HR(preview ? "render-preview-stream" : "render-capture-stream",
+             ICaptureGraphBuilder2_RenderStream(builder,
+             category, &MEDIATYPE_Video, (IUnknown *)source, grabber_filter, renderer));
     memset(&type, 0, sizeof type);
     CHECK_HR("get-connected-media-type", grabber->lpVtbl->GetConnectedMediaType(grabber, &type));
+    printf("DS_CAMERA_NEGOTIATED requested_subtype=%s actual_subtype=%s category=%s\n",
+           subtype_name(subtype), subtype_name(&type.subtype), preview ? "preview" : "capture");
     print_media_type(&type);
+    CHECK_HR("verify-forced-format", forced_sample_length(&type, subtype, &cb->expected_length));
     free_media_type(&type);
     CHECK_HR("query-media-control", IGraphBuilder_QueryInterface(graph, &IID_IMediaControl,
                                                                  (void **)&control));
@@ -515,9 +569,10 @@ cleanup:
     if (cb) {
         EnterCriticalSection(&cb->lock);
         printf("DS_CAMERA_FRAMES callbacks=%lu frames=%lu bytes=%llu nonzero_frames=%lu "
-               "sample_errors=%lu last_sample_bytes=%ld\n", (unsigned long)cb->callbacks,
+               "sample_errors=%lu last_sample_bytes=%ld expected_sample_bytes=%ld\n", (unsigned long)cb->callbacks,
                (unsigned long)cb->frames, (unsigned long long)cb->bytes,
-               (unsigned long)cb->nonzero_frames, (unsigned long)cb->errors, (long)cb->last_length);
+               (unsigned long)cb->nonzero_frames, (unsigned long)cb->errors, (long)cb->last_length,
+               (long)cb->expected_length);
         if (cb->errors) report_hr("sample-buffer", cb->first_error);
         if (cb->frames < REQUIRED_FRAMES || cb->errors) passed = 0;
         LeaveCriticalSection(&cb->lock);
@@ -534,16 +589,42 @@ int main(int argc, char **argv) {
     IEnumMoniker *items = NULL;
     IMoniker *item = NULL;
     unsigned count = 0, bound = 0, captured = 0, fps = 0;
+    const GUID *subtype = NULL;
+    BOOL hold_second_filter = FALSE, preview = FALSE;
     int enum_ok = 0, arg;
     HRESULT hr;
+    setvbuf(stdout, NULL, _IONBF, 0);
     for (arg = 1; arg < argc; ++arg) {
         char *end = NULL;
         unsigned long value;
         if (!strcmp(argv[arg], "--help")) {
-            puts("Usage: dshow-camera-test.exe [--fps=INTEGER]\n"
-                 "Default: read-only capability diagnostics, then sample capture.\n"
-                 "--fps=15: clone GetFormat, request 15 fps with SetFormat, read back, then capture.");
+            puts("Usage: dshow-camera-test.exe [--fps=INTEGER] [--subtype=rgb24|rgb32|argb32]\n"
+                 "                             [--hold-second-filter] [--preview]\n"
+                 "Default: read-only capability diagnostics, then capture pin with any video subtype.\n"
+                 "--fps=15: clone GetFormat, request 15 fps with SetFormat, read back, then capture.\n"
+                 "--subtype: request this Sample Grabber subtype; verify negotiated type and sample sizes.\n"
+                 "--hold-second-filter: bind the same moniker again and hold it during first-filter capture.\n"
+                 "--preview: RenderStream with PIN_CATEGORY_PREVIEW (default: PIN_CATEGORY_CAPTURE).");
             return 0;
+        }
+        if (!strncmp(argv[arg], "--subtype=", 10) && !subtype) {
+            const char *name = argv[arg] + 10;
+            if (!strcmp(name, "rgb24")) subtype = &MEDIASUBTYPE_RGB24;
+            else if (!strcmp(name, "rgb32")) subtype = &MEDIASUBTYPE_RGB32;
+            else if (!strcmp(name, "argb32")) subtype = &MEDIASUBTYPE_ARGB32;
+            else {
+                fprintf(stderr, "Invalid subtype: %s (expected rgb24, rgb32, or argb32)\n", name);
+                return 2;
+            }
+            continue;
+        }
+        if (!strcmp(argv[arg], "--hold-second-filter") && !hold_second_filter) {
+            hold_second_filter = TRUE;
+            continue;
+        }
+        if (!strcmp(argv[arg], "--preview") && !preview) {
+            preview = TRUE;
+            continue;
         }
         if (strncmp(argv[arg], "--fps=", 6) || fps || argv[arg][6] < '0' || argv[arg][6] > '9') {
             fprintf(stderr, "Invalid option: %s (use --help)\n", argv[arg]);
@@ -556,9 +637,10 @@ int main(int argc, char **argv) {
         }
         fps = (unsigned)value;
     }
+    printf("DS_CAMERA_REQUEST subtype=%s category=%s hold_second_filter=%u fps=%u\n",
+           subtype_name(subtype), preview ? "preview" : "capture", hold_second_filter, fps);
     hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(hr)) { report_hr("initialize-com", hr); return 1; }
-    setvbuf(stdout, NULL, _IONBF, 0);
     hr = CoCreateInstance(&CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
                          &IID_ICreateDevEnum, (void **)&devices);
     if (FAILED(hr)) { report_hr("create-device-enumerator", hr); goto cleanup; }
@@ -567,7 +649,7 @@ int main(int argc, char **argv) {
     if (FAILED(hr)) { report_hr("enumerate-devices", hr); goto cleanup; }
     while ((hr = IEnumMoniker_Next(items, 1, &item, NULL)) == S_OK) {
         IPropertyBag *bag = NULL;
-        IBaseFilter *filter = NULL;
+        IBaseFilter *filter = NULL, *second_filter = NULL;
         VARIANT name;
         ++count;
         printf("DS_CAMERA_DEVICE index=%u\n", count);
@@ -587,9 +669,17 @@ int main(int argc, char **argv) {
         printf("DS_CAMERA_BIND 0x%08lx\n", (unsigned long)hr);
         if (SUCCEEDED(hr)) {
             ++bound;
-            if (capture_frames(filter, fps)) ++captured;
+            if (hold_second_filter) {
+                hr = IMoniker_BindToObject(item, NULL, NULL, &IID_IBaseFilter, (void **)&second_filter);
+                printf("DS_CAMERA_SECOND_BIND hr=0x%08lx filter_null=%u held_during_capture=%u "
+                       "same_filter_pointer=%u\n", (unsigned long)hr, second_filter == NULL,
+                       SUCCEEDED(hr) && second_filter != NULL, second_filter == filter);
+                /* A failed second open is an observation; still test the first capture. */
+            }
+            if (capture_frames(filter, fps, subtype, preview)) ++captured;
             IBaseFilter_Release(filter);
         } else report_hr("bind-camera", hr);
+        if (second_filter) IBaseFilter_Release(second_filter);
         IMoniker_Release(item);
         item = NULL;
     }

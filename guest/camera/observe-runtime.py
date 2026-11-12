@@ -1,14 +1,27 @@
 #!/usr/bin/python3
 """Local camera diagnostics only; read selected runtime metadata, never game memory."""
 from pathlib import Path
-import json, os, stat, time
+import json, os, runpy, stat, time
 
 KEYS = ('FEX_ROOTFS','FEX_PORTABLE','FEX_APP_CONFIG_LOCATION','FEX_APP_CONFIG',
         'STEAM_COMPAT_MACHINE_ARCHITECTURE','STEAM_COMPAT_EMULATOR','STEAM_COMPAT_GRAPHICS_PROVIDER',
         'STEAM_COMPAT_TOOL_PATHS','STEAM_COMPAT_CONTAINER_RUNTIME_PATH','WINEPREFIX','WINEDLLOVERRIDES')
 seen = set()
+selection_seen = None
+config = Path('/home/steamos/.local/share/Steam/config/config.vdf')
+state = Path('/home/steamos/.config/steamac/camera-experiment/proton-selection.json')
+vdf = runpy.run_path('/usr/lib/steamac/steam-title-defaults')['vdf_entries']
 end = time.monotonic() + 600
 while time.monotonic() < end:
+    try:
+        if state.exists():
+            values = vdf(config.read_text())[0]
+            key = ('installconfigstore','software','valve','steam','compattoolmapping','438100','name')
+            selected = values.get(key,(None,))[0]
+            if selected != selection_seen:
+                selection_seen = selected
+                print('CAMERA_PROTON_STATUS '+json.dumps({'vrchat_tool':selected}),flush=True)
+    except (OSError,ValueError):pass
     for process in Path('/proc').iterdir():
         if not process.name.isdecimal():
             continue

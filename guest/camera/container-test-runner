@@ -1,0 +1,61 @@
+#!/bin/bash
+# Dedicated clone: synthetic camera, fresh prefix, no game or physical capture.
+set -u
+exec 2>&1
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+steam=/home/steamos/.local/share/Steam
+runtime="$steam/steamapps/common/SteamLinuxRuntime_4"
+fex="$steam/steamapps/common/FEX-Emu"
+proton="$steam/steamapps/common/Proton - Experimental"
+area=/home/steamos/.local/share/steamac-camera-container-test
+echo CAMERA_TEST_BEGIN
+for ((i=0;i<60;i++)); do [[ ! -f /run/steamac-camera-device ]] || break; sleep 1; done
+device=$(cat /run/steamac-camera-device)
+sleep 2
+/usr/lib/steamac/camera/camera-agent --probe-read "$device"
+native=$?
+mkdir -p "$area/cache" "$area/fex-config" /run/user/1000
+cp /usr/lib/steamac/camera/dshow-camera-test.exe "$area/dshow-camera-test.exe"
+chown -R 1000:1000 "$area"
+chown 1000:1000 /run/user/1000
+chmod 700 /run/user/1000
+run_case() {
+ local tool=$1 prefix=$2 label=$3
+ shift 3
+ echo "CAMERA_CONTAINER_CASE $label"
+ setpriv --reuid=1000 --regid=1000 --init-groups env \
+ HOME=/home/steamos USER=steamos LOGNAME=steamos XDG_RUNTIME_DIR=/run/user/1000 \
+ STEAM_COMPAT_MACHINE_ARCHITECTURE=aarch64-linux-gnu \
+ STEAM_COMPAT_EMULATOR="$fex/emulator.json" \
+ STEAM_COMPAT_GRAPHICS_PROVIDER=/usr/share/guestos/fex-mesa/graphics_provider.json \
+ STEAM_COMPAT_TOOL_PATHS="$tool:$runtime:$fex" \
+ STEAM_COMPAT_CLIENT_INSTALL_PATH="$steam" SteamAppId=0 SteamGameId=0 \
+ FEX_PORTABLE=1 FEX_APP_CONFIG_LOCATION="$area/fex-config/" \
+ XDG_CACHE_HOME="$area/cache" WINEPREFIX="$prefix" \
+ WINEDEBUG=err+all,warn+quartz,fixme+quartz WINEDLLOVERRIDES=winemenubuilder.exe=d WINEESYNC=0 WINEFSYNC=0 \
+ timeout 75s "$runtime/_v2-entry-point" --verb=run -- \
+ "$tool/files/bin/wine" "$area/dshow-camera-test.exe" "$@" > "$area/$label.log" 2>&1
+ local result=$?
+ tail -n 100 "$area/$label.log"
+ echo "CAMERA_CONTAINER_CASE_EXIT $label $result"
+ return "$result"
+}
+echo CAMERA_CONTAINER_LAUNCH
+run_case "$proton" "$area/pfx" standard-capture --fps=15
+windows=$?
+run_case "$proton" "$area/pfx" standard-second-filter --fps=15 --hold-second-filter
+run_case "$proton" "$area/pfx" standard-capture-rgb32 --fps=15 --subtype=rgb32
+run_case "$proton" "$area/pfx" standard-preview --fps=15 --preview
+run_case "$proton" "$area/pfx" standard-preview-rgb24 --fps=15 --preview --subtype=rgb24
+run_case "$proton" "$area/pfx" standard-preview-rgb32 --fps=15 --preview --subtype=rgb32
+rtsp="$steam/compatibilitytools.d/proton-rtsp-11.0-20260609-4"
+patched=1
+if [[ -f "$rtsp/.steamac-camera-verified-source" ]] && [[ $(cat "$rtsp/.steamac-camera-verified-source") == b52f231a116e9d0f1f9d19f4e870ff84392f35daae02391a6f79fdf9ca583415 ]]; then
+ run_case "$rtsp" "$area/pfx-rtsp" rtsp-preview-rgb32 --fps=15 --preview --subtype=rgb32
+ patched=$?
+else
+ echo CAMERA_CONTAINER_RTSP_NOT_VERIFIED
+fi
+echo CAMERA_CONTAINER_EXIT=$windows patched=$patched
+if ((native==0 && windows==0 && patched==0)); then echo CAMERA_TEST_EXIT=0; else echo CAMERA_TEST_EXIT=1; fi
+systemctl poweroff

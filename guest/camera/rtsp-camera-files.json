@@ -1,0 +1,6 @@
+{
+  "toolmanifest.vdf": "bb81d44a687cc6f4ea7ae05fa9f0502f35c48e462051809dce3b2a58492e3498",
+  "compatibilitytool.vdf": "ddc38f5f1d8eaf088b7d05d506351fbeeba8f7927eade624ff23657b13a79a28",
+  "files/lib/wine/x86_64-windows/qcap.dll": "c891f99919668872a2acc7d8f5843fc1b52b52034c6f066039df9e89fe2e4365",
+  "files/lib/wine/x86_64-unix/qcap.so": "94023304b60668b5a788a25ba2bdba132a7b56ec0e5b9d3730443219c5193079"
+}

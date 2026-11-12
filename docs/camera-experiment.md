@@ -20,7 +20,7 @@ python3 scripts/camera/launch-experiment.py
 2. 設定の「音声」の右にある「カメラ」で、内蔵カメラを選べます。
 3. ゲームがカメラを使用すると撮影を始め、使用を終えると停止します。待機中は黒い映像の更新頻度も毎秒1回までに抑えます。
 4. プレビューだけ確認する場合は「許可してカメラを使う」を押します。自分の映像と「SteamOSが受け取ったフレーム数」を確認してください。
-5. VRChatはご自身で起動してください。Tracking & IKのSelfie Expressionで自動品質調整をオフにし、品質をBalancedへ設定します。「steamac Built-in Camera Test」を選び、動きが反映されるか確認してください。検証中はこの品質設定を使います。
+5. VRChatはご自身で起動してください。camera.3では検証ディスクのVRChatだけProton-RTSPへ切り替えます。Tracking & IKのSelfie Expressionで自動品質調整をオフにし、品質をBalancedへ設定します。「steamac Built-in Camera Test」を選び、動きが反映されるか確認してください。検証中はこの品質設定を使います。
 6. ゲーム側でカメラを無効にし、Macのカメラが停止するか確認します。「カメラを止める」では自動使用もオフになります。設定を閉じると手動プレビューを終えますが、ゲームが使用中の自動撮影は続けます。
 
 起動時にカメラ利用者がいなければ撮影しません。映像は保存しません。今回は内蔵カメラのみ、使用中は320 × 240・15 fpsでSteamOSへ送信します。Mac側からの入力は640 × 480で受け、ゲスト内で縮小します。
@@ -36,7 +36,7 @@ python3 scripts/camera/launch-experiment.py
 - 設定画面のカメラタブが画面内に収まることを確認。
 - 複製したSteamOSでテスト映像をV4L2のMMAP経由で取得できること、停止後に黒い映像になることを確認。
 - M1・8 GBの実機で内蔵カメラの許可とプレビュー、SteamOS受信フレーム数の増加を確認。初回の「プレビューは見えるが受信が0」の症状は、出力サイズを明示した修正版で解消。
-- VRChatは候補表示まで確認。これまでのテストでは「使用中／非対応」で開始できず、Balancedモードでの再検証が必要。
+- VRChatは候補表示まで確認。標準ProtonではBalancedモードでも「使用中／非対応」で開始できませんでした。camera.3のProton-RTSP切り替え後のゲーム内確認は未完了です。
 - Media Foundation単体診断は起動前に失敗したため判断に使っていません。後述のDirectShow診断では、同じProtonとFEXで実際の映像受信まで確認しています。
 
 Linux側は`fx.camera`専用ポートとv4l2loopbackを使います。カーネル設定を一致させてモジュールをビルドし、実際のゲストで読み込めることを確認しています。
@@ -72,3 +72,30 @@ OSのカメラ許可と自動撮影の設定、手動プレビューは別の状
 標準Protonとproton-rtsp-11.0-20260609-4で、列挙・形式設定・フレームレート関連APIを比較しました。今回調べた結果に差がなく、どちらも映像サンプルを取得できました。比較用ツールは検証ディスクにだけ配置し、VRChatのProton選択は変更していません。
 
 VRChatのログには低フレームレートによるSelfie停止の記録もありました。[公式Wikiの品質表](https://wiki.vrchat.com/wiki/Selfie_Expression#Selfie_Expression_Quality_Level)と実験版の640 × 480・15 fpsが一致していなかったため、ゲスト出力をBalancedの320 × 240・15 fpsへ変更しています。これが「使用中／非対応」の原因だと確定したわけではありません。
+
+## PreviewとRGB32の比較
+
+Balancedでも失敗したため、ゲームを起動せず、実際のSteam Runtimeのpressure-vesselとFEXを使って診断しました。専用prefixとテスト映像を使い、内蔵カメラは開きません。
+
+| 診断 | 標準Proton Experimental | Proton-RTSP -4 |
+| --- | --- | --- |
+| Capture・形式指定なし | 映像取得成功 | 前の単独診断で成功 |
+| 同じデバイスへの2個目のフィルターを保持 | 映像取得成功 | 今回は未実施 |
+| Capture・RGB32指定 | 接続失敗 0x80040217 | 今回は未実施 |
+| Preview・形式指定なし | 映像取得成功 | 今回は未実施 |
+| Preview・RGB24指定 | 230,400バイトの映像取得成功 | 今回は未実施 |
+| Preview・RGB32指定 | 接続失敗 0x80040217 | 307,200バイトの映像取得成功 |
+
+これまでのCaptureだけの比較では、Preview側の差を検出できていませんでした。Proton-RTSPには[Smart TeeのPreview用バッファーとRGB32変換の修正](https://github.com/SpookySkeletons/wine/commit/5f187cd7e5e5b9de82376e501a31661c567a409b)があります。今回の差はこの修正と整合しますが、VRChatが失敗した呼び出し自体を確認したわけではありません。
+
+Macの物理カメラはsteamacが開き、VRChatはSteamOS内の仮想カメラを開きます。出力側をsteamacが保持したまま上記診断が成功しているため、その保持だけで必ず競合するわけではありません。2個目のフィルターを保持する診断は、2本のストリームの同時取得を保証するものではありません。
+
+camera.3の起動スクリプトは、検証ディスクのVRChatに限り`proton-rtsp-11.0-20260609-4`を選択します。検証済みアーカイブの印と、qcap.dll・qcap.so・マニフェストのハッシュを照合します。Steam起動前に変更し、元の設定を保存します。他のProtonを利用者が選んでいた場合は置き換えません。通常版は変更しません。
+
+標準Protonへ戻す場合は、実験版を終了してから次で起動できます。後から利用者が変更した選択は保持します。
+
+```sh
+python3 scripts/camera/launch-experiment.py --standard-proton
+```
+
+診断の再実行は`prepare-dshow-test.py --container`と`test-bridge.py --container`を使います。結果の`container-validation.json`には成功した基準ケースと、失敗した比較ケースを分けて記録します。全形式の対応やVRChatでの成功を示すものではありません。

@@ -45,6 +45,13 @@ print(json.dumps(protected, indent=2))
 if '--check-only' in sys.argv:
     raise SystemExit(0)
 
+proton_mode = '0' if '--standard-proton' in sys.argv else '1'
+if proton_mode == '1':
+    validation = json.loads((WORK/'container-validation.json').read_text())
+    evidence = '\n'.join(validation['checks'])
+    require(validation['passed'] and 'CAMERA_CONTAINER_CASE_EXIT rtsp-preview-rgb32 0' in evidence,
+            'Run the camera-compatible Proton integration check before selecting it.')
+
 # Import preferences only once. Subsequent camera/display choices stay in this separate domain.
 marker = WORK / 'manual-preferences-initialized'
 if not marker.exists():
@@ -59,6 +66,6 @@ args = ['open', '-n', '--stdout', str(log), '--stderr', str(log),
         '--env', 'STEAMAC_SENTRY=0', str(APP), '--args',
         '--experimental-camera', '--no-ssh', '--no-vr', '--no-crash-reports',
         '--disk', str(disk), '--disk', str(APP / 'Contents/Resources/steamac-layer.img') + ':ro',
-        '--cmdline', 'console=hvc0 loglevel=4 rootwait virtio_snd.msg_timeout_ms=10000 steamac.vrchat_setup=0 steamac.camera_debug=1']
+        '--cmdline', 'console=hvc0 loglevel=4 rootwait virtio_snd.msg_timeout_ms=10000 steamac.vrchat_setup=0 steamac.camera_debug=1 steamac.camera_proton_rtsp='+proton_mode]
 run(args, check=True)
-print('Opened the camera experiment. Start the camera from Settings > Camera.')
+print('Opened the camera experiment. Automatic camera use stays idle until a game requests frames.')
