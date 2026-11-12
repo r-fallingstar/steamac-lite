@@ -50,8 +50,9 @@ marker = WORK / 'manual-preferences-initialized'
 if not marker.exists():
     run(['defaults', 'import', DOMAIN, str(WORK / 'preferences-before-test.plist')], check=True)
     marker.write_text('Imported production preferences once; later edits are experiment-only.\n')
-for key in ['checkForUpdates', 'shareGameStats']:
+for key in ['checkForUpdates', 'shareGameStats', 'sshEnabled', 'vrEnabled', 'sendCrashReports', 'vrchatSetup']:
     run(['defaults', 'write', DOMAIN, key, '-bool', 'false'], check=True)
+run(['defaults', 'write', DOMAIN, 'diskImage', '-string', str(disk)], check=True)
 log = WORK / 'manual-camera.log'
 args = ['open', '-n', '--stdout', str(log), '--stderr', str(log),
         '--env', 'STEAMAC_GAME_STATS_FILE=' + str(WORK / 'manual-stats.json'),

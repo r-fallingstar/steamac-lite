@@ -1,8 +1,8 @@
 # VRChat video investigation (issue #1)
 
-Status: open. The reported H.264 initialization failure and N-times-speed audio are
-separate problems. Neither has been reproduced by the maintainer in the reported
-M3 Pro / FEX / custom VR build. Do not treat the reporter's Steam-client licensing
+Status: open; reported by multiple users. The H.264 initialization failure and
+N-times-speed audio are separate problems. Neither has been reproduced by the
+maintainer in the reported M3 Pro / FEX / custom VR build. Do not treat the reporter's Steam-client licensing
 hypothesis as an established cause. An unsuccessful `avcodec_open2` does not by itself
 identify why the decoder failed.
 
@@ -22,8 +22,9 @@ is not evidence that the VRChat version has the same implementation:
 ## Read-only decoder probe
 
 `guest/diagnostics/avcodec-probe.c` loads an explicitly selected library and prints its
-actual path/version, the probe architecture, and the numeric `avcodec_open2` result
-and error text for `h264` and `valve_h264`. It does not replace libraries or load a
+actual path/version, the resolved `avutil` path/version when available, codec build
+configuration, CPU count/feature flags, probe architecture, and the numeric
+`avcodec_open2` result and error text for `h264` and `valve_h264`. It does not replace libraries or load a
 video. A successful empty-context initialization is not a playback test.
 
 Build it on **x86_64 Linux** in the sniper SDK environment used for the failing game:
@@ -42,6 +43,105 @@ the `dlopen` error instead of replacing them.
 ```sh
 ./avcodec-probe /absolute/path/to/Steam/ubuntu12_64/libavcodec.so.58
 ```
+
+## Bounded follow-up (2026-11-12)
+
+The saved issue localizes the video failure to decoder initialization after URL
+resolution, HTTP headers and H.264/AAC MP4 demuxing succeed. The broken
+`steamrt64/video` symlinks alone do not explain a failure in a library that the
+process actually loaded from `ubuntu12_64`. The reporter's successful replacement
+changed four libraries at once, so it implicates that library set/configuration
+but does not isolate a codec defect, dependency mismatch, FEX instruction path,
+thread setup or Steam integration. None of these deeper causes is confirmed.
+
+`work/release-lite14/avcodec-probe.log` is the output of the disposable-library
+regression test, **not** a run against Steam's decoder. It cannot establish that
+H.264 works on the guest. The repository's `guest/proton-vrclient/pin.env` identifies
+our vrclient build, not the reporter's installed Proton Experimental build.
+
+The inspected Lite build and `guest/layer/usr/lib/steamac/vrchat-setup` install FEX
+and configure EAC/Proton launch options; they do not install a codec or set
+GStreamer decoder options. `audio-layout` configures physical VirtIO channels and
+scheduling, not world AudioSource consumers. `guest/vr/runtime` supplies OpenVR
+poses, rendering and frame timing, not Media Foundation source-reader buffers.
+There is no evidence supporting a production codec swap, a global CPU/thread
+setting, a playback-rate change or a pose-runtime audio fix here.
+
+### Decoder experiment
+
+Use the same x86_64 Linux probe and runtime environment as above. Run separate
+processes with the **same original library path**, preserving stdout and stderr:
+
+```sh
+./avcodec-probe --verbose /absolute/path/to/Steam/ubuntu12_64/libavcodec.so.58 > codec-default.log 2>&1
+./avcodec-probe --verbose --threads=2 /absolute/path/to/Steam/ubuntu12_64/libavcodec.so.58 > codec-threads2.log 2>&1
+./avcodec-probe --verbose --threads=1 /absolute/path/to/Steam/ubuntu12_64/libavcodec.so.58 > codec-threads1.log 2>&1
+./avcodec-probe --verbose --threads=2 --cpu-flags=0 /absolute/path/to/Steam/ubuntu12_64/libavcodec.so.58 > codec-threads2-cpu0.log 2>&1
+```
+
+The controls affect only the probe process. `--threads=N` accepts 0–16 (0 asks
+FFmpeg to choose); an unavailable/rejected control fails explicitly rather than
+silently testing defaults. `--cpu-flags=0` disables FFmpeg's runtime CPU feature
+dispatch; it does not change FEX's advertised CPU or remove compiled instructions.
+`--verbose` requests FFmpeg debug logging; a silent failure can still be silent.
+Optional provenance exports may be unavailable in custom builds.
+
+These controls use the public FFmpeg 4.3 APIs:
+[CPU flags](https://github.com/FFmpeg/FFmpeg/blob/n4.3.6/libavutil/cpu.h),
+[AVOptions](https://github.com/FFmpeg/FFmpeg/blob/n4.3.6/libavutil/opt.h),
+[thread defaults](https://github.com/FFmpeg/FFmpeg/blob/n4.3.6/libavcodec/options_table.h),
+[logging](https://github.com/FFmpeg/FFmpeg/blob/n4.3.6/libavutil/log.h).
+The empty-context FFmpeg default is one thread; the default probe is therefore
+not a multithreaded reproduction. For comparison, upstream
+[gst-libav 1.18.6](https://github.com/GStreamer/gst-libav/blob/1.18.6/ext/libav/gstavviddec.c)
+sets thread counts before opening the codec and reports the generic failure when
+that open fails. This explains the experiment, not the installed plugin's version.
+
+Interpretation and next steps:
+
+- If one thread succeeds and two fail, investigate thread initialization under
+  FEX with the exact installed plugin. If only disabling CPU flags changes the
+  two-thread result, investigate runtime CPU dispatch. Neither result alone
+  justifies a game-wide setting; verify actual decoding first.
+- If all fail, keep the numeric error, configuration and dependency provenance.
+  This still does not establish a licensing/Steam-client cause. Compare with an
+  already-backed-up working library set in a separate process only if available;
+  do not mix new libraries into Steam or change its global search paths.
+- If all succeed but VRChat fails, the empty-context test did not reproduce the
+  failure. Next decode the same local public H.264 MP4 through the installed
+  **x86_64** GStreamer stack under FEX, comparing `avdec_h264` defaults with
+  `avdec_h264 max-threads=1`, using `fakesink` to isolate decoding from rendering
+  and audio. Keep caps/plugin versions and confirm loaded library paths; success
+  in a different native GStreamer installation does not test the game stack.
+
+### Audio experiment
+
+The reported audio sample duration and format are internally consistent:
+1024 / 44100 = 0.02321995 seconds; stereo float32 is 352800 bytes/second.
+At 25 fps, equal-duration steady-state consumption predicts about 1.723 audio
+samples per video sample. The reported 3.38 is approximately twice that, but
+request counts alone cannot distinguish duplicated consumption from prefetch,
+retries or multiple readers. This is a separate observation from H.264 failure.
+
+In one public test world, use the same media and settings with one and then two
+AudioSources. After startup buffering, capture matched 5–10 second windows with
+source-reader identity, thread, request/completion times, HRESULT/stream flags,
+sample timestamp, duration and sample count. Count **completed sample durations
+per reader**, excluding empty/retried calls, and compare with monotonic elapsed
+time and video progress. If audio advances about 2 seconds per real second only
+with two outputs, distinguish sequential extra samples (buffer consumed twice)
+from repeated timestamps (duplicated delivery). Record the VRChat/AVPro build and
+whether the symptom occurs in desktop and VR modes. Only then choose an AVPro,
+Wine source-reader or timing investigation; no buffer owner is established yet.
+
+### Local validation
+
+Run `DEVELOPER_DIR=/Library/Developer/CommandLineTools python3 scripts/test/avcodec-probe.py`.
+This compiles with warnings as errors and uses temporary codec/utility libraries
+to check dependency provenance, numeric failures, requested CPU/thread/log
+controls, process isolation, rejected options and missing exports. It does not
+exercise real FFmpeg, Linux/FEX, media playback or the game's audio path.
+No VM, Docker, installed app or production disk is needed for this check.
 
 ## Evidence needed next
 
