@@ -6,13 +6,13 @@
 
 [日本語](https://r-fallingstar.github.io/steamac-lite/?lang=ja) · [English](https://r-fallingstar.github.io/steamac-lite/en/) · [한국어](https://r-fallingstar.github.io/steamac-lite/ko/) · [简体中文](https://r-fallingstar.github.io/steamac-lite/zh-CN/)
 
-Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.4-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
+Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.8-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.14/SteamAC-Lite-1.9.4-lite.14-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.1/SteamAC-Lite-1.9.8-lite.1-macos-arm64.dmg)**
 
 Lite.13では起動前にマイクの許可を確認します。必要な場合はmacOSの許可画面や設定へ案内し、「設定 → 音声」でも状態を確認できます。Lite.6の録音処理の修正も含みます。[原因と確認内容](docs/microphone-fix.md)。
 
-DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.14)
+DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.1)
 
 macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 
@@ -52,15 +52,23 @@ macOSの仮想メモリ設定は変更しません。スワップはRAM不足に
 
 中国語はShift、韓国語はControl＋Spaceで英数入力と切り替えます。Control＋.で入力方式を変更できます。初回は表示言語と物理配列とは別にMacの入力ソースを判別します。ABC/USなら直接英数、対応する日本語・ピンイン・2ボル式ならその入力方式を英数モードで用意します。判別できない場合は直接英数です。既存のSteamOS入力設定は保持します。
 
+1.9.8-lite.1では「設定 → 音声」で入力マイクを選んで保存できます。設定画面は画面内に収まり、スクロールとサイズ変更に対応します。[更新内容](docs/release-notes-1.9.8-lite.1.md)を参照してください。
+
 ## ビルドと起動
 
-導入済みの`FX Steam Launcher.app` 1.9.4-eac.1、Swift 6、SDK、Git、Python 3、erofs-utilsが必要です。
+Lite用の組み立てには、`scripts/lite/base-release.json`で固定した`FX Steam Launcher.app` 1.9.8-eac.1、Swift 6、SDK、Git、Python 3、erofs-utils、Rust 1.90.0が必要です。`BASE_APP`で指定する本体は同ファイルのハッシュで検証します。
+
+先に`guest/vr`をx86_64 LinuxのSteam Runtime sniper環境でビルドし、`make check`を完了してください。`work/out/vr/runtime/bin/linux64/`には`vrclient.so`と`runtime-build.json`が必要です。記録は`source_tree`（`git rev-parse HEAD:guest/vr`）、`sha256`、`unit_tests_passed`、`end_to_end_tests_passed`を含み、実際の成果物と試験結果に対応させます。ソースや試験が不一致の場合、組み立ては停止します。
 
 ```sh
+export BASE_APP="/path/to/FX Steam Launcher.app"
 python3 scripts/test/low-memory-swap.py
 python3 scripts/test/keyboard-setup.py
-bash scripts/lite/build-app.sh
+bash scripts/lite/build-audio-library.sh
+LIBKRUN_OVERRIDE="$PWD/work/out/host/lib/libkrun.1.dylib" bash scripts/lite/build-app.sh
 ```
+
+全コンポーネントをソースから作る場合は[ビルド要件](docs/upstream/requirements-and-building.md)と[VRのビルド順序](docs/vr-guest.md)を参照してください。1.9.8-lite.1のDMGは、固定した上流のVR部品に、このForkからビルド・検証したゲストVRランタイムを組み合わせています。ヘッドセットでの動作確認とは別です。
 
 出力は`work/out/SteamAC Lite.app`です。元の署名付きアプリのカーネル・グラフィックス等を再利用し、変更したランチャーとゲスト設定を組み込みます。全コンポーネントをソースから構築するリリース手順とは異なります。
 

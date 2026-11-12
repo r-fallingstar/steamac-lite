@@ -7,7 +7,7 @@ run; the guest/FEX test and live host connection remain open.
 
 ## Source-build sequence
 
-The Lite DMG is not a complete VR build. Keep an existing app and SteamOS disk separate
+Lite.14 and earlier DMGs are not complete VR builds. The 1.9.8-lite.1 DMG includes the pinned upstream host/Proton VR components and a source-matched guest runtime with the Lite calibration changes. Headset operation is not verified and VR is off by default. The sequence below is for a full source build. Keep an existing app and SteamOS disk separate
 from build outputs. You need the [Mac build requirements](upstream/requirements-and-building.md),
 including Go and Cargo on PATH, and a separate **x86_64 Linux** build environment with
 Podman or Docker. An OrbStack Ubuntu **amd64** machine with x86 translation was reported
@@ -51,8 +51,8 @@ An arm64 Linux VM is not equivalent. Allow about 4 GB for Proton sources and 14 
 
    The rootfs download is about 4 GB. Guest Mesa requires it; the VR layer requires
    that Mesa output and DXMT's guest payload. Borrowing `Image` and initramfs from
-   a DMG, even with their receipts, cannot replace this sequence: the distributed
-   layer is not a VR layer and does not provide its build receipt. Never fabricate
+   a DMG, even with their receipts, cannot replace this sequence: the Lite-modified
+   layer does not provide a full-source build receipt for your checkout. Never fabricate
    `.inputs.json` files to bypass validation. These commands refresh build artifacts;
    they do not recreate an existing SteamOS disk. For a new disk, also run
    `scripts/build-image.sh disk check`.

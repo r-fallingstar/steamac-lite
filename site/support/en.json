@@ -32,7 +32,7 @@
   "support.dmg_caption": "Example installation prompt. Choose Install and Open.",
   "support.booth": "The BOOTH online installer also downloads the latest app. Select the folder containing your existing app as the destination.",
   "support.mic_title": "Check microphone access after updating",
-  "support.mic_intro": "From Lite.13, a microphone check appears on first launch and the first launch after each update, including when access is already allowed.",
+  "support.mic_intro": "From Lite.13, a microphone check appears on first launch and the first launch after each update, including when access is already allowed. In 1.9.8-lite.1, choose a microphone in Settings → Sound → Input device. Your choice is saved without changing the Mac’s default input. Settings support scrolling and window resizing.",
   "support.mic_unknown_title": "Access not yet requested",
   "support.mic_unknown": "Choose Allow Microphone… and allow access in the macOS dialog when it appears. Choose Later if you do not want to request access now.",
   "support.mic_allowed_title": "Access already allowed",
