@@ -13,8 +13,22 @@ subprocess.run([str(FSCK),'--extract='+str(LAYER),'--no-preserve-owner',str(ROOT
 lib=LAYER/'usr/lib/steamac/camera';lib.mkdir(parents=True,exist_ok=True)
 for name in ['camera-agent','mf-camera-test.exe','v4l2loopback.ko']:shutil.copy2(WORK/name,lib/name)
 shutil.copy2(ROOT/'guest/camera/start-camera',lib/'start-camera')
+shutil.copy2(ROOT/'guest/camera/observe-runtime.py',lib/'observe-runtime.py')
 units=LAYER/'usr/lib/systemd/system';shutil.copy2(ROOT/'guest/camera/steamac-camera.service',units/'steamac-camera.service')
 (units/'multi-user.target.wants/steamac-camera.service').symlink_to('../steamac-camera.service')
+(units/'steamac-camera-runtime-observer.service').write_text('''[Unit]
+Description=Local camera runtime metadata (diagnostic clone only)
+ConditionKernelCommandLine=steamac.camera_debug=1
+After=steamac-camera.service
+[Service]
+ExecStart=/usr/bin/python3 /usr/lib/steamac/camera/observe-runtime.py
+TimeoutStartSec=610
+StandardOutput=journal+console
+StandardError=journal+console
+[Install]
+WantedBy=multi-user.target
+''')
+(units/'multi-user.target.wants/steamac-camera-runtime-observer.service').symlink_to('../steamac-camera-runtime-observer.service')
 def image(target):subprocess.run([str(MKFS),'-b4096','-zlz4hc','--all-root',str(target),str(LAYER)],check=True,stdout=subprocess.DEVNULL)
 image(APP/'Contents/Resources/steamac-layer.img')
 runner=lib/'camera-test-runner';runner.write_text('''#!/bin/bash

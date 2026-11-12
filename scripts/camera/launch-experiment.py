@@ -59,6 +59,6 @@ args = ['open', '-n', '--stdout', str(log), '--stderr', str(log),
         '--env', 'STEAMAC_SENTRY=0', str(APP), '--args',
         '--experimental-camera', '--no-ssh', '--no-vr', '--no-crash-reports',
         '--disk', str(disk), '--disk', str(APP / 'Contents/Resources/steamac-layer.img') + ':ro',
-        '--cmdline', 'console=hvc0 loglevel=4 rootwait virtio_snd.msg_timeout_ms=10000 steamac.vrchat_setup=0']
+        '--cmdline', 'console=hvc0 loglevel=4 rootwait virtio_snd.msg_timeout_ms=10000 steamac.vrchat_setup=0 steamac.camera_debug=1']
 run(args, check=True)
 print('Opened the camera experiment. Start the camera from Settings > Camera.')
