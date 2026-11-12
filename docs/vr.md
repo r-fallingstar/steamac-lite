@@ -2,7 +2,7 @@
 
 ## Distribution and source builds
 
-The Lite DMG releases through Lite.13 do **not** include `steamac-vrhost` or the three
+The Lite DMG releases through Lite.14 do **not** include `steamac-vrhost` or the three
 guest VR artifacts. The VR checkbox alone cannot add them. Desktop VRChat setup and
 headset VR are separate features. To build headset support, follow the complete
 [VR source-build sequence](vr-guest.md#source-build-sequence), including DXMT, the host
