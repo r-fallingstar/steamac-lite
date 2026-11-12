@@ -33,6 +33,13 @@ Runtime &Runtime::get() {
 vr::EVRInitError Runtime::init(vr::EVRApplicationType type) {
   std::lock_guard<std::mutex> g(m_);
   if (transport_) return vr::VRInitError_None;
+  if (!controller_offsets_.load(getenv("STEAMAC_VR_GRIP_OFFSET"), getenv("STEAMAC_VR_AIM_OFFSET"))) {
+    SVR_ERR("invalid controller offset: expected x,y,z[,pitch,yaw,roll], metres (abs <= 10) and degrees (abs <= 360); offsets disabled");
+  } else if (controller_offsets_.grip[0].enabled || controller_offsets_.aim[0].enabled) {
+    SVR_INFO("controller-local calibration enabled (left mirrored from right); grip=%s aim=%s",
+             getenv("STEAMAC_VR_GRIP_OFFSET") ? getenv("STEAMAC_VR_GRIP_OFFSET") : "unset",
+             getenv("STEAMAC_VR_AIM_OFFSET") ? getenv("STEAMAC_VR_AIM_OFFSET") : "unset");
+  }
   transport_ = Transport::open_default();
   if (!transport_) {
     SVR_ERR("no host link (DXMT/wmtr not loaded in this process and STEAMAC_VR_SOCKET not set)");
@@ -199,7 +206,7 @@ void Runtime::note_render_head(const vr::TrackedDevicePose_t &p) {
 
 svr_pose Runtime::frame_pose(int dev) const {
   std::lock_guard<std::mutex> g(m_);
-  return frame_.pose[dev];
+  return controller_offsets_.apply(dev, frame_.pose[dev]);
 }
 
 int64_t Runtime::frame_display_guest() const {
@@ -215,7 +222,7 @@ uint64_t Runtime::frame_id() const {
 svr_pose Runtime::pose_at(int dev, int64_t guest_t) const {
   std::lock_guard<std::mutex> g(m_);
   float dt = (float)(guest_t - host_to_guest(latest_.pose_time)) * 1e-9f;
-  return extrapolate(latest_.pose[dev], dt);
+  return controller_offsets_.apply(dev, extrapolate(latest_.pose[dev], dt));
 }
 
 static int device_to_svr(vr::TrackedDeviceIndex_t i) {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Process-wide runtime state behind the OpenVR interfaces: host link, frame clock, poses, events, submits.
 #pragma once
+#include "controller_offsets.h"
 #include <atomic>
 #include <cstdint>
 #include <deque>
@@ -80,6 +81,7 @@ class Runtime {
 
  private:
   Runtime() = default;
+  ControllerOffsets controller_offsets_;
   bool fetch(svr_frame_rep *out);
   void flush_submit_locked();
   int64_t host_to_guest(int64_t host_t) const { return host_t + clock_offset_; }

@@ -13,6 +13,7 @@
 #include "json.h"
 #include "skeleton.h"
 #include "vrmath.h"
+#include "controller_offsets.h"
 
 using namespace svr;
 
@@ -469,6 +470,53 @@ static void test_overlay() {
   CHECK(ov->CreateOverlay("test.a", "back", &h) == vr::VROverlayError_None && ov->DestroyOverlay(h) == vr::VROverlayError_None);
 }
 
+static void test_controller_offsets() {
+  ControllerOffsets offsets;
+  svr_pose p{};
+  p.orientation[3] = 1;
+  p.flags = SVR_POSE_VALID | SVR_POSE_VEL;
+  p.position[0] = 1; p.lin_vel[0] = 2; p.ang_vel[2] = 3;
+  CHECK(offsets.load(nullptr, nullptr));
+  auto same = offsets.apply(SVR_DEV_RIGHT_GRIP, p);
+  CHECK(memcmp(&p, &same, sizeof p) == 0);
+  CHECK(offsets.load("0.1,0.2,0.3", "0,0,0.4"));
+  auto right = offsets.apply(SVR_DEV_RIGHT_GRIP, p);
+  auto left = offsets.apply(SVR_DEV_LEFT_GRIP, p);
+  CHECK(near(right.position[0], 1.1f) && near(left.position[0], 0.9f));
+  CHECK(near(right.position[1], 0.2f) && near(left.position[1], 0.2f));
+  CHECK(near(right.lin_vel[0], 1.4f) && near(right.lin_vel[1], 0.3f));
+  CHECK(near(left.lin_vel[0], 1.4f) && near(left.lin_vel[1], -0.3f));
+  CHECK(near(offsets.apply(SVR_DEV_RIGHT_AIM, p).position[2], 0.4f));
+  same = offsets.apply(SVR_DEV_HEAD, p);
+  CHECK(memcmp(&p, &same, sizeof p) == 0);
+  // Existing orientation rotates the local translation; offset orientation post-multiplies.
+  p.orientation[2] = std::sqrt(0.5f); p.orientation[3] = std::sqrt(0.5f);
+  CHECK(offsets.load("0.1,0,0,90,0,0", nullptr));
+  right = offsets.apply(SVR_DEV_RIGHT_GRIP, p);
+  CHECK(near(right.position[0], 1) && near(right.position[1], 0.1f));
+  CHECK(near(right.orientation[0], 0.5f) && near(right.orientation[1], 0.5f) &&
+        near(right.orientation[2], 0.5f) && near(right.orientation[3], 0.5f));
+  // Mixed Euler rotations preserve exact left/right reflection, including rotated offsets.
+  CHECK(offsets.load("0.1,0.2,0.3,20,30,40", nullptr));
+  CHECK(near(offsets.grip[0].rotation.x, offsets.grip[1].rotation.x));
+  CHECK(near(offsets.grip[0].rotation.y, -offsets.grip[1].rotation.y));
+  CHECK(near(offsets.grip[0].rotation.z, -offsets.grip[1].rotation.z));
+  CHECK(near(offsets.grip[0].rotation.w, offsets.grip[1].rotation.w));
+  for (const char *bad : {"1,2", "1,2,3,4", "1,2,3,4,5", "1,2,3,4,5,6,7", "1,2,3,",
+                          "nan,0,0", "inf,0,0", "1e100,0,0", "11,0,0", "0,0,0,361,0,0", "0 1,2,3"}) {
+    CHECK(!offsets.load(bad, nullptr));
+    CHECK(!offsets.grip[0].enabled && !offsets.aim[1].enabled);
+  }
+  CHECK(!offsets.load("0,0,0.1", "invalid"));
+  CHECK(!offsets.grip[1].enabled);
+  CHECK(offsets.load(" 0.1 , 0 , 0 ", nullptr));
+  // Extrapolation is performed before calibration, so the angular velocity moves the offset point.
+  p.orientation[2] = 0; p.orientation[3] = 1;
+  auto moved = offsets.apply(SVR_DEV_RIGHT_GRIP, extrapolate(p, 0.1f));
+  CHECK(near(moved.position[0], 1.2f + 0.1f * std::cos(0.3f)));
+  CHECK(near(moved.position[1], 0.1f * std::sin(0.3f)));
+}
+
 int main(int argc, char **argv) {
   test_title_bindings(argc > 1 ? argv[1] : "tests/data/vrchat");
   test_skeleton();
@@ -476,6 +524,7 @@ int main(int argc, char **argv) {
   test_json();
   test_bindings();
   test_math();
+  test_controller_offsets();
   printf("%s: %d checks, %d failures\n", failures ? "FAIL" : "PASS", checks, failures);
   return failures ? 1 : 0;
 }

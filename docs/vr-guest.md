@@ -164,3 +164,40 @@ The installer hook is present, but it has not yet been verified end-to-end under
 
 `guest/vr` is Apache-2.0, except `third_party/openvr/openvr.h` (Valve, BSD-3-Clause). `guest/proton-vrclient/patches`
 are LGPL-2.1-or-later like the Proton/Wine code they change. Nothing here contains xrizer, WiVRn or Monado code.
+
+## Controller pose calibration (issue #2, awaiting hardware verification)
+
+The runtime currently uses OpenXR grip poses for OpenVR controller devices. The
+reported difference from SteamVR's raw origin still needs a profile-specific fix.
+`SVR_PROFILE_TOUCH` also covers Pico-like controllers, so a Touch-specific transform
+cannot safely be applied to every device with that profile. No guessed default
+transform is installed by this change.
+
+For source-build testing, the guest runtime accepts these **game process** variables:
+
+- `STEAMAC_VR_GRIP_OFFSET=x,y,z[,pitch,yaw,roll]`
+- `STEAMAC_VR_AIM_OFFSET=x,y,z[,pitch,yaw,roll]`
+
+Values describe the right controller's local coordinates in metres and degrees.
+Rotation is `qx * qy * qz`, post-multiplied onto the tracked orientation. The left
+hand mirrors translation X and rotation yaw/roll. Position and linear velocity are
+both transformed, including `omega cross (R*t)`. Angles must be within ±360° and
+positions within ±10 m; malformed/non-finite values disable both offsets and log
+an error. Unset values leave tracking unchanged. Head poses are never changed.
+
+The calibration applies once to grip/aim pose reads, including frame poses,
+predicted game poses and pose/skeleton actions. It deliberately calibrates all
+uses of those tracked origins; it is not yet a distinction between OpenVR raw and
+grip action spaces. Rebuild the runtime and guest layer before testing it.
+
+For a neutral diagnostic launch, add `STEAMAC_VR_LOG=1
+STEAMAC_VR_GRIP_OFFSET=0,0,0` before the existing `%command%` in Steam launch options,
+keeping all existing EAC/VR options. Set a measured offset for calibration; remove
+these variables to return to the original behavior. Values are read when the game
+initializes its runtime, so close and reopen the game after changing them.
+
+The native unit suite checks mirroring, local rotations, predicted positions,
+velocity, invalid inputs and unchanged head/default poses. Live Quest tracking and
+cross-interface agreement under FEX still require a hardware test. Please provide
+the observed per-hand displacement with controllers held level, controller model,
+current bindings and any measured offsets before treating issue #2 as resolved.
