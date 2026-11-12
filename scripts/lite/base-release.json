@@ -1,0 +1,20 @@
+{
+  "tag": "v1.9.8-eac.1",
+  "source_commit": "b95961884d814bd81a7bcf1eeb4d12c9e3564431",
+  "bundle_id": "es.fxgam.steamac",
+  "app_version": "1.9.8",
+  "dmg_url": "https://github.com/StonkGuy/steamac/releases/download/v1.9.8-eac.1/FX-Steam-Launcher-1.9.8-eac.1-adhoc.dmg",
+  "dmg_sha256": "06eab82e2e63356219a76816119b331456f830c9d907b99fbd8675f133031c13",
+  "dmg_bytes": 100169993,
+  "files": {
+    "Resources/Image": "08bb061d90af3cb59ef72186d4585b6e70b7e2356aadda3f5fe785b8b7c6c289",
+    "Resources/initramfs.cpio.gz": "5add0a6f761841d8629b216245355f47147e349a3629559f758eba7018140e10",
+    "Resources/steamac-layer.img": "58c369fb98e4c3bb9bbc60cd1b425047819c5da72f8100d0be4cda4f89a68675",
+    "Frameworks/libepoxy.0.dylib": "1a4657065f36001ea59523a111d2d0e27aceb968762b9aa4f69ed5f5fd784172",
+    "Frameworks/libkrun.1.dylib": "f24560a405a54476a34f80be03b83d931704c5769b9b7f941501c04d98c75596",
+    "Frameworks/libMoltenVK.dylib": "46750eae4d64d163fa7b702a4642e69d1f9bdcf18af9974c22a095dc0c154e6c",
+    "Frameworks/libvirglrenderer.1.dylib": "40a7ac0ceb46b58c80195292b6d07dc9b00c9fc031ed5d9b3dc8911fec764526",
+    "Frameworks/libvulkan_kosmickrisp.dylib": "4027fd0965683eae2aa10451519933d996be2925f81b0a59298a2eaaab4a8129",
+    "Frameworks/libwmtr_host.dylib": "efed83a48e943ddcf5a6d22895c0094498c68b805ab0cfe8bd3e306496dfa36d"
+  }
+}

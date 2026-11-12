@@ -125,7 +125,10 @@ def main():
     runtime = Path(os.environ['XDG_RUNTIME_DIR'])/'steamac'
     values = environment(layout, japanese)
     atomic_write(runtime/'input.env', ''.join(f'{k}={v}\n' for k, v in values.items()))
-    if layout:
+    # Desktop Mode's live sync owns kxkbrc when enabled. IBus and the outer
+    # Gamescope layout below still follow the physical geometry / selected IME.
+    follow_mac = 'steamac.follow_mac_keyboard=1' in cmdline.split()
+    if layout and not follow_mac:
         state_path = Path.home()/'.config/steamac/keyboard-layout-v1.json'
         state = json.loads(state_path.read_text()) if state_path.exists() else {}
         desktop = Path.home()/'.config/kxkbrc'

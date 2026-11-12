@@ -20105,6 +20105,174 @@
           }
         }
       }
+    },
+    "%@: reconstructed SteamOS file is unavailable. Check that the drive is connected and no other program is moving or deleting its files, then try again": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: восстановленный файл SteamOS недоступен. Проверьте, что накопитель подключён и другая программа не перемещает и не удаляет его файлы, затем повторите попытку"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@：重建的 SteamOS 文件不可用。请检查驱动器是否已连接，并确认没有其他程序正在移动或删除其文件，然后重试"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: 復元したSteamOSファイルが見つかりません。ドライブの接続と、ほかのアプリがファイルを移動・削除していないかを確認して、もう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: 복원한 SteamOS 파일을 사용할 수 없습니다. 드라이브 연결과 다른 앱이 파일을 이동하거나 삭제하고 있지 않은지 확인한 뒤 다시 시도하세요."
+          }
+        }
+      }
+    },
+    "%@: the partition table read back differs from what was written. Check the drive with Disk Utility First Aid or choose another drive": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: прочитанная таблица разделов отличается от записанной. Проверьте накопитель функцией «Первая помощь» в Дисковой утилите или выберите другой накопитель"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@：读回的分区表与写入的内容不一致。请使用“磁盘工具”的“急救”检查驱动器，或选择其他驱动器"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: 書き込んだパーティション情報を正しく読み戻せませんでした。ディスクユーティリティのFirst Aidでドライブを確認するか、別のドライブを選んでください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: 기록한 파티션 정보를 올바르게 다시 읽지 못했습니다. 디스크 유틸리티의 검사/복구로 드라이브를 확인하거나 다른 드라이브를 선택하세요."
+          }
+        }
+      }
+    },
+    "Desktop Mode follows the Mac's keyboard layouts (Fn/Globe, Control-Space) until you change the layouts in SteamOS. The first sync replaces existing layouts; later user edits win.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Режим рабочего стола следует за раскладками Mac (Fn/глобус, Control-пробел), пока вы не измените их в SteamOS. Первая синхронизация заменяет прежние раскладки; последующие правки пользователя имеют приоритет."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "桌面模式跟随 Mac 的键盘布局（Fn/地球仪键、Control-空格），直到你在 SteamOS 中更改布局。首次同步会替换现有布局；之后用户的更改优先。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デスクトップモードの配列をMacに合わせます（Fn／地球儀キー、Control＋Space）。初回の同期で配列を置き換えます。SteamOS側で配列を変更した後は、その設定を優先します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "데스크톱 모드의 키보드 배열을 Mac에 맞춥니다(Fn/지구본 키, Control+Space). 처음 동기화할 때 기존 배열을 바꿉니다. 이후 SteamOS에서 배열을 변경하면 해당 설정을 우선합니다."
+          }
+        }
+      }
+    },
+    "Stream to the Virtual Desktop app on the headset instead of WiVRn. Needs Virtual Desktop Streamer for macOS installed in Applications and signed in to the same account as the headset.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Передавать изображение в приложение Virtual Desktop на шлеме вместо WiVRn. Нужен Virtual Desktop Streamer для macOS в папке «Программы», вошедший в тот же аккаунт, что и шлем."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "改为串流到头显上的 Virtual Desktop 应用，而不是 WiVRn。需要在“应用程序”中安装 macOS 版 Virtual Desktop Streamer，并登录与头显相同的账户。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ヘッドセットのVirtual Desktopアプリへ配信します。MacのアプリケーションフォルダにVirtual Desktop Streamerを入れ、ヘッドセットと同じアカウントでログインしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "헤드셋의 Virtual Desktop 앱으로 스트리밍합니다. Mac의 응용 프로그램 폴더에 Virtual Desktop Streamer를 설치하고 헤드셋과 같은 계정으로 로그인하세요."
+          }
+        }
+      }
+    },
+    "Use Virtual Desktop": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Использовать Virtual Desktop"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Virtual Desktop"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virtual Desktopを使う"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virtual Desktop 사용"
+          }
+        }
+      }
+    },
+    "Use the Mac's keyboard layouts in Desktop Mode": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Раскладки клавиатуры Mac в режиме рабочего стола"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在桌面模式中使用 Mac 的键盘布局"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デスクトップモードの配列をMacに合わせる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "데스크톱 모드의 키보드 배열을 Mac에 맞추기"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -29,6 +29,18 @@ for name in libepoxy.0.dylib libvirglrenderer.1.dylib libMoltenVK.dylib; do
 done
 ln -sfn libepoxy.0.dylib "$WORK/lib/libepoxy.dylib"
 ln -sfn libvirglrenderer.1.dylib "$WORK/lib/libvirglrenderer.dylib"
+# Link only the verified donor's libraries, not a different system virglrenderer.
+mkdir -p "$WORK/pkgconfig"
+for entry in 'epoxy:1.5.10' 'virglrenderer:1.1.0'; do
+    name=${entry%%:*}; version=${entry#*:}
+    cat > "$WORK/pkgconfig/$name.pc" <<EOF
+Name: $name
+Description: pinned steamac donor library
+Version: $version
+Libs: -L$WORK/lib -l$name
+EOF
+done
+export PKG_CONFIG_PATH="$WORK/pkgconfig" PKG_CONFIG_LIBDIR="$WORK/pkgconfig"
 export LIBRARY_PATH="$WORK/lib"
 export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$ROOT=/src/steamac-lite"
 cd "$SRC"
@@ -65,7 +77,7 @@ assert match and int(match[1])>=32
 digest=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
 receipt={'libkrun_commit':'227b2de6ed323fe180e02f871c5f325a90c13cc2',
          'patched_library_sha256':digest(library),
-         'patch_sha256':digest(root/'host/libkrun/patches/0029-snd-wait-for-capture-start-and-microphone-readiness.patch'),
+         'patch_sha256':digest(root/'host/libkrun/patches/0030-virtio-snd-pace-capture-startup-and-own-converters.patch'),
          'cargo_lock_sha256':digest(out/'libkrun-lite-Cargo.lock'),
          'features':['gpu','blk','net','input','snd'],'built_in_init_blob':False,
          'audio_regression_tests_passed':int(match[1]),'audio_regression_tests_ignored':int(match[2]),

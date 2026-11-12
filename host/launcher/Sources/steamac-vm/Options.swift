@@ -121,6 +121,7 @@ struct Options {
     var vrForceSRGB = false
     var vrKeyframeInterval = 0.0
     var vrTCPOnly = false
+    var vrVirtualDesktop = false
     /// Its name as the guest agent reported it (`game <appid> <name>`), if seen before.
     var vrGameName: String?
     var selftestVR = false
@@ -665,6 +666,9 @@ struct Options {
             add("steamac.gfx", o.wmtrLibrary == nil ? "vulkan" : "dxmt")
             add("steamac.gpu_mib", String(VMSizing.gpuBudgetMiB(memMiB: o.memMiB)))
             if o.lowMemory { add("steamac.low_memory", "1") }
+            // Lite's profile owns disk swap; do not also start upstream's fallback file.
+            add("steamac.swap_fallback", "0")
+            add("steamac.follow_mac_keyboard", settings.followMacKeyboard ? "1" : "0")
             add("steamac.keyboard", o.effectiveKeyboardLayout.rawValue)
             add("steamac.japanese_ime", "1")
             add("steamac.input_language", MacInputSource.detected.rawValue)
@@ -751,7 +755,7 @@ struct Options {
         vrGameAppID = s.vrGameAppID
         vrGameName = s.gameName(vrGameAppID)
         vrRenderScale = s.vrRenderScale; vrUpscaler = s.vrUpscaler; vrSharpness = s.vrSharpness; vrForceSRGB = s.vrForceSRGB
-        vrKeyframeInterval = s.vrKeyframeInterval; vrTCPOnly = s.vrTCPOnly
+        vrKeyframeInterval = s.vrKeyframeInterval; vrTCPOnly = s.vrTCPOnly; vrVirtualDesktop = s.vrVirtualDesktop
         if given("--no-sound") { ov[.soundEnabled] = "--no-sound" } else { sound = s.soundEnabled }
         if given("--no-gamepad") { ov[.virtualPad] = "--no-gamepad" }
         if let padType { ov[.padType] = "--pad \(padType.rawValue)" }

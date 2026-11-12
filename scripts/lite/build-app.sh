@@ -4,7 +4,7 @@
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT"
-BASE_APP=${BASE_APP:-/Applications/FX Steam Launcher.app}
+BASE_APP=${BASE_APP:-$ROOT/work/base/1.9.8/FX Steam Launcher.app}
 export DEVELOPER_DIR=${DEVELOPER_DIR:-/Library/Developer/CommandLineTools}
 SDK=${SDK:-/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk}
 [[ -d "$SDK" ]] || SDK=$(xcrun --show-sdk-path)
@@ -21,16 +21,14 @@ import os, pathlib, plistlib, subprocess
 root = pathlib.Path(os.environ['BASE_APP'])
 with (root/'Contents/Info.plist').open('rb') as f:
     p = plistlib.load(f)
-identity = (p.get('CFBundleIdentifier'), p.get('CFBundleShortVersionString'))
-if identity not in [('es.fxgam.steamac', '1.9.4'), ('local.ryuu.steamac-lite', '1.9.4-lite.6'), ('local.ryuu.steamac-lite', '1.9.4-lite.7'), ('local.ryuu.steamac-lite', '1.9.4-lite.8'), ('local.ryuu.steamac-lite', '1.9.4-lite.9'), ('local.ryuu.steamac-lite', '1.9.4-lite.10'), ('local.ryuu.steamac-lite', '1.9.4-lite.11'), ('local.ryuu.steamac-lite', '1.9.4-lite.12'), ('local.ryuu.steamac-lite', '1.9.4-lite.13')]:
-    raise SystemExit('Expected the v1.9.4-eac.1 upstream donor or verified Lite.6–Lite.13 base app')
-if identity[0] == 'local.ryuu.steamac-lite':
-    import hashlib, json
-    receipt = json.loads((root/'Contents/Resources/steamac-lite-provenance.json').read_text())
-    if os.environ['REUSE_LAYER'] == '1':
-        subprocess.run(['git', 'diff', '--exit-code', receipt['source_commit'], '--', 'guest/layer', 'fex-eac', 'scripts/lite/verify-fex-runtime.py'], check=True)
-    for name, field in [('Resources/steamac-layer.img', 'layer_sha256'), ('Frameworks/libkrun.1.dylib', 'libkrun_sha256')]:
-        assert hashlib.sha256((root/'Contents'/name).read_bytes()).hexdigest() == receipt[field], 'Lite base receipt mismatch'
+import hashlib, json
+manifest = json.loads(pathlib.Path('scripts/lite/base-release.json').read_text())
+assert (p.get('CFBundleIdentifier'), p.get('CFBundleShortVersionString')) == (manifest['bundle_id'], manifest['app_version']), 'Use the pinned v1.9.8-eac.1 donor; older Lite/upstream bundles cannot be mixed with this build'
+assert manifest['source_commit'].startswith(p.get('SteamacGitCommit', 'invalid')), 'Unexpected donor source commit'
+for name, digest in manifest['files'].items():
+    assert hashlib.sha256((root/'Contents'/name).read_bytes()).hexdigest() == digest, 'Donor file mismatch: '+name
+assert os.environ['REUSE_LAYER'] != '1', 'The 1.9.8 donor layer must receive the Lite setup and input changes'
+
 PY
 
 mkdir -p "$HOST/include" "$HOST/lib" "$WORK/build"
@@ -65,9 +63,9 @@ import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='steamac Lite',
-         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.4-lite.14',
+         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.8-lite.1',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='194014',
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='198001',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
          LSMinimumSystemVersion='15.5')
 p.pop('SteamacBuildOut', None)
@@ -124,7 +122,7 @@ install -m755 guest/layer/usr/lib/steamac/low-memory-swap "$LAYER/usr/lib/steama
 install -m644 guest/layer/usr/lib/systemd/system/steamac-low-memory-swap.service "$LAYER/usr/lib/systemd/system/"
 mkdir -p "$LAYER/usr/lib/systemd/system/multi-user.target.wants"
 ln -sfn ../steamac-low-memory-swap.service "$LAYER/usr/lib/systemd/system/multi-user.target.wants/steamac-low-memory-swap.service"
-for script in keyboard-setup keyboard-session ibus-launch ibus-x11-display nested-desktop steam-language; do
+for script in keyboard-setup keyboard-session ibus-launch ibus-x11-display nested-desktop steam-language desktop-keyboard; do
     install -m755 "guest/layer/usr/lib/steamac/$script" "$LAYER/usr/lib/steamac/$script"
 done
 for unit in steam.service.d/40-steamac-language.conf steamac-keyboard-setup.service steamac-keyboard-session.service 'steamac-ibus-x11@.service' \
@@ -143,7 +141,7 @@ for unit in steamac-vrchat-setup.service steam.service.d/70-steamac-vrchat-setup
     mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
     install -m644 "guest/layer/usr/lib/systemd/user/$unit" "$LAYER/usr/lib/systemd/user/$unit"
 done
-echo 'steamac-lite v1.9.4-lite.14 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
+echo 'steamac-lite v1.9.8-lite.1 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"
@@ -155,7 +153,7 @@ python3 - "$APP" "$BASE_APP" <<'PY'
 import hashlib, json, pathlib, plistlib, subprocess, sys
 app, donor = map(pathlib.Path, sys.argv[1:])
 base_version = plistlib.loads((donor/'Contents/Info.plist').read_bytes())['CFBundleShortVersionString']
-receipt = {'kind':'experimental-local-fork', 'base_release':'v1.9.4-eac.1' if base_version == '1.9.4' else 'v'+base_version,
+receipt = {'kind':'experimental-local-fork', 'base_release':'v1.9.8-eac.1',
            'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
            'working_tree_modified':bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),
            'donor_layer_sha256':hashlib.sha256((donor/'Contents/Resources/steamac-layer.img').read_bytes()).hexdigest(),
