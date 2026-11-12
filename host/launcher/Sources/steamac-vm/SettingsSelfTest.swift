@@ -84,7 +84,7 @@ enum SettingsSelfTest {
         /// SwiftUI menu pickers (SwiftUIPopupButton, an NSButton with a menu).
         func popups(in view: NSView?) -> [NSButton] {
             guard let view else { return [] }
-            if let b = view as? NSButton, "\(type(of: b))".contains("Popup") { return [b] }
+            if let b = view as? NSButton, (b is NSPopUpButton || "\(type(of: b))".lowercased().contains("popup")) { return [b] }
             return view.subviews.flatMap { popups(in: $0) }
         }
 

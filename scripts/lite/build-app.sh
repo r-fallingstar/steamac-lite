@@ -24,7 +24,7 @@ with (root/'Contents/Info.plist').open('rb') as f:
 import hashlib, json
 manifest = json.loads(pathlib.Path('scripts/lite/base-release.json').read_text())
 assert (p.get('CFBundleIdentifier'), p.get('CFBundleShortVersionString')) == (manifest['bundle_id'], manifest['app_version']), 'Use the pinned v1.9.8-eac.1 donor; older Lite/upstream bundles cannot be mixed with this build'
-assert manifest['source_commit'].startswith(p.get('SteamacGitCommit', 'invalid')), 'Unexpected donor source commit'
+assert len(p.get('SteamacGitCommit', '')) >= 10 and manifest['source_commit'].startswith(p['SteamacGitCommit']), 'Unexpected donor source commit'
 for name, digest in manifest['files'].items():
     assert hashlib.sha256((root/'Contents'/name).read_bytes()).hexdigest() == digest, 'Donor file mismatch: '+name
 assert os.environ['REUSE_LAYER'] != '1', 'The 1.9.8 donor layer must receive the Lite setup and input changes'
@@ -141,6 +141,19 @@ for unit in steamac-vrchat-setup.service steam.service.d/70-steamac-vrchat-setup
     mkdir -p "$LAYER/usr/lib/systemd/user/$(dirname "$unit")"
     install -m644 "guest/layer/usr/lib/systemd/user/$unit" "$LAYER/usr/lib/systemd/user/$unit"
 done
+# The guest OpenVR runtime must match this fork's source, including controller calibration.
+VR_RUNTIME=${VR_RUNTIME_OVERRIDE:-$OUT/vr/runtime/bin/linux64/vrclient.so}
+VR_MANIFEST=$(dirname "$VR_RUNTIME")/runtime-build.json
+python3 - "$VR_RUNTIME" "$VR_MANIFEST" <<'VRPY'
+import hashlib, json, pathlib, subprocess, sys
+binary, metadata = map(pathlib.Path, sys.argv[1:])
+r = json.loads(metadata.read_text())
+assert r['source_tree'] == subprocess.check_output(['git','rev-parse','HEAD:guest/vr'], text=True).strip(), 'Rebuild guest/vr for the current source'
+assert r['sha256'] == hashlib.sha256(binary.read_bytes()).hexdigest()
+assert r['unit_tests_passed'] and r['end_to_end_tests_passed']
+VRPY
+install -m644 "$VR_RUNTIME" "$LAYER/usr/lib/steamac/vr/runtime/bin/linux64/vrclient.so"
+cp "$VR_MANIFEST" "$APP/Contents/Resources/steamac-vr-build.json"
 echo 'steamac-lite v1.9.8-lite.1 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"

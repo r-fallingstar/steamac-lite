@@ -9,6 +9,13 @@ import Foundation
 // leaves an ignored SIGPIPE alone. The VM process gets it ignored from the supervisor too.
 signal(SIGPIPE, SIG_IGN)
 
+// Automated checks must never write to the installed app's preference domain.
+if CommandLine.arguments.contains(where: { $0.hasPrefix("--selftest-") }), getenv("STEAMAC_DEFAULTS_DOMAIN") == nil {
+    let domain = "local.ryuu.steamac-lite.selftest"
+    UserDefaults.standard.removePersistentDomain(forName: domain)
+    setenv("STEAMAC_DEFAULTS_DOMAIN", domain, 1)
+}
+
 // Offer installation before language selection, disk setup, or any VM process starts.
 MainActor.assumeIsolated { DmgInstall.runIfNeeded(CommandLine.arguments) }
 

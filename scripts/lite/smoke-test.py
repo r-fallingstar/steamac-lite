@@ -12,13 +12,14 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--app', type=Path, default=ROOT/'work/out/SteamAC Lite.app')
-parser.add_argument('--disk', type=Path, default=Path.home()/'Library/Application Support/local.ryuu.steamac-lite/steamos.img')
+parser.add_argument('--disk', type=Path, required=True)
 parser.add_argument('--profile', choices=['auto', 'low-memory', 'manual'], default='auto')
 args = parser.parse_args()
 disk = args.disk.resolve(strict=True)
-original = Path.home()/'Library/Application Support/es.fxgam.steamac/steamos.img'
-if disk == original or (original.exists() and os.path.samefile(disk, original)):
-    raise SystemExit('Use a stopped test copy, not the original SteamOS disk.')
+for domain in ['es.fxgam.steamac', 'local.ryuu.steamac-lite']:
+    original = Path.home()/'Library/Application Support'/domain/'steamos.img'
+    if disk == original or (original.exists() and os.path.samefile(disk, original)):
+        raise SystemExit('Use a stopped test copy, not the original SteamOS disk.')
 if subprocess.run(['lsof', '-t', str(disk)], capture_output=True, text=True).stdout.strip():
     raise SystemExit('Test disk is already open; no VM started.')
 log = ROOT/'work/lite-smoke-console.log'
@@ -28,7 +29,7 @@ command = [str(args.app/'Contents/MacOS/steamac-vm'), '--profile', args.profile,
            '--disk', str(disk), '--disk', str(args.app/'Contents/Resources/steamac-layer.img')+':ro']
 with log.open('w') as output:
     process = subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT,
-                               env={**os.environ, 'STEAMAC_SENTRY': '0'}, start_new_session=True)
+                               env={**os.environ, 'STEAMAC_SENTRY': '0', 'STEAMAC_DEFAULTS_DOMAIN': 'local.ryuu.steamac-lite.migration-selftest'}, start_new_session=True)
     print('Test VM started:', process.pid, flush=True)
     seen = set()
     expect_swap = False
