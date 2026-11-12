@@ -20721,6 +20721,118 @@
           }
         }
       }
+    },
+    "Auto (window and render scale)": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動（ウィンドウと倍率に合わせる）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자동 (창 크기와 렌더 배율)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动（根据窗口和渲染比例）"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Авто (размер окна и масштаб)"
+          }
+        }
+      }
+    },
+    "Rendering resolution (px)": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "レンダリング解像度（px）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "렌더링 해상도 (px)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "渲染分辨率（px）"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешение рендеринга (px)"
+          }
+        }
+      }
+    },
+    "Fixed pixels keep the SteamOS rendering size unchanged when the Mac window is resized. The game's own resolution setting is separate.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pxを選ぶと、ウィンドウの大きさを変えてもSteamOSの描画サイズを維持します。ゲーム内の解像度設定は別です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "픽셀 크기를 선택하면 Mac 창 크기를 바꿔도 SteamOS 렌더링 크기를 유지합니다. 게임 내부의 해상도 설정은 별도입니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择固定像素后，调整 Mac 窗口大小不会改变 SteamOS 的渲染尺寸。游戏内的分辨率设置独立生效。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фиксированные пиксели сохраняют размер рендеринга SteamOS при изменении окна Mac. Настройка разрешения в игре действует отдельно."
+          }
+        }
+      }
+    },
+    "Window size in points. Rendering resolution is selected separately above.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ウィンドウの表示サイズです。描画するpx数は上の項目で選びます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "창 표시 크기입니다. 렌더링 픽셀 크기는 위에서 별도로 선택합니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此项为窗口显示大小。渲染像素尺寸在上方单独选择。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Размер окна в точках. Разрешение рендеринга выбирается отдельно выше."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

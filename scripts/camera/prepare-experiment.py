@@ -50,6 +50,12 @@ WantedBy=multi-user.target
 image(WORK/'camera-selftest.img')
 info=plistlib.loads((APP/'Contents/Info.plist').read_bytes());info.update(CFBundleIdentifier='local.ryuu.steamac-lite.camera-experiment',CFBundleName='steamac Lite カメラ実験版',CFBundleDisplayName='steamac Lite カメラ実験版',CFBundleShortVersionString='1.9.8-camera.1',CFBundleVersion='198101',SteamacPreferencesDomain='local.ryuu.steamac-lite.camera-experiment',NSCameraUsageDescription='内蔵カメラの映像を、このMac上のSteamOSとVRChatへ渡す実験に使用します。ボタンを押したときだけ撮影し、映像は保存しません。')
 (APP/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
+for strings in (APP/'Contents/Resources').glob('*.lproj/InfoPlist.strings'):
+ local=plistlib.loads(strings.read_bytes())
+ local['CFBundleName']='steamac Lite Camera Test';local['CFBundleDisplayName']='steamac Lite カメラ実験版'
+ local['NSCameraUsageDescription']=info['NSCameraUsageDescription']
+ strings.write_bytes(plistlib.dumps(local))
+
 entitlements=plistlib.loads((ROOT/'host/launcher/steamac-vm.entitlements').read_bytes());entitlements['com.apple.security.device.camera']=True;(WORK/'camera.entitlements').write_bytes(plistlib.dumps(entitlements))
 metadata={'source_commit':json.loads((APP/'Contents/Resources/steamac-lite-provenance.json').read_text())['source_commit'],'version':'1.9.8-camera.1','default_camera_enabled':False,'camera':'built-in only','width':640,'height':480,'fps':15,'frame_storage':'none','kernel_image_sha256':hashlib.file_digest((APP/'Contents/Resources/Image').open('rb'),'sha256').hexdigest(),'kernel_config_sha256':hashlib.file_digest((WORK/'kernel.config').open('rb'),'sha256').hexdigest(),'module_config_sha256':hashlib.file_digest((WORK/'module-kernel.config').open('rb'),'sha256').hexdigest(),'module_source':json.loads((ROOT/'guest/camera/loopback-source.json').read_text()),'files':{name:hashlib.file_digest((lib/name).open('rb'),'sha256').hexdigest() for name in ['camera-agent','mf-camera-test.exe','v4l2loopback.ko']}}
 (APP/'Contents/Resources/steamac-camera-build.json').write_text(json.dumps(metadata,indent=2)+'\n')

@@ -64,6 +64,11 @@ if options.selftestLanguage {
     print(failures.isEmpty ? "language: PASS" : "language: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
+if options.selftestRenderPixels {
+    let failures = RenderPixels.selfCheck()
+    print(failures.isEmpty ? "render-pixels: PASS" : "render-pixels: FAIL: " + failures.joined(separator: "; "))
+    exit(failures.isEmpty ? 0 : 1)
+}
 if options.selftestCameraUI { CameraBridge.snapshotSelfTest(to: options.selftestOut ?? ".") }
 if options.selftestCamera {
     let failures = CameraWire.selfCheck()
@@ -517,7 +522,7 @@ do {
     let presenter = Presenter(display: display, renderer: renderer)
     let wc = WindowController(title: windowTitle, width: options.displayWidth, height: options.displayHeight,
                               pixelScale: options.pixelScale * options.renderScale, renderer: renderer, inputs: inputs,
-                              mouseMode: options.mouseMode, keyboardLayout: options.effectiveKeyboardLayout)
+                              mouseMode: options.mouseMode, keyboardLayout: options.effectiveKeyboardLayout, renderPixels: options.renderPixels)
     if let f = Supervisor.windowFrame, !f.isEmpty { wc.window.setFrame(NSRectFromString(f), display: false) }
     presenter.view = wc.view
     PerfStats.instance.attach(view: wc.view)

@@ -494,6 +494,22 @@ private struct DisplayTab: View {
         })
     }
 
+    private var renderPreset: Binding<String> {
+        Binding(get: { settings.renderResolutionPreset }, set: { id in
+            if let p = RenderPixels.presets.first(where: { $0.id == id }) {
+                settings.renderWidth = p.width; settings.renderHeight = p.height
+            }
+            settings.renderResolutionPreset = id
+        })
+    }
+    private func renderDimension(_ width: Bool) -> Binding<Int> {
+        Binding(get: { width ? settings.renderWidth : settings.renderHeight }, set: { value in
+            let p = RenderPixels.normalized(width: width ? value : settings.renderWidth,
+                                            height: width ? settings.renderHeight : value)
+            if width { settings.renderWidth = p.width } else { settings.renderHeight = p.height }
+        })
+    }
+
     /// Pixel sizes are interpolated as text: an Int would be grouped like a quantity ("1 920").
     private func presetTitle(_ p: LauncherSettings.SizePreset) -> String {
         p.width > fit.0 || p.height > fit.1
@@ -557,6 +573,30 @@ private struct DisplayTab: View {
                            detail: String(localized: "Off: the guest keeps its resolution and the picture is scaled to the window."),
                            now: true)
                 }
+                .disabled(settings.fixedRenderPixels != nil)
+                Picker(selection: renderPreset) {
+                    Text("Auto (window and render scale)").tag(RenderPixels.automatic)
+                    ForEach(RenderPixels.presets, id: \.id) { Text(verbatim: $0.title).tag($0.id) }
+                    Text("Custom…").tag(RenderPixels.custom)
+                    if settings.renderResolutionPreset != RenderPixels.automatic && settings.renderResolutionPreset != RenderPixels.custom,
+                       !RenderPixels.presets.contains(where: { $0.id == settings.renderResolutionPreset }) {
+                        Text(verbatim: settings.fixedRenderPixels?.title ?? "").tag(settings.renderResolutionPreset)
+                    }
+                } label: {
+                    Label2(title: "Rendering resolution (px)", detail: String(localized: "Fixed pixels keep the SteamOS rendering size unchanged when the Mac window is resized. The game's own resolution setting is separate."),
+                           now: false, key: .renderResolutionPreset)
+                }
+                if settings.renderResolutionPreset == RenderPixels.custom {
+                    HStack {
+                        Text("Custom size")
+                        Spacer()
+                        TextField("W", value: renderDimension(true), format: .number.grouping(.never)).frame(width: 70)
+                        Text(verbatim: "×")
+                        TextField("H", value: renderDimension(false), format: .number.grouping(.never)).frame(width: 70)
+                        Text(verbatim: "px")
+                    }
+                }
+                if settings.renderResolutionPreset == RenderPixels.automatic {
                 Picker(selection: $settings.renderScale) {
                     ForEach(DisplayTab.renderScales, id: \.self) { s in
                         Text(verbatim: s >= 1 ? String(localized: "Off (1.0×)") : String(format: "%.2f×", s)).tag(s)
@@ -569,11 +609,13 @@ private struct DisplayTab: View {
                            now: false, key: .renderScale)
                 }
                 .disabled(!Renderer.superResolutionSupported && settings.renderScale >= 1)
+                }
                 Toggle(isOn: $settings.upscaleLowerResolutions) {
                     Label2(title: "Upscale lower game resolutions",
                            detail: String(localized: "When the game renders below the window's size (its own resolution setting), the guest sends the game's size and the Mac upscales it to fill the window, instead of the guest upscaling it to the full Retina size. MetalFX up to 1.5×, bilinear beyond. The guest display's maximum is unchanged. Off: no change."),
                            now: true)
                 }
+                .disabled(settings.fixedRenderPixels != nil)
                 Picker(selection: preset) {
                     ForEach(LauncherSettings.sizePresets) { Text(verbatim: presetTitle($0)).tag($0.id) }
                     Divider()
@@ -581,7 +623,8 @@ private struct DisplayTab: View {
                     Text("Custom…").tag(LauncherSettings.customPreset)
                 } label: {
                     Label2(title: "Default window size",
-                           detail: String(localized: "Guest pixels = window points (twice per side with Retina resolution); at least 800 × 500."),
+                           detail: settings.fixedRenderPixels != nil ? String(localized: "Window size in points. Rendering resolution is selected separately above.")
+                               : String(localized: "Guest pixels = window points (twice per side with Retina resolution); at least 800 × 500."),
                            now: false, key: .windowSizePreset)
                 }
                 if settings.windowSizePreset == LauncherSettings.customPreset {
@@ -603,6 +646,7 @@ private struct DisplayTab: View {
                                : String(localized: "Off: one guest pixel per point, scaled up to Retina screens (MetalFX super resolution can sharpen it). On: the guest renders at the screen's full pixel density."),
                            now: false, key: .retinaResolution)
                 }
+                .disabled(settings.fixedRenderPixels != nil)
             }
             Section {
                 Toggle(isOn: $settings.metalHUD) {

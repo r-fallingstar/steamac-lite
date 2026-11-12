@@ -103,6 +103,7 @@ final class WindowController: NSObject, NSWindowDelegate {
     private var requestedGuestSize: (Int, Int)
     /// Guest display size at boot: the target while the guest does not follow the window.
     private let bootGuestSize: (Int, Int)
+    private let fixedRenderPixels: RenderPixels?
     /// The focused game's window size in guest pixels (`game-size`, progress agent); nil outside game focus.
     private var focusedGameSize: (Int, Int)?
     /// MetalFX factor limit per axis while a lower game resolution is shown (above it: bilinear).
@@ -122,14 +123,15 @@ final class WindowController: NSObject, NSWindowDelegate {
 
     /// `width` x `height`: initial content size in points; the guest display is that times `pixelScale`.
     init(title: String, width: Int, height: Int, pixelScale: Double = 1, renderer: Renderer, inputs: VMInputs?,
-         mouseMode: MouseMode, keyboardLayout: KeyboardLayout = .detected) {
+         mouseMode: MouseMode, keyboardLayout: KeyboardLayout = .detected, renderPixels: RenderPixels? = nil) {
         self.inputs = inputs
         self.mouseMode = mouseMode
         self.keyboardLayout = keyboardLayout
         self.baseTitle = title
         self.pixelScale = pixelScale
-        self.renderScaled = pixelScale < 1
-        let guest = WindowController.guestSize(points: CGSize(width: width, height: height), scale: pixelScale)
+        self.fixedRenderPixels = renderPixels
+        self.renderScaled = renderPixels != nil || pixelScale < 1
+        let guest = renderPixels?.size ?? WindowController.guestSize(points: CGSize(width: width, height: height), scale: pixelScale)
         self.scanoutSize = guest
         self.requestedGuestSize = guest
         self.bootGuestSize = guest
@@ -258,6 +260,7 @@ final class WindowController: NSObject, NSWindowDelegate {
     /// window), or the focused game's own size while that is smaller than it on both axes and the
     /// setting is on. The window never changes for it: the Mac upscales the smaller picture.
     func desiredGuestSize() -> (Int, Int) {
+        if fixedRenderPixels != nil { return bootGuestSize }
         let base = settings.followWindowSize ? guestSizeForWindow() : bootGuestSize
         guard settings.upscaleLowerResolutions, focusedGame != nil, let g = focusedGameSize,
               g != base, g.0 >= 320, g.1 >= 200, g.0 <= base.0, g.1 <= base.1 else { return base }
@@ -273,7 +276,7 @@ final class WindowController: NSObject, NSWindowDelegate {
     /// MetalFX up to `lowResMetalFXMaxRatio` per axis only while the shown scanout is the focused
     /// game's own size with the setting on; nil otherwise (the renderer's existing path, unchanged).
     private func updateUpscaleCap() {
-        let lower = settings.upscaleLowerResolutions && focusedGame != nil
+        let lower = fixedRenderPixels == nil && settings.upscaleLowerResolutions && focusedGame != nil
             && focusedGameSize.map { $0 == scanoutSize } == true
         let cap: Double? = lower ? WindowController.lowResMetalFXMaxRatio : nil
         guard view.renderer.upscaleCap != cap else { return }

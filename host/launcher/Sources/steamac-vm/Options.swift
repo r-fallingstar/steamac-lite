@@ -67,11 +67,14 @@ struct Options {
     /// (the guest renders at the window's pixel size). Below 1 the guest renders fewer pixels and
     /// MetalFX super resolution upscales them back to the drawable (Renderer), which is cheap next
     /// to the guest drawing them; fixed for the boot (it sizes the EDID mode, like `pixelScale`).
+    var renderPixels: RenderPixels?
+    var selftestRenderPixels = false
     var renderScale = 1.0
     /// Guest display size at boot: the window size times `pixelScale` and `renderScale`
     /// (WindowController.guestSize).
     var guestSize: (Int, Int) {
-        WindowController.guestSize(points: CGSize(width: displayWidth, height: displayHeight),
+        if let renderPixels { return renderPixels.size }
+        return WindowController.guestSize(points: CGSize(width: displayWidth, height: displayHeight),
                                    scale: pixelScale * renderScale)
     }
     var refreshRate = 60
@@ -242,6 +245,7 @@ struct Options {
                            the window: content size in points = guest pixels, x the screen's backing
                            scale with Settings > Display > Retina resolution (even, min 800x500, max
                            4094), applied when a resize / fullscreen switch ends
+      --render-size WxH    fixed guest rendering pixels, independent of the Mac window (even 320x200..4094x4094)
       --render-scale S     guest render scale 0.25..1.0 of the window's pixel size (default 1 = off,
                            Settings > Display "Render scale"): the guest renders fewer pixels and
                            MetalFX super resolution upscales them to the window; next start
@@ -467,6 +471,10 @@ struct Options {
                 let parts = v.lowercased().split(separator: "x").compactMap { Int($0) }
                 guard parts.count == 2, parts[0] > 0, parts[1] > 0 else { throw OptionError("--display: expected WxH, got \(v)") }
                 o.displayWidth = parts[0]; o.displayHeight = parts[1]
+            case "--selftest-render-resolution": o.selftestRenderPixels = true
+            case "--render-size":
+                guard let size = RenderPixels.parse(try value(a)) else { throw OptionError("--render-size: use even pixels in 320x200..4094x4094") }
+                o.renderPixels = size
             case "--render-scale":
                 let v = try value(a)
                 guard let s = Double(v), (0.25...1.0).contains(s) else {
@@ -640,7 +648,7 @@ struct Options {
         selftestDisplay || selftestOverlay || selftestStall || selftestPill || selftestSettings || selftestSettingsLayout || selftestProvision || selftestRemotePlay
             || selftestMetalCache || selftestPointer || selftestGameLayers || selftestVR || selftestL10n || createDisk != nil
             || growDisk != nil
-            || selftestCameraUI || selftestCamera || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage || selftestMicrophone || previewMicrophone || selftestUpdate || previewUpdate
+            || selftestRenderPixels || selftestCameraUI || selftestCamera || showSSHPassword != nil || selftestLowMemory || selftestKeyboard || selftestLanguage || selftestMicrophone || previewMicrophone || selftestUpdate || previewUpdate
     }
 
     /// Command line + saved settings (+ app bundle resources): what this boot runs with, and which
@@ -786,6 +794,10 @@ struct Options {
         if s.retinaResolution && !headless && (Supervisor.isChild || isSelftest) {
             pixelScale = max(1, WindowController.targetScreen()?.backingScaleFactor ?? 1)
         }
+        if given("--render-size") {
+            for key in [LauncherSettings.Key.renderResolutionPreset, .renderWidth, .renderHeight] { ov[key] = "--render-size" }
+        } else if given("--render-scale") { renderPixels = nil }
+        else { renderPixels = s.fixedRenderPixels }
         if given("--render-scale") { ov[.renderScale] = "--render-scale \(renderScale)" }
         else { renderScale = min(1, max(0.25, s.renderScale)) }
         if given("--dpi") || given("--display-mm") {

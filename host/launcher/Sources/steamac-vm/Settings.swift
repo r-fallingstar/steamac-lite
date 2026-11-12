@@ -24,7 +24,7 @@ final class LauncherSettings: ObservableObject {
              closeAction, checkForUpdates, followMacTime, followMacKeyboard, shareClipboard, shareConcealedClipboard, shareGameStats
         // Display
         case performanceMode, dpiSource, fixedDPI, fixedWidthMM, fixedHeightMM, refreshRate, followWindowSize, windowWidth, windowHeight,
-             windowSizePreset, retinaResolution, metalHUD, superResolution, renderScale, upscaleLowerResolutions
+             windowSizePreset, retinaResolution, metalHUD, superResolution, renderScale, renderResolutionPreset, renderWidth, renderHeight, upscaleLowerResolutions
         // Mouse
         case autoCaptureGames, gameNames
         // Controller
@@ -41,7 +41,7 @@ final class LauncherSettings: ObservableObject {
         var nextStart: Bool {
             switch self {
             case .applicationLanguage, .vrchatSetup, .performanceMode, .openFullscreen, .dpiSource, .fixedDPI, .fixedWidthMM, .fixedHeightMM, .refreshRate,
-                 .windowWidth, .windowHeight, .windowSizePreset, .retinaResolution, .renderScale, .soundEnabled, .cpus, .memMiB, .sshEnabled,
+                 .windowWidth, .windowHeight, .windowSizePreset, .retinaResolution, .renderScale, .renderResolutionPreset, .renderWidth, .renderHeight, .soundEnabled, .cpus, .memMiB, .sshEnabled,
                  .sshPort, .network, .lanRemotePlay,
                  .diskImage, .steamClient, .followMacTime, .vulkanDriver, .graphicsPath, .wmtr, .wmtrLibrary, .frameLatency, .vrEnabled,
                  .vrEyeSize, .vrCodec, .vrPairOnRequest, .vrHeadsetAudio, .vrRenderScale, .vrUpscaler, .vrSharpness,
@@ -417,6 +417,12 @@ final class LauncherSettings: ObservableObject {
     @Published var superResolution = false { didSet { save(.superResolution, superResolution) } }
     /// Guest render scale 0.25...1.0 of the window's pixel size (Options.renderScale): the guest
     /// renders fewer pixels and MetalFX super resolution upscales them to the window; next start.
+    @Published var renderResolutionPreset = RenderPixels.automatic { didSet { save(.renderResolutionPreset, renderResolutionPreset) } }
+    @Published var renderWidth = 960 { didSet { save(.renderWidth, renderWidth) } }
+    @Published var renderHeight = 600 { didSet { save(.renderHeight, renderHeight) } }
+    var fixedRenderPixels: RenderPixels? {
+        renderResolutionPreset == RenderPixels.automatic ? nil : .normalized(width: renderWidth, height: renderHeight)
+    }
     @Published var renderScale = 1.0 { didSet { save(.renderScale, renderScale) } }
     /// While the guest game renders below the window size, the guest scanout follows the game's
     /// window size and the Mac upscales it to the window (Renderer; MetalFX up to 1.5x per axis,
@@ -613,6 +619,8 @@ final class LauncherSettings: ObservableObject {
         bool(.metalHUD, &metalHUD)
         bool(.superResolution, &superResolution)
         bool(.upscaleLowerResolutions, &upscaleLowerResolutions)
+        string(.renderResolutionPreset, &renderResolutionPreset)
+        int(.renderWidth, &renderWidth); int(.renderHeight, &renderHeight)
         if let v = d.object(forKey: Key.renderScale.rawValue) as? Double { renderScale = min(1, max(0.25, v)) }
         bool(.autoCaptureGames, &autoCaptureGames)
         bool(.virtualPad, &virtualPad)
@@ -703,6 +711,9 @@ final class LauncherSettings: ObservableObject {
         cpus = 0; memMiB = 0; wmtrLibrary = ""
         // wmtrLibrary's setter saved the blank value; automatic must remain genuinely unset.
         defaults.removeObject(forKey: Key.wmtrLibrary.rawValue)
+        let previousLoading = loading; loading = true
+        renderResolutionPreset = RenderPixels.automatic; renderWidth = 960; renderHeight = 600
+        loading = previousLoading
         performanceMode = .automatic
     }
 
@@ -758,6 +769,9 @@ final class LauncherSettings: ObservableObject {
         case .metalHUD: guard let b else { return false }; metalHUD = b
         case .superResolution: guard let b else { return false }; superResolution = b
         case .upscaleLowerResolutions: guard let b else { return false }; upscaleLowerResolutions = b
+        case .renderResolutionPreset: renderResolutionPreset = text
+        case .renderWidth: guard let i, (320...4094).contains(i), i % 2 == 0 else { return false }; renderWidth = i
+        case .renderHeight: guard let i, (200...4094).contains(i), i % 2 == 0 else { return false }; renderHeight = i
         case .renderScale: guard let d, (0.25...1.0).contains(d) else { return false }; renderScale = d
         case .autoCaptureGames: guard let b else { return false }; autoCaptureGames = b
         case .gameNames: return false
@@ -832,6 +846,7 @@ final class LauncherSettings: ObservableObject {
         fixedHeightMM = fresh.fixedHeightMM; refreshRate = fresh.refreshRate; followWindowSize = fresh.followWindowSize
         windowWidth = fresh.windowWidth; windowHeight = fresh.windowHeight; windowSizePreset = fresh.windowSizePreset
         retinaResolution = fresh.retinaResolution
+        renderResolutionPreset = fresh.renderResolutionPreset; renderWidth = fresh.renderWidth; renderHeight = fresh.renderHeight
         metalHUD = fresh.metalHUD; superResolution = fresh.superResolution; renderScale = fresh.renderScale
         upscaleLowerResolutions = fresh.upscaleLowerResolutions
         autoCaptureGames = fresh.autoCaptureGames
@@ -884,7 +899,7 @@ final class LauncherSettings: ObservableObject {
             .fixedWidthMM: dpiSource == .mm ? fixedWidthMM : 0, .fixedHeightMM: dpiSource == .mm ? fixedHeightMM : 0,
             .refreshRate: refreshRate, .windowWidth: windowWidth, .windowHeight: windowHeight,
             .windowSizePreset: windowSizePreset, .retinaResolution: retinaResolution,
-            .renderScale: renderScale,
+            .renderScale: renderScale, .renderResolutionPreset: renderResolutionPreset, .renderWidth: renderWidth, .renderHeight: renderHeight,
             .soundEnabled: soundEnabled, .cpus: cpus, .memMiB: memMiB, .sshEnabled: sshEnabled, .sshPort: sshPort,
             .network: network, .lanRemotePlay: lanRemotePlay,
             .diskImage: diskImage, .steamClient: steamClient.rawValue, .followMacTime: followMacTime,

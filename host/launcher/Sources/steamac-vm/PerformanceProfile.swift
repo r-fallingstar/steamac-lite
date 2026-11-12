@@ -44,7 +44,7 @@ enum PerformanceProfile {
     }
 
     static let displayKeys: Set<LauncherSettings.Key> = [.windowWidth, .windowHeight, .windowSizePreset,
-                                                         .retinaResolution, .renderScale, .refreshRate]
+                                                         .retinaResolution, .renderScale, .renderResolutionPreset, .renderWidth, .renderHeight, .refreshRate]
     static let customKeys = displayKeys.union([.cpus, .memMiB, .wmtr, .wmtrLibrary, .graphicsPath])
 
     static func plan(host: VMSizing.Host, mode: PerformanceMode) -> Plan? {
