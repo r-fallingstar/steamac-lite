@@ -51,7 +51,7 @@ image(WORK/'camera-selftest.img')
 info=plistlib.loads((APP/'Contents/Info.plist').read_bytes());info.update(CFBundleIdentifier='local.ryuu.steamac-lite.camera-experiment',CFBundleName='steamac Lite カメラ実験版',CFBundleDisplayName='steamac Lite カメラ実験版',CFBundleShortVersionString='1.9.8-camera.1',CFBundleVersion='198101',SteamacPreferencesDomain='local.ryuu.steamac-lite.camera-experiment',NSCameraUsageDescription='内蔵カメラの映像を、このMac上のSteamOSとVRChatへ渡す実験に使用します。ボタンを押したときだけ撮影し、映像は保存しません。')
 (APP/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
 for strings in (APP/'Contents/Resources').glob('*.lproj/InfoPlist.strings'):
- local=plistlib.loads(strings.read_bytes())
+ local=plistlib.loads(subprocess.check_output(['plutil','-convert','xml1','-o','-',str(strings)],env=ENV))
  local['CFBundleName']='steamac Lite Camera Test';local['CFBundleDisplayName']='steamac Lite カメラ実験版'
  local['NSCameraUsageDescription']=info['NSCameraUsageDescription']
  strings.write_bytes(plistlib.dumps(local))
