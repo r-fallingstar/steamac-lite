@@ -241,6 +241,7 @@ private final class SettingsTabController: NSTabViewController {
 
 private struct SettingsTabRoot: View {
     let tab: SettingsWindowController.Tab
+    @EnvironmentObject var context: SettingsContext
     @EnvironmentObject var settings: LauncherSettings
 
     var body: some View {
