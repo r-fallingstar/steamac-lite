@@ -11,6 +11,7 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 work=${1:-$HOME/.cache/steamac/proton-vrclient}
 . "$here/pin.env"
+. "$here/source.sh"
 # Canonicalize WORK before deriving the default output path; keep relative OUT relative to the caller.
 mkdir -p "$work"
 work=$(cd "$work" && pwd)
@@ -20,18 +21,7 @@ out=$(cd "$out" && pwd)
 engine=${CONTAINER_ENGINE:-$(basename "$(command -v podman || command -v docker)")}
 src=$work/proton build=$work/build
 
-if [[ ! -d $src/.git ]]; then
-    mkdir -p "$src"
-    git -C "$src" init -q
-fi
-if ! git -C "$src" cat-file -e "$PROTON_COMMIT^{commit}" 2>/dev/null; then
-    git -C "$src" fetch -q --depth 1 "$PROTON_REPO" "$PROTON_COMMIT"
-fi
-current=$(git -C "$src" rev-parse HEAD 2>/dev/null || true)
-if [[ $current != "$PROTON_COMMIT" ]]; then
-    [[ -z $(git -C "$src" status --porcelain) ]] || { echo "refusing to replace modified Proton source in $src" >&2; exit 1; }
-    git -C "$src" checkout -q --detach "$PROTON_COMMIT"
-fi
+prepare_proton_checkout "$src" "$PROTON_REPO" "$PROTON_COMMIT"
 # Patches may already be applied by a previous invocation, but reject unrelated source edits.
 git -C "$src" submodule update --init --recursive --depth 1 --jobs 8 ||
     git -C "$src" submodule update --init --recursive --jobs 8
