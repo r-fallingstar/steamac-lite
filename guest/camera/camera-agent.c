@@ -11,22 +11,50 @@
 #include <sys/mman.h>
 #include <time.h>
 #include <unistd.h>
+#include "camera-colors.h"
 #define W 640
 #define H 480
 #define BYTES (W*H*3/2)
+#define OUTPUT_BYTES (W*H*3)
 #define HEADER 32
+#define CLIENT_USAGE_EVENT (V4L2_EVENT_PRIVATE_START+0x08E00000+1)
 static uint32_t u32(const unsigned char *p){return (uint32_t)p[0]|(uint32_t)p[1]<<8|(uint32_t)p[2]<<16|(uint32_t)p[3]<<24;}
 static uint64_t millis(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return (uint64_t)t.tv_sec*1000+t.tv_nsec/1000000;}
 static int xio(int fd,unsigned long req,void *p){int r;do{r=ioctl(fd,req,p);}while(r<0&&errno==EINTR);return r;}
 static void fail(const char *what){perror(what);exit(1);}
 static void blank(unsigned char *p){memset(p,16,W*H);memset(p+W*H,128,W*H/2);}
 static uint64_t hash(const unsigned char *p,size_t n){uint64_t h=14695981039346656037ULL;for(size_t i=0;i<n;i++){h^=p[i];h*=1099511628211ULL;}return h;}
+static int probe_read(const char *device){
+ int fd=open(device,O_RDWR|O_NONBLOCK);if(fd<0)fail("read probe open");
+ struct v4l2_capability cap={0};if(xio(fd,VIDIOC_QUERYCAP,&cap)<0)fail("read probe querycap");
+ if(!(cap.device_caps&V4L2_CAP_READWRITE)){fprintf(stderr,"read not supported\n");return 1;}
+ struct v4l2_format fmt={.type=V4L2_BUF_TYPE_VIDEO_CAPTURE};if(xio(fd,VIDIOC_G_FMT,&fmt)<0)fail("read probe get format");
+ fmt.fmt.pix.pixelformat=V4L2_PIX_FMT_BGR24;
+ if(xio(fd,VIDIOC_TRY_FMT,&fmt)<0||fmt.fmt.pix.pixelformat!=V4L2_PIX_FMT_BGR24||fmt.fmt.pix.width!=W||fmt.fmt.pix.height!=H)fail("read probe try BGR24");
+ struct v4l2_frmsizeenum size={.pixel_format=V4L2_PIX_FMT_BGR24};
+ if(xio(fd,VIDIOC_ENUM_FRAMESIZES,&size)<0||size.type!=V4L2_FRMSIZE_TYPE_DISCRETE||size.discrete.width!=W||size.discrete.height!=H)fail("read probe frame sizes");
+ struct v4l2_frmivalenum interval={.pixel_format=V4L2_PIX_FMT_BGR24,.width=W,.height=H};
+ if(xio(fd,VIDIOC_ENUM_FRAMEINTERVALS,&interval)<0||interval.type!=V4L2_FRMIVAL_TYPE_DISCRETE||!interval.discrete.numerator||interval.discrete.denominator!=15*interval.discrete.numerator)fail("read probe frame intervals");
+ memset(&fmt,0,sizeof fmt);fmt.type=V4L2_BUF_TYPE_VIDEO_CAPTURE;fmt.fmt.pix.width=W;fmt.fmt.pix.height=H;fmt.fmt.pix.pixelformat=V4L2_PIX_FMT_BGR24;
+ if(xio(fd,VIDIOC_S_FMT,&fmt)<0)fail("read probe set BGR24");
+ unsigned char *frame=malloc(OUTPUT_BYTES);if(!frame)fail("read probe allocate");
+ uint64_t hashes[16]={0},deadline=millis()+12000;int frames=0,distinct=0;
+ while(frames<16&&millis()<deadline){
+  struct pollfd p={fd,POLLIN,0};if(poll(&p,1,500)<=0)continue;
+  ssize_t n=read(fd,frame,OUTPUT_BYTES);if(n<0&&(errno==EAGAIN||errno==EINTR))continue;
+  if(n!=OUTPUT_BYTES)fail("read probe frame size");
+  hashes[frames]=hash(frame,OUTPUT_BYTES);int seen=0;for(int i=0;i<frames;i++)if(hashes[i]==hashes[frames])seen=1;if(!seen)distinct++;frames++;
+ }
+ free(frame);close(fd);
+ printf("CAMERA_READ_PROBE {\"frames\":%d,\"distinct\":%d,\"width\":%d,\"height\":%d,\"format\":\"BGR24\",\"fps\":15,\"try_fmt\":true,\"set_fmt\":true,\"read\":true}\n",frames,distinct,W,H);
+ return frames==16&&distinct>=3?0:1;
+}
 static int probe(const char *device,int expect_black){
  int fd=open(device,O_RDWR|O_NONBLOCK);if(fd<0)fail("probe open");
  struct v4l2_capability cap={0};if(xio(fd,VIDIOC_QUERYCAP,&cap)<0)fail("querycap");
  if(!(cap.device_caps&V4L2_CAP_VIDEO_CAPTURE)){fprintf(stderr,"not a capture device\n");return 1;}
  struct v4l2_format fmt={.type=V4L2_BUF_TYPE_VIDEO_CAPTURE};if(xio(fd,VIDIOC_G_FMT,&fmt)<0)fail("get format");
- if(fmt.fmt.pix.width!=W||fmt.fmt.pix.height!=H||fmt.fmt.pix.pixelformat!=V4L2_PIX_FMT_NV12){fprintf(stderr,"unexpected capture format\n");return 1;}
+ if(fmt.fmt.pix.width!=W||fmt.fmt.pix.height!=H||fmt.fmt.pix.pixelformat!=V4L2_PIX_FMT_BGR24){fprintf(stderr,"unexpected capture format\n");return 1;}
  struct v4l2_requestbuffers req={.count=4,.type=V4L2_BUF_TYPE_VIDEO_CAPTURE,.memory=V4L2_MEMORY_MMAP};if(xio(fd,VIDIOC_REQBUFS,&req)<0)fail("request buffers");
  void *buffers[32];size_t sizes[32];if(req.count>32||!req.count)return 1;
  for(unsigned i=0;i<req.count;i++){
@@ -38,40 +66,53 @@ static int probe(const char *device,int expect_black){
  while(frames<16&&millis()<deadline){
   struct pollfd p={fd,POLLIN,0};if(poll(&p,1,500)<=0)continue;
   struct v4l2_buffer b={.type=type,.memory=V4L2_MEMORY_MMAP};if(xio(fd,VIDIOC_DQBUF,&b)<0){if(errno==EAGAIN)continue;fail("dequeue");}
-  if(b.index>=req.count||b.bytesused!=BYTES){fprintf(stderr,"invalid frame length\n");return 1;}
-  unsigned char *image=buffers[b.index];int dark=1;for(int j=0;j<BYTES;j++)if(image[j]!=(j<W*H?16:128)){dark=0;break;}black+=dark;
+  if(b.index>=req.count||b.bytesused!=OUTPUT_BYTES){fprintf(stderr,"invalid frame length\n");return 1;}
+  unsigned char *image=buffers[b.index];int dark=1;for(int j=0;j<OUTPUT_BYTES;j++)if(image[j]!=0){dark=0;break;}black+=dark;
   hashes[frames]=hash(buffers[b.index],b.bytesused);int seen=0;for(int i=0;i<frames;i++)if(hashes[i]==hashes[frames])seen=1;if(!seen)distinct++;frames++;
   if(xio(fd,VIDIOC_QBUF,&b)<0)fail("requeue");
  }
  xio(fd,VIDIOC_STREAMOFF,&type);for(unsigned i=0;i<req.count;i++)munmap(buffers[i],sizes[i]);close(fd);
- printf("CAMERA_PROBE {\"frames\":%d,\"distinct\":%d,\"width\":%d,\"height\":%d,\"format\":\"NV12\",\"mmap\":true}\n",frames,distinct,W,H);
+ printf("CAMERA_PROBE {\"frames\":%d,\"distinct\":%d,\"width\":%d,\"height\":%d,\"format\":\"BGR24\",\"mmap\":true}\n",frames,distinct,W,H);
  return frames==16&&(expect_black?black>=12:distinct>=3)?0:1;
 }
 int main(int argc,char **argv){
+ if(argc==3&&!strcmp(argv[1],"--probe-read"))return probe_read(argv[2]);
  if(argc==3&&(!strcmp(argv[1],"--probe")||!strcmp(argv[1],"--probe-black")))return probe(argv[2],!strcmp(argv[1],"--probe-black"));
  const char *port=argc>1?argv[1]:"/dev/virtio-ports/fx.camera";const char *device=argc>2?argv[2]:"/dev/video9";
  int input=open(port,O_RDWR|O_NONBLOCK);if(input<0)fail("camera port");int output=open(device,O_WRONLY|O_NONBLOCK);if(output<0)fail("video output");
- struct v4l2_format fmt={.type=V4L2_BUF_TYPE_VIDEO_OUTPUT};fmt.fmt.pix.width=W;fmt.fmt.pix.height=H;fmt.fmt.pix.pixelformat=V4L2_PIX_FMT_NV12;fmt.fmt.pix.field=V4L2_FIELD_NONE;fmt.fmt.pix.bytesperline=W;fmt.fmt.pix.sizeimage=BYTES;fmt.fmt.pix.colorspace=V4L2_COLORSPACE_REC709;
- if(xio(output,VIDIOC_S_FMT,&fmt)<0||fmt.fmt.pix.sizeimage!=BYTES)fail("set NV12");
+ struct v4l2_format fmt={.type=V4L2_BUF_TYPE_VIDEO_OUTPUT};fmt.fmt.pix.width=W;fmt.fmt.pix.height=H;fmt.fmt.pix.pixelformat=V4L2_PIX_FMT_BGR24;fmt.fmt.pix.field=V4L2_FIELD_NONE;fmt.fmt.pix.bytesperline=W*3;fmt.fmt.pix.sizeimage=OUTPUT_BYTES;fmt.fmt.pix.colorspace=V4L2_COLORSPACE_SRGB;fmt.fmt.pix.quantization=V4L2_QUANTIZATION_FULL_RANGE;
+ if(xio(output,VIDIOC_S_FMT,&fmt)<0||fmt.fmt.pix.sizeimage!=OUTPUT_BYTES)fail("set BGR24");
  struct v4l2_streamparm parm={.type=V4L2_BUF_TYPE_VIDEO_OUTPUT};parm.parm.output.timeperframe.numerator=1;parm.parm.output.timeperframe.denominator=15;if(xio(output,VIDIOC_S_PARM,&parm)<0)fail("set fps");
  struct v4l2_control c={.id=V4L2_CID_USER_BASE|0xf000,.value=1};if(xio(output,VIDIOC_S_CTRL,&c)<0)fail("keep format");
- unsigned char *frame=malloc(BYTES),*rx=malloc(BYTES*3);if(!frame||!rx)fail("allocate");blank(frame);
- size_t used=0;uint64_t received=0,last=0,next=0;dprintf(input,"READY %s NV12 640x480 15fps\n",device);fprintf(stderr,"camera-agent: ready (black until enabled)\n");
+ struct v4l2_event_subscription subscription={.type=CLIENT_USAGE_EVENT,.flags=V4L2_EVENT_SUB_FL_SEND_INITIAL};
+ if(xio(output,VIDIOC_SUBSCRIBE_EVENT,&subscription)<0)fail("subscribe camera users");
+ unsigned char *frame=malloc(BYTES),*rx=malloc(BYTES*3),*bgr=malloc(OUTPUT_BYTES);if(!frame||!rx||!bgr)fail("allocate");blank(frame);camera_nv12_to_bgr24(frame,bgr,W,H);
+ size_t used=0;uint64_t received=0,last=0,next=0;int clients=-1;dprintf(input,"READY %s BGR24 640x480 15fps\n",device);fprintf(stderr,"camera-agent: ready (black until enabled)\n");
  for(;;){
-  struct pollfd p={input,POLLIN,0};poll(&p,1,15);
-  if(p.revents&POLLIN){
+  struct pollfd p[2]={{input,POLLIN,0},{output,POLLPRI,0}};
+  uint64_t before_poll=millis();int wait_ms=next>before_poll?(int)(next-before_poll):0;
+  if(wait_ms>1000)wait_ms=1000;
+  poll(p,2,wait_ms);
+  if(p[1].revents&POLLPRI){
+   struct v4l2_event event={0};
+   while(xio(output,VIDIOC_DQEVENT,&event)==0){
+    if(event.type==CLIENT_USAGE_EVENT){int active=u32(event.u.data)>0;if(active!=clients){clients=active;dprintf(input,"DEMAND %d\n",clients);fprintf(stderr,"camera-agent: capture clients %d\n",clients);next=0;}}
+   }
+   if(errno!=EAGAIN&&errno!=ENOENT&&errno!=EINTR)fail("read camera users");
+  }
+  if(p[0].revents&POLLIN){
    ssize_t n=read(input,rx+used,BYTES*3-used);if(n<0&&errno!=EAGAIN&&errno!=EINTR)fail("read frames");if(n>0)used+=(size_t)n;
    while(used>=HEADER){
     if(memcmp(rx,"FXCM",4)||rx[4]!=1||rx[5]!=0){memmove(rx,rx+1,--used);continue;}
     uint32_t length=u32(rx+20);unsigned kind=rx[6]|(unsigned)rx[7]<<8;
     if(length>BYTES){memmove(rx,rx+1,--used);continue;}
     if(used<HEADER+length)break;
-    if(kind==1&&length==BYTES&&u32(rx+8)==W&&u32(rx+12)==H&&u32(rx+16)==V4L2_PIX_FMT_NV12){memcpy(frame,rx+HEADER,BYTES);last=millis();received++;if(received==1||received%60==0)dprintf(input,"FRAMES %llu\n",(unsigned long long)received);}
-    else if(kind==2){blank(frame);last=0;dprintf(input,"STOPPED\n");}
+    if(kind==1&&length==BYTES&&u32(rx+8)==W&&u32(rx+12)==H&&u32(rx+16)==V4L2_PIX_FMT_NV12){memcpy(frame,rx+HEADER,BYTES);camera_nv12_to_bgr24(frame,bgr,W,H);last=millis();received++;if(received==1||received%60==0)dprintf(input,"FRAMES %llu\n",(unsigned long long)received);}
+    else if(kind==2){blank(frame);camera_nv12_to_bgr24(frame,bgr,W,H);last=0;next=0;dprintf(input,"STOPPED\n");}
     used-=HEADER+length;memmove(rx,rx+HEADER+length,used);
    }
   }
-  uint64_t now=millis();if(last&&now-last>1000){blank(frame);last=0;dprintf(input,"STALE black\n");}
-  if(now>=next){ssize_t n=write(output,frame,BYTES);if(n<0&&errno!=EAGAIN&&errno!=EINTR)fail("write video");if(n>0&&n!=BYTES){fprintf(stderr,"short video write\n");return 1;}next=now+66;}
+  uint64_t now=millis();if(last&&now-last>1000){blank(frame);camera_nv12_to_bgr24(frame,bgr,W,H);last=0;dprintf(input,"STALE black\n");}
+  if(now>=next){ssize_t n=write(output,bgr,OUTPUT_BYTES);if(n<0&&errno!=EAGAIN&&errno!=EINTR)fail("write video");if(n>0&&n!=OUTPUT_BYTES){fprintf(stderr,"short video write\n");return 1;}next=now+((clients>0||last)?66:1000);}
  }
 }

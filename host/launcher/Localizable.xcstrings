@@ -20889,6 +20889,312 @@
           }
         }
       }
+    },
+    "Microphone and camera access": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone and camera access"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクとカメラへのアクセス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 및 카메라 접근"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "麦克风与摄像头访问权限"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к микрофону и камере"
+          }
+        }
+      }
+    },
+    "Allow microphone access for voice chat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow microphone access for voice chat"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ボイスチャット用にマイクを許可する"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음성 채팅을 위해 마이크 접근 허용"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "允许语音聊天使用麦克风"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешить доступ к микрофону для голосового чата"
+          }
+        }
+      }
+    },
+    "Use camera only when a game requests it": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use camera only when a game requests it"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ゲームが要求したときだけカメラを使う"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "게임이 요청할 때만 카메라 사용"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅在游戏请求时使用摄像头"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Использовать камеру только по запросу игры"
+          }
+        }
+      }
+    },
+    "Choose which access to allow. macOS will ask for confirmation if needed. Camera permission alone does not start capture.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose which access to allow. macOS will ask for confirmation if needed. Camera permission alone does not start capture."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "許可する項目を選んでください。必要に応じてmacOSの確認が表示されます。カメラを許可するだけでは撮影は始まりません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용할 접근 권한을 선택하세요. 필요한 경우 macOS에서 확인을 요청합니다. 카메라 접근을 허용하는 것만으로 촬영이 시작되지는 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请选择要允许的访问权限。macOS 会在需要时请求确认。仅授予摄像头权限不会开始拍摄。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите, какой доступ разрешить. При необходимости macOS запросит подтверждение. Само разрешение доступа к камере не запускает съёмку."
+          }
+        }
+      }
+    },
+    "Camera access is allowed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera access is allowed."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カメラへのアクセスは許可されています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "카메라 접근이 허용되어 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已允许访问摄像头。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к камере разрешён."
+          }
+        }
+      }
+    },
+    "Camera access has not been requested.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera access has not been requested."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カメラへのアクセスはまだ要求されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "카메라 접근을 아직 요청하지 않았습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未请求摄像头访问权限。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к камере ещё не запрашивался."
+          }
+        }
+      }
+    },
+    "Camera access is restricted by this Mac's settings or administrator.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera access is restricted by this Mac's settings or administrator."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このMacの設定または管理者により、カメラへのアクセスが制限されています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 Mac의 설정 또는 관리자가 카메라 접근을 제한하고 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 Mac 的设置或管理员限制了摄像头访问。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к камере ограничен настройками этого Mac или администратором."
+          }
+        }
+      }
+    },
+    "Camera permission alone does not start capture. Games start and stop it automatically. Start can be used for a preview.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera permission alone does not start capture. Games start and stop it automatically. Start can be used for a preview."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カメラを許可するだけでは撮影は始まりません。ゲームの要求に応じて自動で開始・停止します。「開始」でプレビューできます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "카메라 접근을 허용하는 것만으로 촬영이 시작되지는 않습니다. 게임이 자동으로 시작하고 중지합니다. 미리 보려면 시작을 누르세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅授予摄像头权限不会开始拍摄。游戏会自动开始和停止拍摄。点击“开始”可预览画面。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Само разрешение доступа к камере не запускает съёмку. Игры запускают и останавливают её автоматически. Для предпросмотра нажмите «Начать»."
+          }
+        }
+      }
+    },
+    "Camera is allowed and waiting for a game.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera is allowed and waiting for a game."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カメラは許可済みです。ゲームからの要求を待っています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "카메라 접근이 허용되어 있으며 게임의 요청을 기다리는 중입니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "摄像头已获授权，正在等待游戏请求。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к камере разрешён. Ожидание запроса от игры."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

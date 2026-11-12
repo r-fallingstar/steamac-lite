@@ -1,0 +1,44 @@
+#!/bin/bash
+# Diagnostic clone only: no game, microphone or physical camera is opened.
+set -u
+exec 2>&1
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+steam=/home/steamos/.local/share/Steam
+runtime="$steam/steamapps/common/SteamLinuxRuntime_4"
+fex="$steam/steamapps/common/FEX-Emu"
+proton="$steam/steamapps/common/Proton - Experimental"
+root=/tmp/steamac-camera-rootfs
+prefix=/home/steamos/.local/share/steamac-camera-dshow-test
+echo CAMERA_TEST_BEGIN
+for ((i=0;i<60;i++)); do [[ ! -f /run/steamac-camera-device ]] || break; sleep 1; done
+device=$(cat /run/steamac-camera-device)
+sleep 2
+/usr/lib/steamac/camera/camera-agent --probe-read "$device"
+native=$?
+files=$(find "$runtime" -mindepth 2 -maxdepth 2 -type d -name files | head -1)
+mkdir -p "$root/usr" "$prefix/fex-config" "$prefix/cache"
+mount --bind "$files" "$root/usr"
+mounted=$?
+if ((mounted!=0)); then echo CAMERA_TEST_EXIT=1; systemctl poweroff; exit 1; fi
+trap 'umount "$root/usr"' EXIT
+mount -o remount,bind,ro "$root/usr"
+for dir in bin etc; do ln -s "usr/$dir" "$root/$dir"; done
+mkdir -p "$root/lib"
+for arch in x86_64-linux-gnu i386-linux-gnu; do ln -s "../usr/lib/$arch" "$root/lib/$arch"; done
+ln -s i386-linux-gnu/ld-linux.so.2 "$root/lib/ld-linux.so.2"
+ln -s usr/lib/x86_64-linux-gnu "$root/lib64"
+cp /usr/lib/steamac/camera/dshow-camera-test.exe "$prefix/dshow-camera-test.exe"
+chown -R 1000:1000 "$prefix"
+echo CAMERA_DSHOW_LAUNCH
+setpriv --reuid=1000 --regid=1000 --init-groups env \
+    HOME=/home/steamos USER=steamos LOGNAME=steamos XDG_RUNTIME_DIR=/run/user/1000 \
+    FEX_ROOTFS="$root" FEX_PORTABLE=1 FEX_APP_CONFIG_LOCATION="$prefix/fex-config/" \
+    XDG_CACHE_HOME="$prefix/cache" WINEPREFIX="$prefix/pfx" \
+    WINEDEBUG=-all WINEDLLOVERRIDES=winemenubuilder.exe=d WINEESYNC=0 WINEFSYNC=0 \
+    timeout 75s "$fex/usr/bin/FEX" "$proton/files/bin/wine" "$prefix/dshow-camera-test.exe"
+windows=$?
+echo CAMERA_DSHOW_EXIT=$windows
+if ((native==0 && windows==0)); then echo CAMERA_TEST_EXIT=0; else echo CAMERA_TEST_EXIT=1; fi
+umount "$root/usr"
+trap - EXIT
+systemctl poweroff

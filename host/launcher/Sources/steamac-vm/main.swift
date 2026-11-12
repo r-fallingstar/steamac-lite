@@ -71,7 +71,7 @@ if options.selftestRenderPixels {
 }
 if options.selftestCameraUI { CameraBridge.snapshotSelfTest(to: options.selftestOut ?? ".") }
 if options.selftestCamera {
-    let failures = CameraWire.selfCheck()
+    let failures = CameraWire.selfCheck() + CameraCapturePolicy.selfCheck() + CapturePermissionNotice.selfCheck()
     print(failures.isEmpty ? "camera: PASS (no device opened)" : "camera: FAIL")
     exit(failures.isEmpty ? 0 : 1)
 }
@@ -648,15 +648,22 @@ do {
         DebugControl.start(path: path, window: wc, progress: progress, settingsWindow: settingsWindow, gamepad: gamepad) { dumpFrames(to: $0) }
     }
     console.start()
-    // Resolve microphone access before the guest can open a capture stream.
+    // Resolve access before the guest can open a capture stream.
     DispatchQueue.main.async { [wc] in
-        MicrophonePermission.shared.prepareForBoot(on: wc.window,
-            boot: Supervisor.bootNumber, defaults: settings.defaults,
-            version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development") {
-                vm.start()
-                if camera != nil && !options.cameraTestPattern { settingsWindow.show(tab: .camera) }
-                UpdateChecker.shared.start { [weak wc] in wc?.window }
-            }
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development"
+        let start = {
+            camera?.applyBootPermissions()
+            vm.start()
+            if camera != nil && !options.cameraTestPattern { settingsWindow.show(tab: .camera) }
+            UpdateChecker.shared.start { [weak wc] in wc?.window }
+        }
+        if camera != nil && !options.cameraTestPattern {
+            CapturePermissionNotice.prepareForBoot(on: wc.window, boot: Supervisor.bootNumber,
+                defaults: settings.defaults, version: version, completion: start)
+        } else {
+            MicrophonePermission.shared.prepareForBoot(on: wc.window, boot: Supervisor.bootNumber,
+                defaults: settings.defaults, version: version, completion: start)
+        }
     }
     // VR boots: "Start in VR" / the headset's app list reach the guest agent; the pairing PIN shows on the window.
     var vrRelay: VRRelay?

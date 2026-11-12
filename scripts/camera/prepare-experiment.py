@@ -31,12 +31,14 @@ enumerable=$?
 sleep 2
 /usr/lib/steamac/camera/camera-agent --probe "$device"
 live=$?
-sleep 8
+/usr/lib/steamac/camera/camera-agent --probe-read "$device"
+readable=$?
+sleep 12
 /usr/lib/steamac/camera/camera-agent --probe-black "$device"
 black=$?
-echo CAMERA_TEST_RESULT live=$live black=$black enumerable=$enumerable
+echo CAMERA_TEST_RESULT live=$live black=$black enumerable=$enumerable readable=$readable
 journalctl -b --no-pager -u steamac-camera.service -n30
-if ((live==0 && black==0 && enumerable==0)); then echo CAMERA_TEST_EXIT=0; else echo CAMERA_TEST_EXIT=1; fi
+if ((live==0 && black==0 && enumerable==0 && readable==0)); then echo CAMERA_TEST_EXIT=0; else echo CAMERA_TEST_EXIT=1; fi
 systemctl poweroff
 ''');runner.chmod(0o755)
 (units/'steamac-camera-test.service').write_text('''[Unit]
@@ -62,7 +64,7 @@ for strings in (APP/'Contents/Resources').glob('*.lproj/InfoPlist.strings'):
  strings.write_bytes(plistlib.dumps(local))
 
 entitlements=plistlib.loads((ROOT/'host/launcher/steamac-vm.entitlements').read_bytes());entitlements['com.apple.security.device.camera']=True;(WORK/'camera.entitlements').write_bytes(plistlib.dumps(entitlements))
-metadata={'source_commit':json.loads((APP/'Contents/Resources/steamac-lite-provenance.json').read_text())['source_commit'],'version':'1.9.8-camera.1','default_camera_enabled':False,'camera':'built-in only','width':640,'height':480,'fps':15,'frame_storage':'none','kernel_image_sha256':hashlib.file_digest((APP/'Contents/Resources/Image').open('rb'),'sha256').hexdigest(),'kernel_config_sha256':hashlib.file_digest((WORK/'kernel.config').open('rb'),'sha256').hexdigest(),'module_config_sha256':hashlib.file_digest((WORK/'module-kernel.config').open('rb'),'sha256').hexdigest(),'module_source':json.loads((ROOT/'guest/camera/loopback-source.json').read_text()),'files':{name:hashlib.file_digest((lib/name).open('rb'),'sha256').hexdigest() for name in ['camera-agent','mf-camera-test.exe','v4l2loopback.ko']}}
+metadata={'source_commit':json.loads((APP/'Contents/Resources/steamac-lite-provenance.json').read_text())['source_commit'],'version':'1.9.8-camera.1','default_camera_enabled':False,'camera':'built-in only','width':640,'height':480,'fps':15,'frame_storage':'none','wire_format':'NV12','guest_format':'BGR24','guest_source_sha256':{name:hashlib.file_digest((ROOT/'guest/camera'/name).open('rb'),'sha256').hexdigest() for name in ['camera-agent.c','camera-colors.h','start-camera']},'kernel_image_sha256':hashlib.file_digest((APP/'Contents/Resources/Image').open('rb'),'sha256').hexdigest(),'kernel_config_sha256':hashlib.file_digest((WORK/'kernel.config').open('rb'),'sha256').hexdigest(),'module_config_sha256':hashlib.file_digest((WORK/'module-kernel.config').open('rb'),'sha256').hexdigest(),'module_source':json.loads((ROOT/'guest/camera/loopback-source.json').read_text()),'files':{name:hashlib.file_digest((lib/name).open('rb'),'sha256').hexdigest() for name in ['camera-agent','mf-camera-test.exe','v4l2loopback.ko']}}
 (APP/'Contents/Resources/steamac-camera-build.json').write_text(json.dumps(metadata,indent=2)+'\n')
 subprocess.run(['codesign','--force','--sign','-','--entitlements',str(WORK/'camera.entitlements'),str(APP/'Contents/MacOS/steamac-vm')],check=True)
 subprocess.run(['codesign','--force','--sign','-','--entitlements',str(WORK/'camera.entitlements'),str(APP)],check=True)

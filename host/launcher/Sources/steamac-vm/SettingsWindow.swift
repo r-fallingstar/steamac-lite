@@ -147,7 +147,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let id = tabs.tabViewItems[tabs.selectedTabViewItemIndex].identifier as? String
         fit(Tab.allCases.first { $0.name == id } ?? .general)
     }
-    func windowWillClose(_ notification: Notification) { context.camera?.stop() }
+    func windowWillClose(_ notification: Notification) { context.camera?.stopPreview() }
 
     static func boundedFrame(_ requested: NSRect, within visible: NSRect) -> NSRect {
         guard visible.width > 0, visible.height > 0 else { return requested }

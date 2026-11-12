@@ -114,6 +114,25 @@ private final class CameraFrameSink: NSObject, AVCaptureVideoDataOutputSampleBuf
     }
 }
 
+enum CameraCapturePolicy {
+    static func requested(ready: Bool, preview: Bool, automatic: Bool, demand: Bool) -> Bool {
+        ready && (preview || (automatic && demand))
+    }
+    static func selfCheck() -> [String] {
+        let cases: [(Bool, Bool, Bool, Bool, Bool)] = [
+            (true, false, true, false, false), // Permission/automatic mode alone never captures.
+            (true, false, true, true, true),
+            (true, false, false, true, false),
+            (true, true, false, false, true),
+            (false, true, true, true, false),
+            (true, false, false, false, false)
+        ]
+        return cases.enumerated().compactMap { index, item in
+            requested(ready: item.0, preview: item.1, automatic: item.2, demand: item.3) == item.4 ? nil : "camera demand policy \(index)"
+        }
+    }
+}
+
 final class CameraBridge: ObservableObject {
     let port: CameraPort
     let session = AVCaptureSession()
@@ -125,6 +144,14 @@ final class CameraBridge: ObservableObject {
     @Published var selectedDeviceID = ""
     private var configured = false
     private var wanted = false
+    private var manualPreview = false
+    private var guestDemand = false
+    @Published var automaticCaptureEnabled = false {
+        didSet {
+            LauncherSettings.shared.defaults.set(automaticCaptureEnabled, forKey: "cameraAutomaticCapture")
+            reconcileCapture()
+        }
+    }
     private var patternTimer: DispatchSourceTimer?
     private var patternWanted = false
     @Published private(set) var ready = false
@@ -139,9 +166,35 @@ final class CameraBridge: ObservableObject {
             guard let self else { return }; log("camera guest: " + line)
             if line.hasPrefix("READY ") {
                 ready = true; message = String(localized: "Camera is off. SteamOS receives a black picture.")
-                if patternWanted { beginPattern() }
+                if patternWanted { beginPattern() } else { reconcileCapture() }
             } else if line.hasPrefix("FRAMES ") { received = String(line.dropFirst(7)) }
+            else if line == "DEMAND 1" || line == "DEMAND 0" {
+                guestDemand = line == "DEMAND 1"
+                reconcileCapture()
+            }
         }
+    }
+    func applyBootPermissions() {
+        automaticCaptureEnabled = LauncherSettings.shared.defaults.bool(forKey: "cameraAutomaticCapture")
+    }
+    private func reconcileCapture() {
+        guard !patternWanted else { return }
+        let requested = CameraCapturePolicy.requested(ready: ready, preview: manualPreview,
+            automatic: automaticCaptureEnabled, demand: guestDemand)
+        guard requested else {
+            if wanted || running { stopCapture() }
+            if automaticCaptureEnabled && AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+                message = String(localized: "Camera is allowed and waiting for a game.")
+            }
+            return
+        }
+        guard AVCaptureDevice.authorizationStatus(for: .video) == .authorized else {
+            if wanted || running { stopCapture() }
+            message = String(localized: "Camera access is not allowed. Check macOS Camera settings.")
+            return
+        }
+        wanted = true
+        if !busy && !running { startAuthorized() }
     }
     func startPattern() { patternWanted = true; if ready { beginPattern() } }
     private func beginPattern() {
@@ -161,7 +214,7 @@ final class CameraBridge: ObservableObject {
         if !devices.contains(where: { $0.id == selectedDeviceID }) { selectedDeviceID = devices.first?.id ?? "" }
     }
     func start() {
-        guard ready, !busy, !running else { return }; wanted = true
+        guard ready, !busy, !running else { return }; manualPreview = true; wanted = true
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: startAuthorized()
         case .notDetermined:
@@ -209,7 +262,7 @@ final class CameraBridge: ObservableObject {
                 DispatchQueue.main.async { [self] in
                     busy = false
                     if wanted { running = true; message = String(localized: "Sending the built-in camera to SteamOS.") }
-                    else { stop() }
+                    else { stopCapture() }
                 }
             } catch {
                 port.stop(); DispatchQueue.main.async { [self] in busy = false; wanted = false; message = String(describing: error) }
@@ -217,7 +270,20 @@ final class CameraBridge: ObservableObject {
         }
     }
     func stop() {
-        wanted = false; patternWanted = false; patternTimer?.cancel(); patternTimer = nil
+        manualPreview = false; patternWanted = false; patternTimer?.cancel(); patternTimer = nil
+        stopCapture()
+    }
+    func stopByUser() {
+        manualPreview = false
+        automaticCaptureEnabled = false
+        stop()
+    }
+    func stopPreview() {
+        manualPreview = false
+        reconcileCapture()
+    }
+    private func stopCapture() {
+        wanted = false
         port.stop(); running = false; message = String(localized: "Camera is off. SteamOS receives a black picture.")
         sessionQueue.async { [session] in if session.isRunning { session.stopRunning() } }
     }
@@ -264,6 +330,7 @@ struct CameraSettingsView: View {
         ScrollView {
         VStack(alignment: .leading, spacing: 14) {
             Text("Built-in camera (experimental)").font(.title2.bold())
+            Toggle("Use camera only when a game requests it", isOn: $bridge.automaticCaptureEnabled)
             Picker("Camera", selection: $bridge.selectedDeviceID) {
                 if bridge.devices.isEmpty { Text("Built-in camera").tag("") }
                 ForEach(bridge.devices) { Text(verbatim: $0.name).tag($0.id) }
@@ -275,10 +342,10 @@ struct CameraSettingsView: View {
             Text("Frames received by SteamOS: \(bridge.received)").font(.caption).monospacedDigit()
             HStack {
                 Button("Allow and start camera") { bridge.start() }.disabled(!bridge.ready || bridge.running || bridge.busy)
-                Button("Stop camera") { bridge.stop() }.disabled(!bridge.running && !bridge.busy)
+                Button("Stop camera") { bridge.stopByUser() }.disabled(!bridge.running && !bridge.busy)
             }
             Button("Open Camera privacy settings…") { NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")!) }
-            Text("Camera access starts only when you choose Start. Closing this window stops capture. No recordings are saved.").font(.caption).foregroundStyle(.secondary)
+            Text("Camera permission alone does not start capture. Games start and stop it automatically. Start can be used for a preview.").font(.caption).foregroundStyle(.secondary)
         }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
         }.frame(minWidth: 480, minHeight: 420).onAppear { bridge.refreshDevices() }
     }
