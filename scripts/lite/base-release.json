@@ -15,6 +15,8 @@
     "Frameworks/libMoltenVK.dylib": "46750eae4d64d163fa7b702a4642e69d1f9bdcf18af9974c22a095dc0c154e6c",
     "Frameworks/libvirglrenderer.1.dylib": "40a7ac0ceb46b58c80195292b6d07dc9b00c9fc031ed5d9b3dc8911fec764526",
     "Frameworks/libvulkan_kosmickrisp.dylib": "4027fd0965683eae2aa10451519933d996be2925f81b0a59298a2eaaab4a8129",
-    "Frameworks/libwmtr_host.dylib": "efed83a48e943ddcf5a6d22895c0094498c68b805ab0cfe8bd3e306496dfa36d"
+    "Frameworks/libwmtr_host.dylib": "efed83a48e943ddcf5a6d22895c0094498c68b805ab0cfe8bd3e306496dfa36d",
+    "MacOS/steamac-vm": "30b36de94dfb8e8383f305add17e29b359013a81097997ce49bfa23677c6b91e",
+    "MacOS/steamac-vrhost": "03f03fc8e372e80c1b558d9caff3724677c6ff1a44f30f11738dfc983c7d6f22"
   }
 }
