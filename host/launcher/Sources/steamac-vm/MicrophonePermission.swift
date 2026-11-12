@@ -80,22 +80,30 @@ final class MicrophonePermission: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
-    static func needsNotice(state: State, enabled: Bool, boot: Int, version: String, lastNotice: String?) -> Bool {
-        enabled && boot == 1 && state != .authorized && lastNotice != version
+    static func needsNotice(boot: Int, version: String, lastNotice: String?) -> Bool {
+        boot == 1 && lastNotice != version
     }
 
     /// Before the first VM boot, so a permission alert cannot make the guest's capture
     /// request time out. A dismissed notice is not repeated for every VM restart.
-    func prepareForBoot(on window: NSWindow, enabled: Bool, boot: Int, defaults: UserDefaults,
+    func prepareForBoot(on window: NSWindow, boot: Int, defaults: UserDefaults,
                         version: String, completion: @escaping () -> Void) {
         refresh()
         log("microphone: macOS authorization \(state.rawValue)")
-        guard Self.needsNotice(state: state, enabled: enabled, boot: boot, version: version,
+        guard Self.needsNotice(boot: boot, version: version,
                                lastNotice: defaults.string(forKey: Self.noticeKey)) else { completion(); return }
-        defaults.set(version, forKey: Self.noticeKey)
+        let finish = {
+            defaults.set(version, forKey: Self.noticeKey)
+            completion()
+        }
+        let displayedState = state
         let alert = NSAlert()
         alert.messageText = String(localized: "Microphone access")
-        if state == .notDetermined {
+        if state == .authorized {
+            alert.informativeText = state.description + "\n\n" + String(localized: "Microphone access is checked after every app update. You can review it in Settings → Sound.")
+            alert.addButton(withTitle: String(localized: "Continue"))
+            alert.addButton(withTitle: String(localized: "Open Microphone Settings…"))
+        } else if state == .notDetermined {
             alert.informativeText = String(localized: "Allow microphone access for voice chat in SteamOS games? macOS will ask you to confirm. After an app update, permission may be needed again.")
             alert.addButton(withTitle: String(localized: "Allow Microphone…"))
         } else {
@@ -104,24 +112,51 @@ final class MicrophonePermission: ObservableObject {
                 : String(localized: "You can use SteamOS without a microphone. To allow it later, open Settings → Sound."))
             alert.addButton(withTitle: String(localized: "Open Microphone Settings…"))
         }
-        alert.addButton(withTitle: String(localized: "Continue Without Microphone"))
+        if state != .authorized { alert.addButton(withTitle: String(localized: "Later")) }
         alert.beginSheetModal(for: window) { [self] response in
-            guard response == .alertFirstButtonReturn else { completion(); return }
-            if state == .notDetermined {
+            if displayedState == .authorized {
+                if response == .alertSecondButtonReturn { openSettings() }
+                finish()
+                return
+            }
+            guard response == .alertFirstButtonReturn else { finish(); return }
+            if displayedState == .notDetermined {
                 requestAccess {
                     if self.state == .denied || self.state == .restricted {
                         let denied = NSAlert()
                         denied.messageText = String(localized: "Microphone access")
                         denied.informativeText = self.state.description + "\n\n" + String(localized: "You can use SteamOS without a microphone. To allow it later, open Settings → Sound.")
                         denied.addButton(withTitle: String(localized: "Continue"))
-                        denied.beginSheetModal(for: window) { _ in completion() }
-                    } else { completion() }
+                        denied.beginSheetModal(for: window) { _ in finish() }
+                    } else { finish() }
                 }
             } else {
                 if state != .authorized { openSettings() }
-                completion()
+                finish()
             }
         }
+    }
+
+    /// Show the production startup notice without booting a VM or remembering its dismissal.
+    static func preview() -> Never {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.regular)
+        MainMenu.installMinimal()
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 180),
+                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        window.title = "steamac Lite"
+        window.isReleasedWhenClosed = false
+        let domain = "steamac.microphone-preview." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: domain)!
+        DispatchQueue.main.async {
+            window.center(); window.makeKeyAndOrderFront(nil); app.activate()
+            shared.prepareForBoot(on: window, boot: 1, defaults: defaults, version: "preview") {
+                defaults.removePersistentDomain(forName: domain)
+                exit(0)
+            }
+        }
+        withExtendedLifetime(window) { app.run() }
+        exit(0)
     }
 
     /// Exercises real state transitions with an injected OS, without opening a microphone
@@ -129,12 +164,11 @@ final class MicrophonePermission: ObservableObject {
     static func selfCheck() -> [String] {
         var failures: [String] = []
         for state in State.allCases {
-            let expected = state != .authorized
-            if needsNotice(state: state, enabled: true, boot: 1, version: "new", lastNotice: "old") != expected {
+            if !needsNotice(boot: 1, version: "new", lastNotice: "old") {
                 failures.append("update notice: \(state)")
             }
-            for (enabled, boot, last) in [(false, 1, "old"), (true, 2, "old"), (true, 1, "new")] {
-                if needsNotice(state: state, enabled: enabled, boot: boot, version: "new", lastNotice: last) {
+            for (boot, last) in [(2, "old"), (1, "new")] {
+                if needsNotice(boot: boot, version: "new", lastNotice: last) {
                     failures.append("unexpected notice: \(state)")
                 }
             }

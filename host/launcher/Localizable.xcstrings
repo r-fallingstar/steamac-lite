@@ -19721,41 +19721,6 @@
         }
       }
     },
-    "Continue Without Microphone": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue Without Microphone"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "マイクを使わずに続ける"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "마이크 없이 계속"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不使用麦克风并继续"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Продолжить без микрофона"
-          }
-        }
-      }
-    },
     "If access is already on, turn this app's microphone switch off and on again after an update.": {
       "extractionState": "manual",
       "localizations": {
@@ -20102,6 +20067,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "SteamOS можно использовать без микрофона. Чтобы разрешить доступ позже, откройте «Настройки → Звук»."
+          }
+        }
+      }
+    },
+    "Microphone access is checked after every app update. You can review it in Settings → Sound.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone access is checked after every app update. You can review it in Settings → Sound."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリの更新後はマイクの許可を確認します。「設定 → 音声」でも確認できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 업데이트 후에는 마이크 권한을 확인합니다. 설정 → 사운드에서도 확인할 수 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用每次更新后都会检查麦克风权限。也可以在“设置 → 声音”中查看。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "После каждого обновления приложения проверяется доступ к микрофону. Его также можно проверить в разделе «Настройки → Звук»."
           }
         }
       }

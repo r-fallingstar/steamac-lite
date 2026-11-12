@@ -58,6 +58,7 @@ if options.selftestMicrophone {
     print(failures.isEmpty ? "microphone: PASS (no recording or permission changes)" : "microphone: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
+if options.previewMicrophone { MicrophonePermission.preview() }
 if options.selftestUpdate {
     let failures = UpdateChecker.selfCheck()
     print(failures.isEmpty ? "updates: PASS" : "updates: FAIL: " + failures.joined(separator: "; "))
@@ -591,7 +592,7 @@ do {
     console.start()
     // Resolve microphone access before the guest can open a capture stream.
     DispatchQueue.main.async { [wc] in
-        MicrophonePermission.shared.prepareForBoot(on: wc.window, enabled: vm.hasSound,
+        MicrophonePermission.shared.prepareForBoot(on: wc.window,
             boot: Supervisor.bootNumber, defaults: settings.defaults,
             version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development") {
                 vm.start()
