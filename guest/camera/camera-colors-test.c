@@ -19,6 +19,14 @@ int main(void) {
             }
     }
     if (output[0]!=0xa5 || output[49]!=0xa5 || memcmp(before,input,sizeof input)) return 1;
+    memset(output,0xa5,sizeof output);
+    camera_nv12_to_bgr24_scaled(input,output+1,4,4,2,2);
+    for(unsigned tile=0;tile<4;tile++) for(unsigned channel=0;channel<3;channel++)
+        if(abs((int)output[1+tile*3+channel]-expected[tile][channel])>1) return 1;
+    if(output[0]!=0xa5 || output[13]!=0xa5 || memcmp(before,input,sizeof input)) return 1;
+    const uint8_t mixed[6]={16,235,235,16,128,128};
+    camera_nv12_to_bgr24_scaled(mixed,output+1,2,2,1,1);
+    for(unsigned channel=0;channel<3;channel++) if(output[1+channel]!=128) return 1;
     memset(input,0,sizeof input); camera_nv12_to_bgr24(input,output+1,4,4);
     if (output[0]!=0xa5 || output[49]!=0xa5) return 1;
     puts("NV12 to BGR24: black/white/red/blue, chroma rows, bounds and input preservation PASS");

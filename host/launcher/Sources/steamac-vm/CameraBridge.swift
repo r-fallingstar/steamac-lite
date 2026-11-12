@@ -342,7 +342,7 @@ struct CameraSettingsView: View {
             CameraPreview(session: bridge.session).frame(height: 260).background(.black)
             Text(verbatim: bridge.message)
             if !bridge.deviceName.isEmpty { Text(verbatim: bridge.deviceName).font(.caption) }
-            Text(verbatim: "640 × 480 · 15 fps").font(.caption).foregroundStyle(.secondary)
+            Text(verbatim: "320 × 240 · 15 fps").font(.caption).foregroundStyle(.secondary)
             Text("Frames received by SteamOS: \(bridge.received)").font(.caption).monospacedDigit()
             HStack {
                 Button("Allow and start camera") { bridge.start() }.disabled(!bridge.ready || bridge.running || bridge.busy)
