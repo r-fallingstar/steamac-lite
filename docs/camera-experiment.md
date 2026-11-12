@@ -37,7 +37,7 @@ python3 scripts/camera/launch-experiment.py
 - 複製したSteamOSでテスト映像をV4L2のMMAP経由で取得できること、停止後に黒い映像になることを確認。
 - M1・8 GBの実機で内蔵カメラの許可とプレビュー、SteamOS受信フレーム数の増加を確認。初回の「プレビューは見えるが受信が0」の症状は、出力サイズを明示した修正版で解消。
 - VRChatのSelfie Expressionは利用者の確認待ち。
-- 単体のWindows Media Foundation診断はFEX/Protonの起動条件が整わず実行できていないため、VRChatでの動作可否は未確認。
+- Media Foundation単体診断は起動前に失敗したため判断に使っていません。後述のDirectShow診断では、同じProtonとFEXで実際の映像受信まで確認しています。
 
 Linux側は`fx.camera`専用ポートとv4l2loopbackを使います。カーネル設定を一致させてモジュールをビルドし、実際のゲストで読み込めることを確認しています。
 ビルド元とハッシュは実験版の`steamac-camera-build.json`に記録します。
@@ -56,7 +56,7 @@ Linux側は`fx.camera`専用ポートとv4l2loopbackを使います。カーネ�
 Media Foundation側は[映像デバイス列挙が未実装の経路](https://github.com/ValveSoftware/wine/blob/5b557605b4e51f0853ec8e0e4f0eb536c669fae3/dlls/mf/main.c#L933-L955)があるため、
 `MFEnumDeviceSources`の結果だけではDirectShowの動作を判断できません。
 `guest/camera/dshow-camera-test.c`はDirectShowの列挙・フィルターへの接続・映像サンプルの受信を調べる別の診断です。
-コンパイルは通過していますが、ゲームと同じ起動環境での実行は未確認です。
+同じ検証ディスクのProton ExperimentalとFEXを使い、別の一時RootFS・専用の新しいprefixでWindows用診断を実行しました。カメラの列挙・接続と9フレームの受信が成功しています。ゲームのpressure-vessel環境そのものを再現した試験ではないため、VRChat側での確認は引き続き必要です。
 
 番号の修正後、VRChatには候補が出るものの「使用中／非対応」で開始できないとの結果でした。
 [WineのV4L2処理](https://github.com/ValveSoftware/wine/blob/5b557605b4e51f0853ec8e0e4f0eb536c669fae3/dlls/qcap/v4l.c#L488-L501)が要求するBGR24へゲスト内で変換するよう変更しています。
