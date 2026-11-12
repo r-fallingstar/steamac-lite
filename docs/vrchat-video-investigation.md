@@ -145,6 +145,24 @@ No VM, Docker, installed app or production disk is needed for this check.
 
 ## Evidence needed next
 
+The clone-only `guest/diagnostics/video-test-runner --collect` records the FEX
+launch manifests, both Runtime 4 layouts, ELF interpreter architectures, and Steam
+codec hashes without starting a program. Its optional `--run` mode refuses a
+rootfs that cannot resolve the probe's exact x86_64 interpreter. That validation
+does not construct pressure-vessel's filesystem namespace or prove equivalence
+to the game's runtime. The initial Media Foundation camera diagnostic failed
+before Proton started, so it says nothing about camera compatibility.
+
+A [September 2026 Proton report](https://github.com/ValveSoftware/Proton/issues/1199#issuecomment-5699247563)
+describes normal video with 2× audio in Pocket Storm and improvement using
+GE-Proton 11-6, with seeking still broken. This is a useful whole-build comparison;
+it does not establish the same AudioSource-count bug. The
+[GE-Proton 11-6 release](https://github.com/GloriousEggroll/proton-ge-custom/releases/tag/GE-Proton11-6)
+includes AVPro/Media Engine work, but the local report uses an asynchronous source
+reader without a media session. Do not attribute the improvement to an individual
+patch or replace the configured Proton automatically. Compare builds only in the
+test clone after preserving the required EAC integration and existing prefix.
+
 - Proton's exact build identifier, FEX version, and SteamOS build. “Experimental”
   alone changes over time and cannot identify the tested binary.
 - The first decoder failure, its preceding caps messages, and which library the

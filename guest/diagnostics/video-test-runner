@@ -1,0 +1,211 @@
+#!/usr/bin/python3
+"""Collect clone-only FEX/runtime layout, or run an explicitly validated codec probe.
+
+Default/--collect is read-only and starts nothing. --run needs a complete RootFS,
+not an assumed depot files directory. Run as the clone's desktop user, optionally
+inside its already-established Steam Runtime namespace. No Proton/EAC is invoked.
+This does not construct pressure-vessel's cross-architecture filesystem view.
+"""
+import argparse
+from collections import deque
+import hashlib
+import json
+import os
+from pathlib import Path
+import platform
+import signal
+import struct
+import subprocess
+import sys
+import tempfile
+
+
+def elf(path):
+    """Inspect ELF64 LE and PT_INTERP without executing the file (Mach-O is rejected)."""
+    try:
+        with Path(path).open('rb') as stream:
+            header = stream.read(64)
+            if len(header) != 64 or header[:6] != b'\x7fELF\x02\x01':
+                raise ValueError('not ELF64 little-endian')
+            machine = struct.unpack_from('<H', header, 18)[0]
+            offset = struct.unpack_from('<Q', header, 32)[0]
+            size, count = struct.unpack_from('<HH', header, 54)
+            if size != 56 or count > 1024:
+                raise ValueError('invalid/unsupported ELF program headers')
+            interpreter = None
+            for i in range(count):
+                stream.seek(offset + i * size)
+                ph = stream.read(size)
+                if len(ph) != size:
+                    raise ValueError('truncated ELF program headers')
+                if struct.unpack_from('<I', ph)[0] == 3:
+                    pos, length = struct.unpack_from('<Q', ph, 8)[0], struct.unpack_from('<Q', ph, 32)[0]
+                    if not 1 < length <= 4096:
+                        raise ValueError('invalid ELF interpreter length')
+                    stream.seek(pos)
+                    name = stream.read(length)
+                    if len(name) != length or name[-1:] != b'\0':
+                        raise ValueError('truncated ELF interpreter')
+                    interpreter = name[:-1].decode('utf-8')
+            return {'machine': machine, 'architecture': {62: 'x86_64', 183: 'aarch64'}.get(machine, 'other'),
+                    'interpreter': interpreter}
+    except (OSError, ValueError, UnicodeError) as error:
+        return {'error': str(error)}
+
+
+def rooted(root, name):
+    """Resolve absolute symlinks inside RootFS, never against the ARM guest's /."""
+    if not name.startswith('/'):
+        raise ValueError('ELF interpreter must be absolute')
+    todo, done, links = deque(name.split('/')), [], 0
+    while todo:
+        part = todo.popleft()
+        if part in ('', '.'):
+            continue
+        if part == '..':
+            if done:
+                done.pop()
+            continue
+        candidate = root.joinpath(*done, part)
+        if candidate.is_symlink():
+            links += 1
+            if links > 40:
+                raise ValueError('RootFS symlink loop')
+            target = os.readlink(candidate)
+            if target.startswith('/'):
+                done = []
+            todo.extendleft(reversed(target.split('/')))
+        else:
+            done.append(part)
+    return root.joinpath(*done)
+
+
+def describe(path):
+    result = {'path': str(path), 'exists': path.exists()}
+    if path.is_symlink():
+        result['symlink'] = os.readlink(path)
+    if path.is_file():
+        result['resolved'] = str(path.resolve())
+        result['elf'] = elf(path)
+    return result
+
+
+def collect(steam):
+    result = {'steam_root': str(steam), 'mode': 'collection-only', 'tools': [], 'libraries': []}
+    common = steam / 'steamapps/common'
+    for name in ('FEX-Emu', 'SteamLinuxRuntime_4', 'SteamLinuxRuntime_4-arm64', 'Proton - Experimental'):
+        tool = common / name
+        item = {'path': str(tool), 'exists': tool.is_dir(), 'metadata': {}, 'candidates': []}
+        # Capture the actual launch contract, not a guessed emulator variable or runtime root.
+        for relative in ('VERSIONS.txt', 'version', 'toolmanifest.vdf', 'emulator.json',
+                         'ConfigTemplate.json', '_v2-entry-point', 'run', 'run-in-steamrt4'):
+            path = tool / relative
+            if path.is_file():
+                with path.open('rb') as source:
+                    data = source.read(65537)
+                item['metadata'][relative] = data[:65536].decode('utf-8', errors='replace')
+                if len(data) > 65536:
+                    item['metadata'][relative] += '\n[truncated]'
+        for relative in ('FEXCompatTool', 'usr/bin/FEX', 'bin/python3', 'usr/bin/python3'):
+            item['candidates'].append(describe(tool / relative))
+        # Deliberately inspect both layouts. A platform/files tree may represent /usr.
+        for files in sorted(tool.glob('*_platform_*/files'))[:8]:
+            for relative in ('usr', 'bin', 'lib', 'lib64', 'etc'):
+                item['candidates'].append(describe(files / relative))
+            for relative in ('bin/python3', 'usr/bin/python3', 'lib64/ld-linux-x86-64.so.2',
+                             'lib/x86_64-linux-gnu/ld-linux-x86-64.so.2',
+                             'usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2'):
+                item['candidates'].append(describe(files / relative))
+        result['tools'].append(item)
+    for name in ('libavcodec.so.58', 'libavutil.so.56', 'libavformat.so.58', 'libavfilter.so.7'):
+        path = steam / 'ubuntu12_64' / name
+        item = describe(path)
+        if path.is_file():
+            digest = hashlib.sha256()
+            with path.open('rb') as source:
+                for data in iter(lambda: source.read(1024 * 1024), b''):
+                    digest.update(data)
+            item['sha256'] = digest.hexdigest()
+        result['libraries'].append(item)
+    result['video_links'] = [describe(p) for p in sorted((steam / 'steamrt64/video').glob('*.so*'))[:32]]
+    for key in ('FEX_ROOTFS', 'STEAM_COMPAT_GRAPHICS_PROVIDER', 'STEAM_COMPAT_EMULATOR'):
+        result[key] = os.environ.get(key)
+    return result
+
+
+def validate(root, probe, library, tool):
+    for path in (root, probe, library, tool):
+        if not path.is_absolute():
+            raise ValueError(f'absolute path required: {path}')
+    for path, machine in ((probe, 62), (library, 62), (tool / 'FEXCompatTool', 183), (tool / 'usr/bin/FEX', 183)):
+        info = elf(path)
+        if info.get('machine') != machine:
+            raise ValueError(f'{path}: expected ELF machine {machine}, got {info}')
+    interpreter = elf(probe)['interpreter']
+    if not interpreter:
+        raise ValueError('probe must be a dynamically linked x86_64 Linux executable')
+    loader = rooted(root, interpreter)
+    if elf(loader).get('machine') != 62:
+        raise ValueError(f'RootFS cannot resolve {interpreter} to x86_64 ELF: {loader}; '
+                         'collect the runtime layout; do not guess a files/usr path')
+    return loader
+
+
+def run(args):
+    root, probe, library, tool = map(Path, (args.rootfs, args.probe, args.library, args.fex_tool))
+    loader = validate(root, probe, library, tool)
+    if sys.platform != 'linux' or platform.machine() not in ('aarch64', 'arm64') or os.geteuid() == 0:
+        raise ValueError('--run requires the ARM64 Linux clone desktop user, not root/macOS')
+    command = [str(tool / 'FEXCompatTool'), str(probe), '--verbose', str(library)]
+    # Non-portable config plus tool cwd also handles the cached wrapper's relative usr/bin/FEX.
+    # Keep the desktop HOME, XDG_RUNTIME_DIR and any established runtime namespace intact.
+    with tempfile.TemporaryDirectory(prefix='steamac-video-') as temp:
+        config = Path(temp) / 'config'
+        config.mkdir()
+        app = Path(temp) / 'app.json'
+        app.write_text('{"Config": {}}\n')
+        env = dict(os.environ, DEVELOPER_DIR='/Library/Developer/CommandLineTools', FEX_PORTABLE='0',
+                   FEX_ROOTFS=str(root), FEX_APP_CONFIG_LOCATION=str(config) + '/', FEX_APP_CONFIG=str(app),
+                   XDG_CONFIG_HOME=temp, XDG_CACHE_HOME=temp, FEX_APP_DATA_LOCATION=temp + '/',
+                   LD_LIBRARY_PATH=str(library.parent))
+        print(json.dumps({'mode': 'explicit-rootfs-probe', 'command': command, 'cwd': str(tool),
+                          'rootfs': str(root), 'loader': str(loader),
+                          'library_search': str(library.parent), 'timeout_seconds': args.timeout,
+                          'limitation': 'Does not create or prove the game pressure-vessel namespace.'}), flush=True)
+        process = subprocess.Popen(command, cwd=tool, env=env, start_new_session=True)
+        try:
+            status = process.wait(timeout=args.timeout)
+            return status if status >= 0 else 128 - status
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.wait()
+            print('probe timeout: killed only this invocation process group', file=sys.stderr)
+            return 124
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--collect', action='store_true')
+    mode.add_argument('--run', action='store_true')
+    parser.add_argument('--steam-root', type=Path, default=Path.home() / '.local/share/Steam')
+    for option in ('rootfs', 'probe', 'library', 'fex-tool'):
+        parser.add_argument('--' + option)
+    parser.add_argument('--timeout', type=int, default=30)
+    args = parser.parse_args()
+    if not 1 <= args.timeout <= 60:
+        parser.error('--timeout must be 1..60 seconds')
+    if args.run and not all((args.rootfs, args.probe, args.library, args.fex_tool)):
+        parser.error('--run requires --rootfs, --probe, --library and --fex-tool')
+    try:
+        if args.run:
+            return run(args)
+        print(json.dumps(collect(args.steam_root), indent=2, ensure_ascii=False))
+        return 0
+    except (ValueError, OSError) as error:
+        print(f'video-test-runner: {error}', file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
