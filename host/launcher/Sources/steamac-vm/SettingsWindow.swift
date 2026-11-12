@@ -36,7 +36,7 @@ final class SettingsContext: ObservableObject {
 /// App menu "steamac Lite → Settings…" (Cmd+,): toolbar-style tabs, one SwiftUI form each.
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     enum Tab: Int, CaseIterable {
-        case general, display, mouse, controller, sound, games, vr, advanced
+        case general, display, mouse, controller, sound, camera, games, vr, advanced
 
         var name: String {
             switch self {
@@ -44,6 +44,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             case .display: return "display"
             case .mouse: return "mouse"
             case .controller: return "controller"
+            case .camera: return "camera"
             case .sound: return "sound"
             case .games: return "games"
             case .vr: return "vr"
@@ -57,6 +58,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             case .display: return String(localized: "Display")
             case .mouse: return String(localized: "Mouse")
             case .controller: return String(localized: "Controller")
+            case .camera: return String(localized: "Camera")
             case .sound: return String(localized: "Sound")
             case .games: return String(localized: "Games", comment: "Settings tab: game statistics")
             case .vr: return String(localized: "VR")
@@ -70,6 +72,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             case .display: return "display"
             case .mouse: return "computermouse"
             case .controller: return "gamecontroller"
+            case .camera: return "camera"
             case .sound: return "speaker.wave.2"
             case .games: return "chart.bar.xaxis"
             case .vr: return "visionpro"
@@ -84,6 +87,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             case .display: return 600
             case .mouse: return 470
             case .controller: return 620
+            case .camera: return 620
             case .sound: return 670
             case .games: return 620
             case .vr: return 800
@@ -103,13 +107,14 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         self.context = context
         tabs = SettingsTabController()
         tabs.tabStyle = .toolbar
-        for tab in Tab.allCases {
+        for tab in Tab.allCases where tab != .camera || context.camera != nil {
             let root = SettingsTabRoot(tab: tab).environmentObject(context).environmentObject(context.settings)
             let host = NSHostingController(rootView: AnyView(root))
             host.sizingOptions = []
             host.view.frame = NSRect(x: 0, y: 0, width: SettingsWindowController.width, height: tab.height)
             host.title = tab.title
             let item = NSTabViewItem(viewController: host)
+            item.identifier = tab.name
             item.label = tab.title
             item.image = NSImage(systemSymbolName: tab.symbol, accessibilityDescription: tab.title)
             tabs.addTabViewItem(item)
@@ -138,7 +143,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     func windowDidEndLiveResize(_ notification: Notification) { userContentSize = window.contentLayoutRect.size }
     func windowDidChangeScreen(_ notification: Notification) { fitCurrentTab() }
 
-    private func fitCurrentTab() { fit(Tab(rawValue: tabs.selectedTabViewItemIndex) ?? .general) }
+    private func fitCurrentTab() {
+        let id = tabs.tabViewItems[tabs.selectedTabViewItemIndex].identifier as? String
+        fit(Tab.allCases.first { $0.name == id } ?? .general)
+    }
+    func windowWillClose(_ notification: Notification) { context.camera?.stop() }
 
     static func boundedFrame(_ requested: NSRect, within visible: NSRect) -> NSRect {
         guard visible.width > 0, visible.height > 0 else { return requested }
@@ -168,7 +177,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     private func fit(_ tab: Tab) {
-        let contentSize = userContentSize ?? NSSize(width: SettingsWindowController.width, height: tab.height)
+        let contentSize = userContentSize ?? NSSize(width: context.camera == nil ? SettingsWindowController.width : 680, height: tab.height)
         let frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: contentSize))
         var f = window.frame
         f.origin.y += f.height - frame.height
@@ -176,7 +185,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let visible = (window.screen ?? NSScreen.main)?.visibleFrame
         if let visible {
             f = Self.boundedFrame(f, within: visible)
-            window.contentMinSize = NSSize(width: min(460, visible.width - 32), height: min(320, visible.height - 140))
+            window.contentMinSize = NSSize(width: min(context.camera == nil ? 460 : 560, visible.width - 32), height: min(320, visible.height - 140))
         }
         window.setFrame(f, display: true, animate: false)
         window.title = tab.title
@@ -195,7 +204,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     func select(_ tab: Tab) {
-        tabs.selectedTabViewItemIndex = tab.rawValue
+        guard let index = tabs.tabViewItems.firstIndex(where: { ($0.identifier as? String) == tab.name }) else { return }
+        tabs.selectedTabViewItemIndex = index
         fit(tab)
     }
 
@@ -223,7 +233,7 @@ private final class SettingsTabController: NSTabViewController {
 
     override func tabView(_ tabView: NSTabView, didSelect item: NSTabViewItem?) {
         super.tabView(tabView, didSelect: item)
-        if let item, let tab = SettingsWindowController.Tab(rawValue: tabView.indexOfTabViewItem(item)) { didSelect?(tab) }
+        if let item, let tab = SettingsWindowController.Tab.allCases.first(where: { $0.name == (item.identifier as? String) }) { didSelect?(tab) }
     }
 }
 
@@ -242,6 +252,8 @@ private struct SettingsTabRoot: View {
                 case .mouse: MouseTab()
                 case .controller: ControllerTab()
                 case .sound: SoundTab()
+                case .camera:
+                    if let camera = context.camera { CameraSettingsView(bridge: camera) }
                 case .games: GamesTab()
                 case .vr: VRTab()
                 case .advanced: AdvancedTab()
@@ -349,12 +361,7 @@ private struct GeneralTab: View {
 
     var body: some View {
         Form {
-            if let camera = context.camera {
-                Section {
-                    Button("Built-in camera (experimental)") { camera.show() }
-                    Text("Open camera controls to allow and start capture.").font(.caption).foregroundStyle(.secondary)
-                }
-            }
+
             Section {
                 Picker(selection: $settings.applicationLanguage) {
                     ForEach(ApplicationLanguage.allCases) { Text(verbatim: $0.title).tag($0) }
@@ -568,12 +575,13 @@ private struct DisplayTab: View {
                 }
             }
             Section {
+                if settings.fixedRenderPixels == nil {
                 Toggle(isOn: $settings.followWindowSize) {
                     Label2(title: "Guest display follows the window size",
                            detail: String(localized: "Off: the guest keeps its resolution and the picture is scaled to the window."),
                            now: true)
                 }
-                .disabled(settings.fixedRenderPixels != nil)
+                }
                 Picker(selection: renderPreset) {
                     Text("Auto (window and render scale)").tag(RenderPixels.automatic)
                     ForEach(RenderPixels.presets, id: \.id) { Text(verbatim: $0.title).tag($0.id) }
@@ -610,12 +618,13 @@ private struct DisplayTab: View {
                 }
                 .disabled(!Renderer.superResolutionSupported && settings.renderScale >= 1)
                 }
+                if settings.fixedRenderPixels == nil {
                 Toggle(isOn: $settings.upscaleLowerResolutions) {
                     Label2(title: "Upscale lower game resolutions",
                            detail: String(localized: "When the game renders below the window's size (its own resolution setting), the guest sends the game's size and the Mac upscales it to fill the window, instead of the guest upscaling it to the full Retina size. MetalFX up to 1.5×, bilinear beyond. The guest display's maximum is unchanged. Off: no change."),
                            now: true)
                 }
-                .disabled(settings.fixedRenderPixels != nil)
+                }
                 Picker(selection: preset) {
                     ForEach(LauncherSettings.sizePresets) { Text(verbatim: presetTitle($0)).tag($0.id) }
                     Divider()
@@ -639,6 +648,7 @@ private struct DisplayTab: View {
                         Text("pt")
                     }
                 }
+                if settings.fixedRenderPixels == nil {
                 Toggle(isOn: $settings.retinaResolution) {
                     Label2(title: "Retina resolution",
                            detail: settings.retinaResolution
@@ -646,7 +656,7 @@ private struct DisplayTab: View {
                                : String(localized: "Off: one guest pixel per point, scaled up to Retina screens (MetalFX super resolution can sharpen it). On: the guest renders at the screen's full pixel density."),
                            now: false, key: .retinaResolution)
                 }
-                .disabled(settings.fixedRenderPixels != nil)
+                }
             }
             Section {
                 Toggle(isOn: $settings.metalHUD) {

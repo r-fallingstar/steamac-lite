@@ -654,7 +654,7 @@ do {
             boot: Supervisor.bootNumber, defaults: settings.defaults,
             version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development") {
                 vm.start()
-                if !options.cameraTestPattern { camera?.show() }
+                if camera != nil && !options.cameraTestPattern { settingsWindow.show(tab: .camera) }
                 UpdateChecker.shared.start { [weak wc] in wc?.window }
             }
     }

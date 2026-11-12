@@ -108,17 +108,19 @@ private final class CameraFrameSink: NSObject, AVCaptureVideoDataOutputSampleBuf
     }
 }
 
-final class CameraBridge: NSObject, ObservableObject, NSWindowDelegate {
+final class CameraBridge: ObservableObject {
     let port: CameraPort
     let session = AVCaptureSession()
     private let sessionQueue = DispatchQueue(label: "steamac.camera.capture")
     private let frameQueue = DispatchQueue(label: "steamac.camera.frames")
     private let sink: CameraFrameSink
+    struct Choice: Identifiable { let id: String; let name: String }
+    @Published private(set) var devices: [Choice] = []
+    @Published var selectedDeviceID = ""
     private var configured = false
     private var wanted = false
     private var patternTimer: DispatchSourceTimer?
     private var patternWanted = false
-    private var controller: NSWindowController?
     @Published private(set) var ready = false
     @Published private(set) var running = false
     @Published private(set) var busy = false
@@ -126,7 +128,7 @@ final class CameraBridge: NSObject, ObservableObject, NSWindowDelegate {
     @Published private(set) var received = "0"
     @Published private(set) var message = String(localized: "Waiting for the SteamOS camera bridge.")
     init(port: CameraPort) {
-        self.port = port; sink = CameraFrameSink(port: port); super.init()
+        self.port = port; sink = CameraFrameSink(port: port)
         port.onLine = { [weak self] line in
             guard let self else { return }; log("camera guest: " + line)
             if line.hasPrefix("READY ") {
@@ -147,6 +149,11 @@ final class CameraBridge: NSObject, ObservableObject, NSWindowDelegate {
         }
         log("camera: synthetic pattern only (no capture device)")
     }
+    func refreshDevices() {
+        let found = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: .video, position: .unspecified).devices
+        devices = found.map { Choice(id: $0.uniqueID, name: $0.localizedName) }
+        if !devices.contains(where: { $0.id == selectedDeviceID }) { selectedDeviceID = devices.first?.id ?? "" }
+    }
     func start() {
         guard ready, !busy, !running else { return }; wanted = true
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -163,11 +170,12 @@ final class CameraBridge: NSObject, ObservableObject, NSWindowDelegate {
     }
     private func startAuthorized() {
         busy = true; message = String(localized: "Starting the built-in camera…")
+        let selected = selectedDeviceID
         sessionQueue.async { [self] in
             do {
                 if !configured {
                     let discovery = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: .video, position: .unspecified)
-                    guard let device = discovery.devices.first else { throw OptionError("No built-in camera") }
+                    guard let device = discovery.devices.first(where: { $0.uniqueID == selected }) ?? discovery.devices.first else { throw OptionError("No built-in camera") }
                     let input = try AVCaptureDeviceInput(device: device)
                     session.beginConfiguration(); defer {
                         if !configured { session.inputs.forEach(session.removeInput); session.outputs.forEach(session.removeOutput) }
@@ -208,10 +216,13 @@ final class CameraBridge: NSObject, ObservableObject, NSWindowDelegate {
         let bridge: CameraBridge
         do { bridge = CameraBridge(port: try CameraPort()) } catch { print(error); exit(1) }
         DispatchQueue.main.async {
-            bridge.show()
+            let context = SettingsContext(settings: LauncherSettings.shared, sound: nil, restart: nil, vmHasPad: false, vmHasSound: false)
+            context.camera = bridge
+            let settings = SettingsWindowController(context: context)
+            settings.show(tab: .camera)
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                guard let window = bridge.controller?.window,
-                      let visible = window.screen?.visibleFrame, visible.contains(window.frame),
+                let window = settings.window
+                guard let visible = window.screen?.visibleFrame, visible.contains(window.frame),
                       let rep = SettingsWindowController.snapshot(window),
                       let png = rep.representation(using: .png, properties: [:]) else { print("camera-ui: FAIL"); exit(1) }
                 do {
@@ -223,17 +234,7 @@ final class CameraBridge: NSObject, ObservableObject, NSWindowDelegate {
         }
         app.run(); exit(1)
     }
-    func windowWillClose(_ notification: Notification) { stop() }
-    func show() {
-        if controller == nil {
-            let root = CameraSettingsView(bridge: self)
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 620), styleMask: [.titled,.closable,.resizable], backing: .buffered, defer: false)
-            window.title = String(localized: "Built-in camera (experimental)"); window.contentView = NSHostingView(rootView: root)
-            window.isReleasedWhenClosed = false; window.delegate = self; window.contentMinSize = NSSize(width: 500, height: 420); window.center()
-            if let visible = window.screen?.visibleFrame { window.setFrame(SettingsWindowController.boundedFrame(window.frame, within: visible), display: false) }; controller = NSWindowController(window: window)
-        }
-        controller?.showWindow(nil); controller?.window?.makeKeyAndOrderFront(nil); NSApp.activate()
-    }
+
 }
 
 private final class CameraPreviewView: NSView {
@@ -247,16 +248,20 @@ private struct CameraPreview: NSViewRepresentable {
     func makeNSView(context: Context) -> CameraPreviewView { let view = CameraPreviewView(); view.preview.session = session; return view }
     func updateNSView(_ view: CameraPreviewView, context: Context) {}
 }
-private struct CameraSettingsView: View {
+struct CameraSettingsView: View {
     @ObservedObject var bridge: CameraBridge
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 14) {
             Text("Built-in camera (experimental)").font(.title2.bold())
+            Picker("Camera", selection: $bridge.selectedDeviceID) {
+                if bridge.devices.isEmpty { Text("Built-in camera").tag("") }
+                ForEach(bridge.devices) { Text(verbatim: $0.name).tag($0.id) }
+            }.disabled(bridge.running || bridge.busy)
             CameraPreview(session: bridge.session).frame(height: 260).background(.black)
             Text(verbatim: bridge.message)
             if !bridge.deviceName.isEmpty { Text(verbatim: bridge.deviceName).font(.caption) }
-            Text(verbatim: "640 × 480 · 15 fps · NV12").font(.caption).foregroundStyle(.secondary)
+            Text(verbatim: "640 × 480 · 15 fps").font(.caption).foregroundStyle(.secondary)
             Text("Frames received by SteamOS: \(bridge.received)").font(.caption).monospacedDigit()
             HStack {
                 Button("Allow and start camera") { bridge.start() }.disabled(!bridge.ready || bridge.running || bridge.busy)
@@ -265,6 +270,6 @@ private struct CameraSettingsView: View {
             Button("Open Camera privacy settings…") { NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")!) }
             Text("Camera access starts only when you choose Start. Closing this window stops capture. No recordings are saved.").font(.caption).foregroundStyle(.secondary)
         }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
-        }.frame(minWidth: 480, minHeight: 420)
+        }.frame(minWidth: 480, minHeight: 420).onAppear { bridge.refreshDevices() }
     }
 }

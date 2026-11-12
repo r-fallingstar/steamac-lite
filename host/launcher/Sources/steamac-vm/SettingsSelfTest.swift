@@ -48,7 +48,7 @@ enum SettingsSelfTest {
         var failures = CrashReporting.scrubSelfCheck() + CrashReporting.scannerSelfCheck() + CrashReporting.exitSelfCheck()
             + VMSizing.selfCheck() + SettingsWindowController.layoutSelfCheck()
             + UpdateChecker.selfCheck() + MacTime.selfCheck() + KeyboardLayoutSync.selfCheck() + ClipboardSync.selfCheck() + GameProfile.selfCheck()
-        var tabs = SettingsWindowController.Tab.allCases[...]
+        var tabs = SettingsWindowController.Tab.allCases.filter { $0 != .camera || context.camera != nil }[...]
 
         func capture(_ name: String, _ rep: NSBitmapImageRep?) {
             if SettingsWindowController.Tab.allCases.contains(where: { $0.name == name }),
