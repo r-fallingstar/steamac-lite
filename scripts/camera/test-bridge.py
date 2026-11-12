@@ -27,6 +27,6 @@ with log.open('w') as out:
   if process.poll() is None:process.terminate()
   try:process.wait(timeout=50)
   except subprocess.TimeoutExpired:forced=True;os.killpg(process.pid,signal.SIGKILL);process.wait()
-s=log.read_text(errors='replace');passed=('VIDEO_LAYOUT_EXIT=0' if LAYOUT else 'CAMERA_TEST_EXIT=0') in s and process.returncode==0 and not forced and (not MF or 'MF_CAMERA_PASS' in s)
-record={'passed':passed,'camera_hardware_opened':False,'real_camera_permission_requested':False,'exit_code':process.returncode,'forced_shutdown':forced,'elapsed_seconds':round(time.monotonic()-started,1),'checks':[line for line in s.splitlines() if any(k in line for k in ['CAMERA_TEST','CAMERA_PROBE','MF_CAMERA','CAMERA_MF','camera guest:','camera: synthetic'])]}
+s=log.read_text(errors='replace');passed=('VIDEO_LAYOUT_EXIT=0' if LAYOUT else 'CAMERA_TEST_EXIT=0') in s and process.returncode==0 and not forced and (not MF or 'MF_CAMERA_PASS' in s) and (not DSHOW or 'DS_CAMERA_CAPTURE_PASS' in s)
+record={'passed':passed,'camera_hardware_opened':False,'real_camera_permission_requested':False,'exit_code':process.returncode,'forced_shutdown':forced,'elapsed_seconds':round(time.monotonic()-started,1),'checks':[line for line in s.splitlines() if any(k in line for k in ['CAMERA_TEST','CAMERA_PROBE','CAMERA_READ_PROBE','MF_CAMERA','CAMERA_MF','DS_CAMERA','CAMERA_DSHOW','camera guest:','camera: synthetic'])]}
 (W/('dshow-validation.json' if DSHOW else ('layout-validation.json' if LAYOUT else ('mf-validation.json' if MF else 'synthetic-validation.json')))).write_text(json.dumps(record,indent=2)+'\n');print(json.dumps(record,indent=2));raise SystemExit(0 if passed else 1)
