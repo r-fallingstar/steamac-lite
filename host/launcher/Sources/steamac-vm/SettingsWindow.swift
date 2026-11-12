@@ -117,7 +117,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.toolbarStyle = .preference
         window.isReleasedWhenClosed = false
-        window.setFrameAutosaveName("FXSettings")
+        // AppKit saves frames in the bundle's standard defaults, even when LauncherSettings
+        // uses a test suite. Keep test windows out of the installed app's preferences.
+        if LauncherSettings.domain == LauncherSettings.defaultDomain {
+            window.setFrameAutosaveName("FXSettings")
+        }
         super.init()
         window.delegate = self
         tabs.didSelect = { [weak self] tab in self?.fit(tab) }
