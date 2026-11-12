@@ -6,7 +6,7 @@
 
 [Update support](https://r-fallingstar.github.io/steamac-lite/en/support/) covers in-app and DMG updates, microphone access, and troubleshooting.
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.13/SteamAC-Lite-1.9.4-lite.13-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.13) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.4-lite.14/SteamAC-Lite-1.9.4-lite.14-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.4-lite.14) · [はじめての導入手順](docs/quick-start.ja.md)
 
 Lite.13 checks microphone access before starting SteamOS. When needed, it offers the macOS permission prompt or a link to Microphone settings. Access status is also available in Settings → Sound. Ad-hoc builds may need permission again after an update.
 
