@@ -84,7 +84,10 @@ if options.previewUpdate {
     let app = NSApplication.shared
     app.setActivationPolicy(.regular)
     MainMenu.installMinimal()
-    DispatchQueue.main.async { UpdateChecker.shared.manualCheck() }
+    DispatchQueue.main.async {
+        if options.previewStartupUpdate { UpdateChecker.shared.start { nil } }
+        else { UpdateChecker.shared.manualCheck() }
+    }
     app.run()
     exit(0)
 }

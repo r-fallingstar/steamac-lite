@@ -1515,34 +1515,6 @@
         }
       }
     },
-    "Asks GitHub (api.github.com) for the newest release, at most every 6 hours; only the app version is sent.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проверяет наличие новой версии на GitHub (api.github.com) не чаще одного раза в 6 часов; отправляется только версия приложения."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最多每 6 小时向 GitHub（api.github.com）查询一次最新版本；仅发送应用版本号。"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最大6時間に1回、GitHub（api.github.com）へ最新のリリースを確認します。送信するのはアプリのバージョンのみです。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "최대 6시간마다 GitHub(api.github.com)에 최신 릴리스를 확인하며, 앱 버전만 전송됩니다."
-          }
-        }
-      }
-    },
     "Auto": {
       "localizations": {
         "ru": {
@@ -20382,6 +20354,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Если микрофон отключён, используется системный вход Mac. Активный микрофон VR-гарнитуры имеет приоритет."
+          }
+        }
+      }
+    },
+    "Checks GitHub (api.github.com) at every app launch and every 6 hours while running; only the app version is sent.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверяет новую версию на GitHub (api.github.com) при каждом запуске и каждые 6 часов во время работы; отправляется только версия приложения."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每次启动时向 GitHub（api.github.com）查询最新版本，运行期间每 6 小时查询一次；仅发送应用版本号。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "起動するたびにGitHub（api.github.com）で最新版を確認します。起動中は6時間ごとに確認します。送信するのはアプリのバージョンのみです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱을 실행할 때마다 GitHub(api.github.com)에서 최신 버전을 확인합니다. 실행 중에는 6시간마다 확인하며 앱 버전만 전송합니다."
           }
         }
       }

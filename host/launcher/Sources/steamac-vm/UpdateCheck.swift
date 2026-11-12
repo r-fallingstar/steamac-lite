@@ -190,6 +190,20 @@ final class UpdateChecker {
         let md = "## What's new\r\n* **Faster** boot\n- see [notes](https://e)\n\n\n\nend<!-- hidden -->\n---\n```\ncode\n```\n"
         let notes = String(releaseNotesText(md).characters)
         if notes != "What's new\n• Faster boot\n• see notes\n\nend\n──────────\ncode" { failures.append("update: release notes \(notes.debugDescription)") }
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        for (name, last, startup, deferred) in [
+            ("launch after recent check", now.addingTimeInterval(-30), true, false),
+            ("launch after manual check", now, true, false),
+            ("recent periodic check", now.addingTimeInterval(-30), false, true),
+            ("periodic interval elapsed", now.addingTimeInterval(-interval), false, false),
+            ("clock moved backward", now.addingTimeInterval(60), false, false)] {
+            if shouldDeferAutomaticCheck(lastCheck: last, now: now, atStartup: startup) != deferred {
+                failures.append("update scheduling: " + name)
+            }
+        }
+        if shouldDeferAutomaticCheck(lastCheck: nil, now: now, atStartup: false) {
+            failures.append("update scheduling: first periodic check")
+        }
         log("selftest-settings: update check: \(failures.isEmpty ? "ok" : failures.joined(separator: "; "))")
         return failures
     }
@@ -202,28 +216,33 @@ final class UpdateChecker {
         self.vmWindow = vmWindow
         subscription = LauncherSettings.shared.$checkForUpdates.dropFirst().sink { [weak self] on in
             guard on else { return }
-            DispatchQueue.main.async { self?.automaticCheck() }
+            DispatchQueue.main.async { self?.automaticCheck(atStartup: true) }
         }
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: UpdateChecker.interval, repeats: true) { [weak self] _ in self?.automaticCheck() }
         guard Supervisor.bootNumber == 1 else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + UpdateChecker.startupDelay) { [weak self] in self?.automaticCheck() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + UpdateChecker.startupDelay) { [weak self] in self?.automaticCheck(atStartup: true) }
     }
 
-    /// The startup check: setting, build kind, 6 h limit and Skip This Version apply; errors only logged.
-    func automaticCheck() {
+    /// Every app launch checks immediately; periodic checks retain the six-hour limit.
+    /// Both respect the user's opt-out and skipped version; network errors only log.
+    static func shouldDeferAutomaticCheck(lastCheck: Date?, now: Date, atStartup: Bool) -> Bool {
+        guard !atStartup, let lastCheck else { return false }
+        let age = now.timeIntervalSince(lastCheck)
+        return age >= 0 && age < interval
+    }
+
+    func automaticCheck(atStartup: Bool = false) {
         guard LauncherSettings.shared.checkForUpdates else { log("update: startup check off (Settings > General)"); return }
         let testURL = ProcessInfo.processInfo.environment[UpdateChecker.urlEnv].map { !$0.isEmpty } ?? false
         guard CrashReporting.buildKind != .development || testURL else {
             log("update: no startup check in development builds (menu Check for Updates… still works)")
             return
         }
-        if let last = defaults.object(forKey: Store.lastCheck) as? Date {
-            let age = Date().timeIntervalSince(last)
-            if age >= 0 && age < UpdateChecker.interval {
-                log("update: last checked \(Int(age / 60)) min ago; next startup check after \(Int(UpdateChecker.interval / 3600)) h")
-                return
-            }
+        if Self.shouldDeferAutomaticCheck(lastCheck: defaults.object(forKey: Store.lastCheck) as? Date,
+                                          now: Date(), atStartup: atStartup) {
+            log("update: periodic check deferred; last check was less than six hours ago")
+            return
         }
         guard pending == 0 else { return }
         fetch { [weak self] outcome in
@@ -408,7 +427,7 @@ final class UpdateChecker {
     func control(_ args: [String]) {
         switch args.first {
         case "check": menuAction()
-        case "startup": automaticCheck()
+        case "startup": automaticCheck(atStartup: true)
         case "press":
             guard let panel else { log("control: update: no update window"); return }
             panel.press(args.dropFirst().first ?? "")

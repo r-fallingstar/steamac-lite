@@ -6,7 +6,7 @@
 
 [Update support](https://r-fallingstar.github.io/steamac-lite/en/support/) covers in-app and DMG updates, microphone access, and troubleshooting.
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.1/SteamAC-Lite-1.9.8-lite.1-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.1) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.2/SteamAC-Lite-1.9.8-lite.2-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.2) · [はじめての導入手順](docs/quick-start.ja.md)
 
 Lite.13 checks microphone access before starting SteamOS. When needed, it offers the macOS permission prompt or a link to Microphone settings. Access status is also available in Settings → Sound. Ad-hoc builds may need permission again after an update.
 
@@ -30,7 +30,7 @@ Mac側の物理キーボード情報からUS/JISを起動時に判別し、Steam
 
 詳細は[日本語README](README.ja.md)、[導入・ビルドと制限](docs/8gb-profile.md)、[日本語入力と配列](docs/japanese-input.md)を参照してください。作者のM1・RAM 8 GBのMacでVRChatの動作を確認しました。FPS、重いワールド、長時間の安定性は測定していません。
 
-In 1.9.8-lite.1, Settings → Sound lets you choose and save the input microphone. The settings window fits the screen and supports scrolling and resizing. See [release notes](docs/release-notes-1.9.8-lite.1.md).
+In 1.9.8-lite.2, Settings → Sound lets you choose and save the input microphone. The settings window fits the screen and supports scrolling and resizing. See [release notes](docs/release-notes-1.9.8-lite.2.md).
 
 ---
 

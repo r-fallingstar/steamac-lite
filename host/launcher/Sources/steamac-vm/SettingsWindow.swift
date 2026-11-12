@@ -431,7 +431,7 @@ private struct GeneralTab: View {
                 CrashReportsToggle(settings: settings, showsApplies: true)
                 Toggle(isOn: $settings.checkForUpdates) {
                     Label2(title: "Check for updates at startup",
-                           detail: String(localized: "Asks GitHub (api.github.com) for the newest release, at most every 6 hours; only the app version is sent.")
+                           detail: String(localized: "Checks GitHub (api.github.com) at every app launch and every 6 hours while running; only the app version is sent.")
                                + " " + (CrashReporting.buildKind == .development
                                    ? String(localized: "This development build never checks at startup; steamac Lite > Check for Updates… does.")
                                    : String(localized: "steamac Lite > Check for Updates… checks at any time.")),

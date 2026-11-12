@@ -30,6 +30,7 @@ struct Options {
     var previewMicrophone = false
     var selftestUpdate = false
     var previewUpdate = false
+    var previewStartupUpdate = false
     /// nil follows the Mac's physical keyboard at each boot, not its input-source language.
     var keyboardLayout: KeyboardLayout?
     var effectiveKeyboardLayout: KeyboardLayout { keyboardLayout ?? .detected }
@@ -435,6 +436,7 @@ struct Options {
             case "--selftest-microphone-ui": o.previewMicrophone = true
             case "--selftest-update": o.selftestUpdate = true
             case "--preview-update": o.previewUpdate = true
+            case "--preview-startup-update": o.previewUpdate = true; o.previewStartupUpdate = true
             case "--keyboard-layout":
                 let v = try value(a)
                 guard v == "auto" || KeyboardLayout(rawValue: v) != nil else {
