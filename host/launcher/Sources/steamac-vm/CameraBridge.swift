@@ -203,13 +203,34 @@ final class CameraBridge: NSObject, ObservableObject, NSWindowDelegate {
         port.stop(); running = false; message = String(localized: "Camera is off. SteamOS receives a black picture.")
         sessionQueue.async { [session] in if session.isRunning { session.stopRunning() } }
     }
+    static func snapshotSelfTest(to directory: String) -> Never {
+        let app = NSApplication.shared; app.setActivationPolicy(.regular); MainMenu.installMinimal()
+        let bridge: CameraBridge
+        do { bridge = CameraBridge(port: try CameraPort()) } catch { print(error); exit(1) }
+        DispatchQueue.main.async {
+            bridge.show()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                guard let window = bridge.controller?.window,
+                      let visible = window.screen?.visibleFrame, visible.contains(window.frame),
+                      let rep = SettingsWindowController.snapshot(window),
+                      let png = rep.representation(using: .png, properties: [:]) else { print("camera-ui: FAIL"); exit(1) }
+                do {
+                    try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+                    try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("camera-settings.png"))
+                    print("camera-ui: PASS (no device opened)"); exit(0)
+                } catch { print(error); exit(1) }
+            }
+        }
+        app.run(); exit(1)
+    }
     func windowWillClose(_ notification: Notification) { stop() }
     func show() {
         if controller == nil {
             let root = CameraSettingsView(bridge: self)
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 540), styleMask: [.titled,.closable], backing: .buffered, defer: false)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 620), styleMask: [.titled,.closable,.resizable], backing: .buffered, defer: false)
             window.title = String(localized: "Built-in camera (experimental)"); window.contentView = NSHostingView(rootView: root)
-            window.isReleasedWhenClosed = false; window.delegate = self; window.center(); controller = NSWindowController(window: window)
+            window.isReleasedWhenClosed = false; window.delegate = self; window.contentMinSize = NSSize(width: 500, height: 420); window.center()
+            if let visible = window.screen?.visibleFrame { window.setFrame(SettingsWindowController.boundedFrame(window.frame, within: visible), display: false) }; controller = NSWindowController(window: window)
         }
         controller?.showWindow(nil); controller?.window?.makeKeyAndOrderFront(nil); NSApp.activate()
     }
@@ -229,6 +250,7 @@ private struct CameraPreview: NSViewRepresentable {
 private struct CameraSettingsView: View {
     @ObservedObject var bridge: CameraBridge
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 14) {
             Text("Built-in camera (experimental)").font(.title2.bold())
             CameraPreview(session: bridge.session).frame(height: 260).background(.black)
@@ -242,6 +264,7 @@ private struct CameraSettingsView: View {
             }
             Button("Open Camera privacy settings…") { NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")!) }
             Text("Camera access starts only when you choose Start. Closing this window stops capture. No recordings are saved.").font(.caption).foregroundStyle(.secondary)
-        }.padding(20).frame(width: 480)
+        }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        }.frame(minWidth: 480, minHeight: 420)
     }
 }

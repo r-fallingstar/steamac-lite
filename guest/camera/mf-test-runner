@@ -1,0 +1,27 @@
+#!/bin/bash
+exec 2>&1
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+echo CAMERA_TEST_BEGIN
+for ((i=0;i<60;i++)); do [[ ! -c /dev/video20 ]] || break; sleep 1; done
+sleep 2
+/usr/lib/steamac/camera/camera-agent --probe /dev/video20
+native=$?
+steam=/home/steamos/.local/share/Steam
+proton="$steam/steamapps/common/Proton - Experimental"
+runtime="$steam/steamapps/common/SteamLinuxRuntime_4"
+fex="$steam/steamapps/common/FEX-Emu"
+echo CAMERA_PROTON_PATHS
+find "$steam/steamapps/common" -maxdepth 2 -name proton -o -name _v2-entry-point -o -name run | head -30
+as_user() { setpriv --reuid=1000 --regid=1000 --init-groups env HOME=/home/steamos USER=steamos LOGNAME=steamos XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus DISPLAY=:0 "$@"; }
+for ((i=0;i<60;i++)); do [[ ! -d /run/user/1000 ]] || break; sleep 1; done
+as_user mkdir -p /home/steamos/.local/share/steamac-camera-mf-test
+rootfs=$(find "$runtime" -maxdepth 2 -type d -name files | head -1)
+echo "CAMERA_FEX_ROOTFS $rootfs"
+find "$steam/steamapps/common" -maxdepth 3 -name FEXCompatTool | head -5
+command=("$fex/FEXCompatTool" "$rootfs/usr/bin/python3" "$proton/proton" run /usr/lib/steamac/camera/mf-camera-test.exe)
+printf 'CAMERA_MF_COMMAND '; printf '%q ' "${command[@]}"; echo
+as_user env STEAM_COMPAT_CLIENT_INSTALL_PATH="$steam" STEAM_COMPAT_DATA_PATH=/home/steamos/.local/share/steamac-camera-mf-test FEX_PORTABLE=1 STEAM_COMPAT_GRAPHICS_PROVIDER="$rootfs/usr" FEX_ROOTFS="$rootfs" SteamAppId=0 SteamGameId=0 WINEDEBUG=-all PROTON_USE_XALIA=0 PRESSURE_VESSEL_REMOVE_GAME_OVERLAY=1 timeout 125s "${command[@]}"
+mf=$?
+echo CAMERA_MF_EXIT=$mf
+if ((native==0 && mf==0)); then echo CAMERA_TEST_EXIT=0; else echo CAMERA_TEST_EXIT=1; fi
+systemctl poweroff

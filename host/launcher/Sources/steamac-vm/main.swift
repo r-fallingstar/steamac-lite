@@ -64,6 +64,7 @@ if options.selftestLanguage {
     print(failures.isEmpty ? "language: PASS" : "language: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
+if options.selftestCameraUI { CameraBridge.snapshotSelfTest(to: options.selftestOut ?? ".") }
 if options.selftestCamera {
     let failures = CameraWire.selfCheck()
     print(failures.isEmpty ? "camera: PASS (no device opened)" : "camera: FAIL")
