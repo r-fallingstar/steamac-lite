@@ -33,6 +33,11 @@ struct Options {
     var cameraTestPattern = false
     var selftestCamera = false
     var selftestCameraUI = false
+    /// Explicit diagnostics also work outside a release bundle; ordinary headless boots do not capture.
+    var cameraEnabled: Bool { cameraEnabled(bundleSupport: AppBundle.cameraSupport) }
+    func cameraEnabled(bundleSupport: Bool) -> Bool {
+        !isSelftest && (experimentalCamera || (bundleSupport && !headless))
+    }
     var previewUpdate = false
     var previewStartupUpdate = false
     /// nil follows the Mac's physical keyboard at each boot, not its input-source language.
@@ -210,6 +215,8 @@ struct Options {
            steamac-vm --selftest-metal-cache
            steamac-vm --selftest-game-layers
            steamac-vm --selftest-l10n
+           steamac-vm --selftest-camera
+           steamac-vm --selftest-camera-ui [--selftest-out DIR]
            steamac-vm --selftest-graphics-path [--graphics-path dxmt|vulkan]
            steamac-vm --selftest-pointer
            steamac-vm --create-disk PATH [--branch stable|rc] [--home-gib N]
@@ -385,6 +392,11 @@ struct Options {
       --selftest-metal-cache reproduce an inaccessible Metal module cache and verify startup recovery
       --selftest-l10n      the bundle's ja, ko, ru and zh-Hans tables: present, the same keys, the same format
                            arguments, the launcher's settings strings translated
+      --experimental-camera enable built-in camera diagnostics, including the Camera settings at startup
+      --camera-test-pattern send synthetic camera frames only; never request capture permissions
+      --selftest-camera    camera wire, demand, activation and permission policy; no device opened
+      --selftest-camera-ui render the Camera settings without a VM or capture device
+      --selftest-render-resolution verify render pixel sizing without a VM
       --selftest-pointer   host pointer -> guest cursor mapping (Retina on/off, window vs scanout size,
                            full-screen letterbox, MetalFX, the guest's focused surface from focus lines)
       --selftest-game-layers verify game layer visibility and the Metal HUD's game/picture policy

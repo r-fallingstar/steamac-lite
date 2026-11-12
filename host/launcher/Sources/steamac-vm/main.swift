@@ -72,7 +72,8 @@ if options.selftestRenderPixels {
 if options.selftestCameraUI { CameraBridge.snapshotSelfTest(to: options.selftestOut ?? ".") }
 if options.selftestCamera {
     let failures = CameraWire.selfCheck() + CameraCapturePolicy.selfCheck() + CapturePermissionNotice.selfCheck()
-    print(failures.isEmpty ? "camera: PASS (no device opened)" : "camera: FAIL")
+        + CameraBridge.activationSelfCheck()
+    print(failures.isEmpty ? "camera: PASS (no device opened)" : "camera: FAIL: " + failures.joined(separator: "; "))
     exit(failures.isEmpty ? 0 : 1)
 }
 if options.selftestSettingsLayout {
@@ -430,8 +431,8 @@ do {
     let padPorts = options.headless || !options.gamepad ? [] : try (0..<GamepadBridge.maxPads).map { try PadPort(player: $0) }
     // Clipboard sharing follows the app's activation (ClipboardSync): window only.
     let clipboardPort = options.headless ? nil : try ClipboardPort()
-    let cameraPort = options.experimentalCamera ? try CameraPort() : nil
-    let camera = cameraPort.map { CameraBridge(port: $0) }
+    let cameraPort = options.cameraEnabled ? try CameraPort() : nil
+    let camera = cameraPort.map { CameraBridge(port: $0, diagnostics: options.experimentalCamera, syntheticOnly: options.cameraTestPattern) }
     lifecycle.camera = camera
     if options.cameraTestPattern { camera?.startPattern() }
     let vm = try VM(options: options, display: display, console: console, progressPort: progressPort,
@@ -583,7 +584,7 @@ do {
         noPicture.vmPaused = paused
         gamepad?.vmPaused(paused)
         clipboard?.vmPaused = paused
-        if paused { camera?.stop() }
+        camera?.vmPaused(paused)
         gameStats.vmPaused = paused
         if paused {
             activity.map(ProcessInfo.processInfo.endActivity)
@@ -652,12 +653,14 @@ do {
     DispatchQueue.main.async { [wc] in
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development"
         let start = {
-            camera?.applyBootPermissions()
+            if !options.cameraTestPattern { camera?.applyBootPermissions() }
             vm.start()
-            if camera != nil && !options.cameraTestPattern { settingsWindow.show(tab: .camera) }
+            if options.experimentalCamera && !options.cameraTestPattern { settingsWindow.show(tab: .camera) }
             UpdateChecker.shared.start { [weak wc] in wc?.window }
         }
-        if camera != nil && !options.cameraTestPattern {
+        if options.cameraTestPattern {
+            start()
+        } else if camera != nil {
             CapturePermissionNotice.prepareForBoot(on: wc.window, boot: Supervisor.bootNumber,
                 defaults: settings.defaults, version: version, completion: start)
         } else {

@@ -108,10 +108,11 @@ def account():
 
 def busy():
     # A title's FEX server outlives its window. Never terminate it to do setup.
-    for name in ("FEXServer", "FEX", "wineserver", "wineserver64"):
-        if subprocess.run(["pgrep", "-x", name], stdout=subprocess.DEVNULL).returncode == 0:
-            return True
-    return False
+    try:
+        return subprocess.run(["pgrep", "-i", "-x", "FEX.*|wine.*|proton.*"],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 1
+    except OSError:
+        return True
 
 
 def steam_running():
@@ -131,11 +132,39 @@ def compatible_launch(text):
         "EAC_LAUNCHERDIR=", "PROTON_EAC_RUNTIME=", "PROTON_USE_XALIA=0", "WINE_CPU_TOPOLOGY=", "%command%"))
 
 
+def camera_api():
+    # Lazy loading keeps source-tree fixtures and installations without the optional
+    # camera payload usable. Tests inject the imported helper rather than copy Proton.
+    path = HERE/"camera/prepare-proton.py"
+    return runpy.run_path(str(path)) if path.is_file() else None
+
+
+def owned_camera():
+    api = camera_api()
+    return bool(api and api["ready_tool"](STEAM))
+
+
+def mapping_conflict(text):
+    name = value(text, (*MAPPING, "name"))
+    return bool(name and name != "proton_experimental" and
+                not (name == "steamac_camera" and owned_camera()))
+
+
+def camera_proton(proton):
+    try:
+        api = camera_api()
+        if api:
+            return api["prepare"](STEAM, proton, vdf=VDF)
+    except (OSError, ValueError, KeyError) as error:
+        print("vrchat-setup: camera Proton unavailable: " + str(error), file=sys.stderr)
+    return None
+
+
 def conflicts(local):
     config = STEAM/"config/config.vdf"
     a, b = config.read_text(), local.read_text()
-    name, launch = value(a, (*MAPPING, "name")), value(b, LAUNCH)
-    return bool((name and name != "proton_experimental") or (launch and not compatible_launch(launch)))
+    launch = value(b, LAUNCH)
+    return bool(mapping_conflict(a) or (launch and not compatible_launch(launch)))
 
 
 def validate_payload():
@@ -203,13 +232,16 @@ def install_fex(target):
 def configure(local, replace=False):
     if steam_running() or busy():
         raise RuntimeError("game-running")
-    if conflicts(local) and not replace:
+    # Even Replace applies only to launch options; custom Proton choices win.
+    if mapping_conflict((STEAM/"config/config.vdf").read_text()) or (conflicts(local) and not replace):
         raise RuntimeError("custom-settings")
     eac, fex, proton = tool("1826330"), tool("3127680"), tool("1493710")
     if not all((eac, fex, proton)):
         raise RuntimeError("downloads-pending")
+    managed = camera_proton(proton)
+    # A known private snapshot retains its own architecture after stock updates.
     # DXMT and the patched FEX require the x86-64 Proton, not ARM64EC Wine.
-    version = proton/"version"
+    version = (STEAM/"compatibilitytools.d/steamac-camera" if managed else proton)/"version"
     if not version.exists() or "x86_64" not in version.read_text():
         raise RuntimeError("proton-architecture")
     config = STEAM/"config/config.vdf"
@@ -223,8 +255,14 @@ def configure(local, replace=False):
         p = backup/name
         if not p.exists():
             atomic_write(p, data)
+    if steam_running() or busy():
+        raise RuntimeError("game-running")
     install_fex(fex)
-    for field, v in (("name", "proton_experimental"), ("config", ""), ("priority", "250")):
+    if steam_running() or busy():
+        raise RuntimeError("game-running")
+    if config.read_text() != original_text or local.read_text() != user:
+        raise RuntimeError("custom-settings")
+    for field, v in (("name", managed or "proton_experimental"), ("config", ""), ("priority", "250")):
         text = set_value(text, (*MAPPING, field), v)
     old = value(user, LAUNCH)
     # Retain an existing working VRChat command, including any user-added flags.
@@ -298,6 +336,11 @@ def run_ui():
                                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         pending["appid"] = appid
                     return True
+            if mapping_conflict((STEAM/"config/config.vdf").read_text()):
+                replace.hide()
+                label.set_text(tr("既存のVRChatの互換ツールの選択を保持しています。自動設定を利用する場合は、SteamのVRChatのプロパティで互換ツールをProton Experimentalに変更し、再試行してください。",
+                                  "Keeping your selected VRChat compatibility tool. To use automatic setup, select Proton Experimental in VRChat’s Steam compatibility settings and retry."))
+                return True
             if conflicts(local) and not replace.get_active():
                 replace.show()
                 label.set_text(tr("既存の互換ツールまたは起動オプションがあります。置き換える場合は「既存のVRChat向け設定を置き換える」にチェックを入れて「再試行」を押してください。",

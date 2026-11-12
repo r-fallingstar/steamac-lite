@@ -8,15 +8,23 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.8-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.2/SteamAC-Lite-1.9.8-lite.2-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.3/SteamAC-Lite-1.9.8-lite.3-macos-arm64.dmg)**
 
-Lite.13では起動前にマイクの許可を確認します。必要な場合はmacOSの許可画面や設定へ案内し、「設定 → 音声」でも状態を確認できます。Lite.6の録音処理の修正も含みます。[原因と確認内容](docs/microphone-fix.md)。
+初回の案内ではマイクとカメラの許可を確認します。許可が残っていれば聞き直さず、更新などで以前の許可が外れた場合は再案内します。自動使用をオフにした選択や許可しなかった機能も聞き直しません。Lite.6の録音処理の修正も含みます。[原因と確認内容](docs/microphone-fix.md)。
 
-DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.2)
+DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.3)
 
 macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 
 Lite.9以降は新しいReleaseをアプリ内で通知します。「アップデート」で取得し、「更新して開き直す」で反映します。SteamOSのディスクと設定は引き継ぎます。Lite.8以前は最初の1回だけ手動でLite.9以降へ更新してください。[更新のしくみ](docs/in-app-updates.md)。
+
+## v1.9.8-lite.3
+
+標準版に内蔵カメラの転送を追加しました。設定の「音声」の隣に「カメラ」タブがあります。「ゲームで使うときだけカメラを起動」は既定でオンです。ゲームがカメラを要求すると撮影を始め、使用を終えると停止します。許可だけでは撮影しません。手動プレビューも利用でき、設定を閉じるとプレビューを終了します。ゲームが使用中の場合は自動撮影を続けます。
+
+VRChatの「Tracking & IK → Selfie Expression」では自動品質調整をオフにして、**Balanced（320 × 240・15 fps）**を選んでください。「画面」には**レンダリング解像度（px）**のプリセットと、幅・高さのカスタム指定を追加しました。ウインドウの大きさとは別の設定です。変更は設定画面の再起動操作で反映します。
+
+M1・RAM 8 GBのMacで、利用者が実験版camera.4のSelfie Expressionによる顔トラッキングと、ゲームで無効にした後のMacのカメラ自動停止を確認しました。このカメラ機能を標準版へ取り込みます。すべてのカメラやMacの動作を保証するものではありません。動画プレーヤー・音声とヘッドセットVRの問題は引き続き調査中です。既存のSteamOSディスク・ゲーム・設定、入力マイクの選択、設定画面のスクロールとサイズ変更は引き継ぎます。[更新内容](docs/release-notes-1.9.8-lite.3.md)を参照してください。
 
 ## このForkの変更
 
@@ -51,8 +59,6 @@ macOSの仮想メモリ設定は変更しません。スワップはRAM不足に
 詳しい設定と手動指定は[日本語入力と配列](docs/japanese-input.md)にあります。
 
 中国語はShift、韓国語はControl＋Spaceで英数入力と切り替えます。Control＋.で入力方式を変更できます。初回は表示言語と物理配列とは別にMacの入力ソースを判別します。ABC/USなら直接英数、対応する日本語・ピンイン・2ボル式ならその入力方式を英数モードで用意します。判別できない場合は直接英数です。既存のSteamOS入力設定は保持します。
-
-1.9.8-lite.2では「設定 → 音声」で入力マイクを選んで保存できます。設定画面は画面内に収まり、スクロールとサイズ変更に対応します。[更新内容](docs/release-notes-1.9.8-lite.2.md)を参照してください。
 
 ## ビルドと起動
 

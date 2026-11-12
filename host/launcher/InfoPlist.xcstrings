@@ -145,6 +145,42 @@
           }
         }
       }
+    },
+    "NSCameraUsageDescription": {
+      "comment": "Built-in camera permission prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The built-in camera is sent to games in the SteamOS virtual machine only while a game uses it or a manual preview is open. Video is not saved."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内蔵カメラの映像をSteamOS内のゲームへ渡します。ゲームで使用中、または手動プレビューを開いている間だけ撮影します。映像は保存しません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내장 카메라 영상을 SteamOS 가상 머신의 게임에 전달합니다. 게임이 사용하거나 수동 미리보기를 열었을 때만 촬영하며 영상은 저장하지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将内置摄像头画面传递给 SteamOS 虚拟机内的游戏。仅在游戏使用摄像头或手动预览开启时采集，不保存视频。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Изображение встроенной камеры передаётся играм в виртуальной машине SteamOS только во время использования игрой или ручного предпросмотра. Видео не сохраняется."
+          }
+        }
+      }
     }
   }
 }

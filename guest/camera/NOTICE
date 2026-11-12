@@ -1,0 +1,19 @@
+steamac Lite camera support
+
+The camera bridge (camera-agent.c and camera-colors.h) is distributed under
+this repository's GPL-3.0 license.
+
+v4l2loopback is Copyright its contributors, licensed under GPL-2.0.
+Source: https://github.com/v4l2loopback/v4l2loopback
+Revision: 442d720262e150084e7923068fb3c01acc42a253
+
+The Wine qcap.dll camera module is Copyright the Wine project contributors,
+licensed under LGPL-2.1-or-later. It is built from the same Wine source revision
+as the supported Proton Experimental, with the Smart Tee preview/RGB32 fix.
+Wine source: https://github.com/ValveSoftware/wine
+Revision: e8ca5806eec488f5916e83d655ffc5349b6b1702
+Smart Tee fix: https://github.com/SpookySkeletons/wine/commit/5f187cd7e5e5b9de82376e501a31661c567a409b
+
+Corresponding sources, the patch, configuration and build instructions are
+provided in the camera source archive attached to this steamac Lite Release.
+This is not a Microsoft Windows camera driver or an official Valve release.

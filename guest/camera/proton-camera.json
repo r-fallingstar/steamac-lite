@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "stock_version_sha256": "503c72483de03a9c63dda987ba1374002bfca48fb24858d5793db0c05f3342f8",
+  "stock_pe_sha256": "e2e95abf6567edabdfc9756ee8c1cd54101c5102bd556eb1d01df86f279c246c",
+  "stock_unix_sha256": "b9090cf3952a4adcb3ce6a9fe8e155d52ec59f0aa405bbaf923386230a5847b3",
+  "patched_pe_sha256": "1286679c825da1c3a8e871a85f6763d3a9a97e877538fbd3d6545edb3a85ece3",
+  "wine_repository": "https://github.com/ValveSoftware/wine",
+  "wine_commit": "e8ca5806eec488f5916e83d655ffc5349b6b1702",
+  "wine_archive_sha256": "e05dcfb965b294e5c69e0a643a0595e12b74c7878e78827485a21aed1c784a16",
+  "preview_patch_commit": "5f187cd7e5e5b9de82376e501a31661c567a409b",
+  "preview_patch_sha256": "7bf3afe0e2367886675de6987d874161baac159225494b1f9962f81eb1ab2df9"
+}

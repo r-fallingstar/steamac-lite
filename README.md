@@ -6,9 +6,17 @@
 
 [Update support](https://r-fallingstar.github.io/steamac-lite/en/support/) covers in-app and DMG updates, microphone access, and troubleshooting.
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.2/SteamAC-Lite-1.9.8-lite.2-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.2) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.3/SteamAC-Lite-1.9.8-lite.3-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.3) · [はじめての導入手順](docs/quick-start.ja.md)
 
-Lite.13 checks microphone access before starting SteamOS. When needed, it offers the macOS permission prompt or a link to Microphone settings. Access status is also available in Settings → Sound. Ad-hoc builds may need permission again after an update.
+## v1.9.8-lite.3
+
+The standard release adds built-in camera forwarding. In Settings, the **Camera** tab sits next to **Sound**. Automatic camera use is on by default: capture starts when a game requests the camera and stops when the game releases it. Manual preview is also available. Closing Settings ends the manual preview; automatic capture continues if a game is still using the camera.
+
+The initial notice covers microphone and camera permissions. Granting access alone does not start capture. Existing grants are not requested again; if an update loses a previously granted permission, the app shows the notice again. Choices to leave automatic camera use off or decline access are kept.
+
+In VRChat **Tracking & IK → Selfie Expression**, turn off automatic quality adjustment and select **Balanced (320 × 240, 15 fps)**. Settings → Display also includes rendering resolution presets in **px** and custom width and height, independently of the window size. Use the restart control in Settings to apply resolution changes.
+
+On an M1 Mac with 8 GB RAM, the user confirmed Selfie Expression face tracking and Mac camera auto-stop after disabling the camera in the game in experimental camera.4. This release brings that camera feature into the standard app. Other cameras and Macs are not covered by that confirmation. Video-player/audio and headset VR issues remain under investigation. Existing SteamOS disks, games and settings are preserved, along with microphone selection and the resizable, scrollable settings window. See [release notes](docs/release-notes-1.9.8-lite.3.md).
 
 Lite.9 adds in-app update notifications and verified downloads from this fork’s GitHub releases. Choose **Update**, then **Install and Relaunch**. The SteamOS disk and settings are kept. Lite.8 and older need one manual upgrade to Lite.9 or later first. [Update behavior and publishing](docs/in-app-updates.md).
 
@@ -29,8 +37,6 @@ Apple Silicon向けの実験版です。8 GBではVMのRAMを3 GiBに抑え、�
 Mac側の物理キーボード情報からUS/JISを起動時に判別し、Steamとゲームの配列へ反映します。日本語入力は既存のIBus・Anthyを使います。最初は英数入力です。必要に応じて**Control＋.**でAnthyを選び、**Control＋Space**で日本語入力へ切り替え、Spaceで変換、Enterで確定します。JISの「かな」「英数」キーにも対応します。
 
 詳細は[日本語README](README.ja.md)、[導入・ビルドと制限](docs/8gb-profile.md)、[日本語入力と配列](docs/japanese-input.md)を参照してください。作者のM1・RAM 8 GBのMacでVRChatの動作を確認しました。FPS、重いワールド、長時間の安定性は測定していません。
-
-In 1.9.8-lite.2, Settings → Sound lets you choose and save the input microphone. The settings window fits the screen and supports scrolling and resizing. See [release notes](docs/release-notes-1.9.8-lite.2.md).
 
 ---
 

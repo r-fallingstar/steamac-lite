@@ -19,6 +19,11 @@ enum AppBundle {
         Bundle.main.object(forInfoDictionaryKey: "SteamacReleaseDefaults") as? Bool ?? false
     }
 
+    /// Only bundles shipping the matching guest camera bridge enable the normal Camera UI.
+    static var cameraSupport: Bool {
+        Bundle.main.object(forInfoDictionaryKey: "SteamacCameraSupport") as? Bool ?? false
+    }
+
     static var appSupportDir: String {
         NSHomeDirectory() + "/Library/Application Support/" + LauncherSettings.defaultDomain
     }

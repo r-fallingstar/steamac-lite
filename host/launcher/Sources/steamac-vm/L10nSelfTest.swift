@@ -19,7 +19,15 @@ enum L10nSelfTest {
          "VR (experimental)", "VR pairing PIN %@", "Pairing PIN", "Let new headsets ask to pair", "Start in VR",
          "Game audio in the headset", "Treat game images as sRGB", "Upscaler", "Preset",
          "The VR host did not answer.", "No headset is connected, or it does not offer this refresh rate.",
-         "“%@” tried to connect but is not paired, and pairing is off."]
+         "“%@” tried to connect but is not paired, and pairing is off.",
+         "Camera", "Built-in camera", "Microphone and camera access",
+         "Use camera only when a game requests it", "Allow and start camera", "Stop camera",
+         "Open Camera privacy settings…", "Camera is allowed and waiting for a game.",
+         "Only this Mac’s built-in camera is supported.",
+         "No built-in camera is available on this Mac.", "The built-in camera cannot provide 640 × 480 video.",
+         "The built-in camera output is unavailable.",
+         "The built-in camera could not start. Check camera access and try again.",
+         "Camera permission alone does not start capture. Games start and stop it automatically. Start can be used for a preview."]
     }
 
     static func run() -> Never {

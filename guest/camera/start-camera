@@ -13,7 +13,9 @@ if [[ -z $number ]]; then
 fi
 [[ $number =~ ^[0-9]$ && ! -e /dev/video$number && ! -e /sys/class/video4linux/video$number ]] || { echo 'camera: no available Wine-compatible video number (0-9)' >&2; exit 1; }
 device=/dev/video$number
-insmod /usr/lib/steamac/camera/v4l2loopback.ko devices=1 video_nr="$number" 'card_label="steamac Built-in Camera Test"' exclusive_caps=1
+label=${STEAMAC_CAMERA_LABEL:-steamac Built-in Camera Test}
+[[ $label != *'"'* && $label != *$'\n'* && ${#label} -le 31 ]] || exit 1
+insmod /usr/lib/steamac/camera/v4l2loopback.ko devices=1 video_nr="$number" "card_label=\"$label\"" exclusive_caps=1
 for ((i=0;i<30;i++)); do [[ ! -e $device ]] || break; sleep .1; done
 chown 1000:1000 "$device"
 chmod 0600 "$device"

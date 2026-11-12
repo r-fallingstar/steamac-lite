@@ -63,9 +63,10 @@ import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='steamac Lite',
-         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.8-lite.2',
+         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.8-lite.3',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='198003',
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='198004', SteamacCameraSupport=True,
+         NSCameraUsageDescription='The built-in camera is sent to games in the SteamOS virtual machine only while a game uses it or a manual preview is open. Video is not saved.',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
          LSMinimumSystemVersion='15.5')
 p.pop('SteamacBuildOut', None)
@@ -154,7 +155,8 @@ assert r['unit_tests_passed'] and r['end_to_end_tests_passed']
 VRPY
 install -m644 "$VR_RUNTIME" "$LAYER/usr/lib/steamac/vr/runtime/bin/linux64/vrclient.so"
 cp "$VR_MANIFEST" "$APP/Contents/Resources/steamac-vr-build.json"
-echo 'steamac-lite v1.9.8-lite.2 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
+python3 scripts/lite/stage-camera.py "$LAYER" "$APP"
+echo 'steamac-lite v1.9.8-lite.3 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"
@@ -182,6 +184,8 @@ STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-keybo
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-language
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-update
 STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-microphone
+STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-camera
+STEAMAC_DEFAULTS_DOMAIN=local.ryuu.steamac-lite.selftest "$EXE" --selftest-render-resolution
 DEST=${LITE_APP_DEST:-$OUT/SteamAC\ Lite.app}
 if [[ -e "$DEST" ]]; then mv "$DEST" "$OUT/SteamAC Lite.previous.$(date +%Y%m%d%H%M%S).app"; fi
 mv "$APP" "$DEST"

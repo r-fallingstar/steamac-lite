@@ -1,0 +1,80 @@
+#!/bin/bash
+# Isolated clone only: real production preparation and DirectShow, synthetic frames.
+set -euo pipefail
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+steam=/home/steamos/.local/share/Steam
+lib=/usr/lib/steamac/camera
+area=/home/steamos/.local/share/steamac-camera-production-test
+if [[ ${1:-} == --wine ]]; then
+    tool=$2; shift 2
+    result=0
+    timeout -k 2s 55s "$tool/files/bin/wine" "$area/dshow-camera-test.exe" "$@" || result=$?
+    "$tool/files/bin/wineserver" -k
+    timeout 10s "$tool/files/bin/wineserver" -w
+    exit "$result"
+fi
+finish() {
+    result=$?
+    trap - EXIT
+    echo "CAMERA_TEST_EXIT=$result"
+    systemctl poweroff
+}
+trap finish EXIT
+echo CAMERA_TEST_BEGIN
+for ((i=0;i<60;i++)); do [[ ! -f /run/steamac-camera-device ]] || break; sleep 1; done
+"$lib/camera-agent" --probe-read "$(cat /run/steamac-camera-device)"
+stock="$steam/steamapps/common/Proton - Experimental"
+before=$(sha256sum "$stock/files/lib/wine/x86_64-windows/qcap.dll")
+setpriv --reuid=1000 --regid=1000 --init-groups env HOME=/home/steamos USER=steamos \
+    python3 "$lib/prepare-proton.py" --auto
+python3 - "$steam" <<'PY'
+import runpy,sys
+m=runpy.run_path('/usr/lib/steamac/camera/prepare-proton.py')
+from pathlib import Path
+s=Path(sys.argv[1]);assert m['ready_tool'](s), 'Private camera tool not ready'
+v=runpy.run_path('/usr/lib/steamac/steam-title-defaults')
+assert m['mapping_name']((s/'config/config.vdf').read_text(),v)==m['NAME']
+print('CAMERA_PRODUCTION_PRIVATE_TOOL_READY',flush=True)
+PY
+tool="$steam/compatibilitytools.d/steamac-camera"
+mkdir -p "$area/cache" "$area/fex-config" /run/user/1000
+cp "$lib/dshow-camera-test.exe" "$area/dshow-camera-test.exe"
+cp "$0" "$area/runner"
+chown -R 1000:1000 "$area" /run/user/1000
+chmod 700 /run/user/1000
+run_case() {
+    local selected=$1 label=$2 expected=$3 bytes=$4 result=0
+    shift 4
+    setpriv --reuid=1000 --regid=1000 --init-groups env \
+        HOME=/home/steamos USER=steamos LOGNAME=steamos XDG_RUNTIME_DIR=/run/user/1000 \
+        STEAM_COMPAT_MACHINE_ARCHITECTURE=aarch64-linux-gnu \
+        STEAM_COMPAT_EMULATOR="$steam/steamapps/common/FEX-Emu/emulator.json" \
+        STEAM_COMPAT_GRAPHICS_PROVIDER=/usr/share/guestos/fex-mesa/graphics_provider.json \
+        STEAM_COMPAT_TOOL_PATHS="$selected:$steam/steamapps/common/SteamLinuxRuntime_4:$steam/steamapps/common/FEX-Emu" \
+        STEAM_COMPAT_CLIENT_INSTALL_PATH="$steam" SteamAppId=0 SteamGameId=0 \
+        FEX_PORTABLE=1 FEX_APP_CONFIG_LOCATION="$area/fex-config/" XDG_CACHE_HOME="$area/cache" \
+        WINEPREFIX="$area/pfx-${selected##*/}" WINEDEBUG=-all \
+        WINEDLLOVERRIDES=winemenubuilder.exe=d WINEESYNC=0 WINEFSYNC=0 \
+        timeout -k 3s 85s "$steam/steamapps/common/SteamLinuxRuntime_4/_v2-entry-point" --verb=run -- \
+        /bin/bash "$area/runner" --wine "$selected" --fps=15 "$@" > "$area/$label.log" 2>&1 || result=$?
+    python3 - "$area/$label.log" "$label" "$expected" "$bytes" "$result" <<'PY'
+import sys,re
+from pathlib import Path
+path,label,outcome,size,code=sys.argv[1:];text=Path(path).read_text(errors='replace')
+frames=[dict(re.findall(r'(\w+)=(\d+)',s)) for s in text.splitlines() if s.startswith('DS_CAMERA_FRAMES ')]
+if outcome=='fail':
+    good=code=='1' and 'DS_CAMERA_FAIL render-preview-stream hr=0x80040217' in text and 'DS_CAMERA_CAPTURE_PASS' not in text
+else:
+    good=code=='0' and 'DS_CAMERA_CAPTURE_PASS' in text and any(int(x.get('frames','0'))>=8 and int(x.get('nonzero_frames','0'))>=8 and x.get('sample_errors')=='0' and x.get('last_sample_bytes')==size and int(x.get('bytes','0'))==int(x['frames'])*int(size) for x in frames)
+print('CAMERA_PRODUCTION_CASE_RESULT '+label+' passed='+str(int(good)),flush=True)
+if not good: print(text[-7000:])
+assert good,label
+PY
+}
+run_case "$stock" stock-preview-rgb32 fail 0 --preview --subtype=rgb32
+run_case "$tool" capture-rgb24 pass 230400 --subtype=rgb24
+run_case "$tool" preview-rgb24 pass 230400 --preview --subtype=rgb24
+run_case "$tool" preview-rgb32 pass 307200 --preview --subtype=rgb32
+run_case "$tool" second-filter pass 230400 --subtype=rgb24 --hold-second-filter
+[[ $(sha256sum "$stock/files/lib/wine/x86_64-windows/qcap.dll") == "$before" ]]
+echo CAMERA_PRODUCTION_ORIGINAL_UNCHANGED

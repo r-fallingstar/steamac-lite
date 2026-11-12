@@ -52,7 +52,7 @@ with tempfile.TemporaryDirectory(prefix='lite-dmg-', dir=ROOT/'work') as tmp:
         subprocess.run(['codesign', '--verify', '--deep', '--strict', str(portable)], check=True)
         assert json.loads((portable/'Contents/Resources/steamac-lite-provenance.json').read_text()) == receipt
         test_env = {**env, 'STEAMAC_DEFAULTS_DOMAIN': 'steamac.lite.distribution-selftest'}
-        for option in ['--selftest-low-memory', '--selftest-keyboard', '--selftest-language', '--selftest-l10n', '--selftest-update', '--selftest-microphone']:
+        for option in ['--selftest-low-memory', '--selftest-keyboard', '--selftest-language', '--selftest-l10n', '--selftest-update', '--selftest-microphone', '--selftest-camera', '--selftest-render-resolution']:
             subprocess.run([str(portable/'Contents/MacOS/steamac-vm'), option], env=test_env, check=True)
     finally:
         subprocess.run(['hdiutil', 'detach', '-quiet', str(mount)], check=True)

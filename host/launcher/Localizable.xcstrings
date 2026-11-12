@@ -20526,34 +20526,6 @@
         }
       }
     },
-    "Built-in camera (experimental)": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "内蔵カメラ（実験）"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "내장 카메라 (실험)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "内置摄像头（实验）"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Встроенная камера (эксперимент)"
-          }
-        }
-      }
-    },
     "Frames received by SteamOS: %@": {
       "localizations": {
         "ja": {
@@ -21133,31 +21105,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permission alone does not start capture. The camera runs while a game uses it. Choose “Allow and start camera” for a preview."
+            "value": "Camera permission alone does not start capture. With automatic capture enabled, the camera runs only while a game uses it. “Allow and start camera” starts a preview; leaving this tab ends the preview."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "許可だけでは撮影を始めません。ゲームで使う間だけ自動で撮影します。プレビューは「許可してカメラを使う」で確認できます。"
+            "value": "許可だけでは撮影は始まりません。自動起動がオンのときは、ゲームで使う間だけ撮影します。「許可してカメラを使う」でプレビューを開始し、このタブを離れるとプレビューを終了します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "권한을 허용하는 것만으로 촬영이 시작되지는 않습니다. 게임에서 사용할 때만 자동으로 촬영합니다. 미리 보려면 “허용하고 카메라 사용”를 누르세요."
+            "value": "권한 허용만으로 촬영이 시작되지는 않습니다. 자동 촬영이 켜져 있으면 게임에서 사용할 때만 촬영합니다. “허용하고 카메라 사용”을 누르면 미리 보기가 시작되고 이 탭을 벗어나면 미리 보기가 종료됩니다."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "仅授予权限不会开始拍摄。摄像头只在游戏使用时自动开启。点击“允许并启动摄像头”可预览画面。"
+            "value": "仅授予权限不会开始拍摄。启用自动拍摄后，摄像头仅在游戏使用时运行。点击“允许并启动摄像头”可开始预览；离开此标签页即结束预览。"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Разрешение доступа само по себе не запускает съёмку. Камера работает, пока игра её использует. Для предпросмотра нажмите «Разрешить и включить камеру»."
+            "value": "Само разрешение доступа не запускает съёмку. При включённом автоматическом захвате камера работает, только пока игра её использует. Кнопка «Разрешить и включить камеру» запускает предпросмотр; переход на другую вкладку завершает его."
           }
         }
       }
@@ -21192,6 +21164,176 @@
           "stringUnit": {
             "state": "translated",
             "value": "Доступ к камере разрешён. Ожидание запроса от игры."
+          }
+        }
+      }
+    },
+    "Only this Mac’s built-in camera is supported.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only this Mac’s built-in camera is supported."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このMacの内蔵カメラのみ対応しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 Mac의 내장 카메라만 지원합니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅支持此 Mac 的内置摄像头。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поддерживается только встроенная камера этого Mac."
+          }
+        }
+      }
+    },
+    "No built-in camera is available on this Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No built-in camera is available on this Mac."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このMacでは内蔵カメラを利用できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 Mac에서 사용할 수 있는 내장 카메라가 없습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 Mac 上没有可用的内置摄像头。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом Mac нет доступной встроенной камеры."
+          }
+        }
+      }
+    },
+    "The built-in camera cannot provide 640 × 480 video.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The built-in camera cannot provide 640 × 480 video."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内蔵カメラから640 × 480の映像を取得できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내장 카메라에서 640 × 480 영상을 가져올 수 없습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内置摄像头无法提供 640 × 480 视频。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встроенная камера не может передавать видео 640 × 480."
+          }
+        }
+      }
+    },
+    "The built-in camera output is unavailable.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The built-in camera output is unavailable."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内蔵カメラの映像出力を利用できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내장 카메라의 영상 출력을 사용할 수 없습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内置摄像头的视频输出不可用。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вывод видео встроенной камеры недоступен."
+          }
+        }
+      }
+    },
+    "The built-in camera could not start. Check camera access and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The built-in camera could not start. Check camera access and try again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内蔵カメラを起動できませんでした。カメラへのアクセス許可を確認して、もう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내장 카메라를 시작할 수 없습니다. 카메라 접근 권한을 확인한 후 다시 시도하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法启动内置摄像头。请检查摄像头访问权限后重试。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось включить встроенную камеру. Проверьте разрешение на доступ к камере и повторите попытку."
           }
         }
       }

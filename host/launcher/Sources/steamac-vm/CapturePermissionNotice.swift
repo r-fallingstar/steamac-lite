@@ -1,7 +1,7 @@
 import AppKit
 import AVFoundation
 
-/// Startup consent for the camera experiment. Permission requests never create a capture session.
+/// Combined startup consent. Permission requests never create a capture session.
 final class CapturePermissionNotice: NSObject {
     static let noticeKey = "capturePermissionsNoticeVersion"
     static let cameraKey = "cameraAutomaticCapture"
