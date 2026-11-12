@@ -5,6 +5,17 @@ import hashlib,json,os,plistlib,shutil,subprocess,sys
 ROOT=Path(__file__).resolve().parents[2];WORK=ROOT/'work/camera-experiment';APP=WORK/'steamac Lite Camera Test.app';LAYER=WORK/'layer'
 ENV={**os.environ,'DEVELOPER_DIR':'/Library/Developer/CommandLineTools'}
 FSCK=ROOT/'work/tools/erofs-utils/fsck/fsck.erofs';MKFS=ROOT/'work/tools/erofs-utils/mkfs/mkfs.erofs'
+if subprocess.run(['pgrep','-x','steamac-vm'],capture_output=True).stdout.strip():
+ raise SystemExit('Close SteamOS VMs before changing the experimental app or its layer.')
+validation=json.loads((WORK/'overlay-validation.json').read_text())
+assert validation['passed'], 'The stock-Proton camera prototype must pass the isolated A/B/A check first.'
+relative='overlay/files/lib/wine/x86_64-windows/qcap.dll'
+fixture=WORK/'overlay-qcap.dll'
+candidate=LAYER/'usr/lib/steamac/camera'/relative
+if candidate.exists():
+ assert hashlib.file_digest(candidate.open('rb'),'sha256').hexdigest()=='c891f99919668872a2acc7d8f5843fc1b52b52034c6f066039df9e89fe2e4365'
+ shutil.copyfile(candidate,fixture)
+assert hashlib.file_digest(fixture.open('rb'),'sha256').hexdigest()=='c891f99919668872a2acc7d8f5843fc1b52b52034c6f066039df9e89fe2e4365'
 if LAYER.exists():
  if '--refresh' not in sys.argv:raise SystemExit('Use --refresh to replace the generated layer staging directory.')
  assert not LAYER.is_symlink() and (LAYER/'usr/lib/steamac/camera/camera-agent').is_file()
@@ -14,8 +25,10 @@ lib=LAYER/'usr/lib/steamac/camera';lib.mkdir(parents=True,exist_ok=True)
 for name in ['camera-agent','mf-camera-test.exe','v4l2loopback.ko']:shutil.copy2(WORK/name,lib/name)
 shutil.copy2(ROOT/'guest/camera/start-camera',lib/'start-camera')
 shutil.copy2(ROOT/'guest/camera/observe-runtime.py',lib/'observe-runtime.py')
-for name in ('select-proton.py','rtsp-camera-files.json'):
+for name in ('select-proton.py','rtsp-camera-files.json','stock-overlay.py'):
  shutil.copy2(ROOT/'guest/camera'/name,lib/name)
+target=lib/relative;target.parent.mkdir(parents=True,exist_ok=True)
+shutil.copyfile(fixture,target);target.chmod(0o444)
 dropin=LAYER/'usr/lib/systemd/user/steam.service.d/99-steamac-camera.conf'
 dropin.write_text('[Service]\nExecStartPre=-/usr/bin/python3 /usr/lib/steamac/camera/select-proton.py\n')
 units=LAYER/'usr/lib/systemd/system';shutil.copy2(ROOT/'guest/camera/steamac-camera.service',units/'steamac-camera.service')
@@ -73,7 +86,7 @@ WantedBy=multi-user.target
 ''')
 (units/'multi-user.target.wants/steamac-camera-test.service').symlink_to('../steamac-camera-test.service')
 image(WORK/'camera-selftest.img')
-info=plistlib.loads((APP/'Contents/Info.plist').read_bytes());info.update(CFBundleIdentifier='local.ryuu.steamac-lite.camera-experiment',CFBundleName='steamac Lite カメラ実験版',CFBundleDisplayName='steamac Lite カメラ実験版',CFBundleShortVersionString='1.9.8-camera.3',CFBundleVersion='198103',SteamacPreferencesDomain='local.ryuu.steamac-lite.camera-experiment',NSCameraUsageDescription='内蔵カメラの映像を、このMac上のSteamOSとVRChatへ渡す実験に使用します。ゲームで使用中、または設定でプレビューを開いたときだけ撮影します。映像は保存しません。')
+info=plistlib.loads((APP/'Contents/Info.plist').read_bytes());info.update(CFBundleIdentifier='local.ryuu.steamac-lite.camera-experiment',CFBundleName='steamac Lite カメラ実験版',CFBundleDisplayName='steamac Lite カメラ実験版',CFBundleShortVersionString='1.9.8-camera.4',CFBundleVersion='198104',SteamacPreferencesDomain='local.ryuu.steamac-lite.camera-experiment',NSCameraUsageDescription='内蔵カメラの映像を、このMac上のSteamOSとVRChatへ渡す実験に使用します。ゲームで使用中、または設定でプレビューを開いたときだけ撮影します。映像は保存しません。')
 (APP/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
 for strings in (APP/'Contents/Resources').glob('*.lproj/InfoPlist.strings'):
  local=plistlib.loads(subprocess.check_output(['plutil','-convert','xml1','-o','-',str(strings)],env=ENV))
@@ -82,7 +95,7 @@ for strings in (APP/'Contents/Resources').glob('*.lproj/InfoPlist.strings'):
  strings.write_bytes(plistlib.dumps(local))
 
 entitlements=plistlib.loads((ROOT/'host/launcher/steamac-vm.entitlements').read_bytes());entitlements['com.apple.security.device.camera']=True;(WORK/'camera.entitlements').write_bytes(plistlib.dumps(entitlements))
-metadata={'source_commit':json.loads((APP/'Contents/Resources/steamac-lite-provenance.json').read_text())['source_commit'],'version':'1.9.8-camera.3','capture_on_start':False,'automatic_camera_use_default':True,'camera_proton': 'proton-rtsp-11.0-20260609-4 (opt-in test boots only)','camera':'built-in only','width':320,'height':240,'capture_width':640,'capture_height':480,'fps':15,'frame_storage':'none','wire_format':'NV12','guest_format':'BGR24','guest_source_sha256':{name:hashlib.file_digest((ROOT/'guest/camera'/name).open('rb'),'sha256').hexdigest() for name in ['camera-agent.c','camera-colors.h','start-camera','select-proton.py','rtsp-camera-files.json']},'kernel_image_sha256':hashlib.file_digest((APP/'Contents/Resources/Image').open('rb'),'sha256').hexdigest(),'kernel_config_sha256':hashlib.file_digest((WORK/'kernel.config').open('rb'),'sha256').hexdigest(),'module_config_sha256':hashlib.file_digest((WORK/'module-kernel.config').open('rb'),'sha256').hexdigest(),'module_source':json.loads((ROOT/'guest/camera/loopback-source.json').read_text()),'files':{name:hashlib.file_digest((lib/name).open('rb'),'sha256').hexdigest() for name in ['camera-agent','mf-camera-test.exe','v4l2loopback.ko']}}
+metadata={'source_commit':json.loads((APP/'Contents/Resources/steamac-lite-provenance.json').read_text())['source_commit'],'version':'1.9.8-camera.4','capture_on_start':False,'automatic_camera_use_default':True,'camera_proton': 'stock Experimental with boot-only x64 camera PE prototype','camera':'built-in only','width':320,'height':240,'capture_width':640,'capture_height':480,'fps':15,'frame_storage':'none','wire_format':'NV12','guest_format':'BGR24','guest_source_sha256':{name:hashlib.file_digest((ROOT/'guest/camera'/name).open('rb'),'sha256').hexdigest() for name in ['camera-agent.c','camera-colors.h','start-camera','select-proton.py','rtsp-camera-files.json','stock-overlay.py','steamac-camera.service']},'kernel_image_sha256':hashlib.file_digest((APP/'Contents/Resources/Image').open('rb'),'sha256').hexdigest(),'kernel_config_sha256':hashlib.file_digest((WORK/'kernel.config').open('rb'),'sha256').hexdigest(),'module_config_sha256':hashlib.file_digest((WORK/'module-kernel.config').open('rb'),'sha256').hexdigest(),'module_source':json.loads((ROOT/'guest/camera/loopback-source.json').read_text()),'files':{name:hashlib.file_digest((lib/name).open('rb'),'sha256').hexdigest() for name in ['camera-agent','mf-camera-test.exe','v4l2loopback.ko']}}
 (APP/'Contents/Resources/steamac-camera-build.json').write_text(json.dumps(metadata,indent=2)+'\n')
 subprocess.run(['codesign','--force','--sign','-','--entitlements',str(WORK/'camera.entitlements'),str(APP/'Contents/MacOS/steamac-vm')],check=True)
 subprocess.run(['codesign','--force','--sign','-','--entitlements',str(WORK/'camera.entitlements'),str(APP)],check=True)

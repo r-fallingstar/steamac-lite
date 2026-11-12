@@ -7,7 +7,14 @@ MF='--mf' in sys.argv
 LAYOUT='--layout' in sys.argv
 DSHOW='--dshow' in sys.argv
 CONTAINER='--container' in sys.argv
-if CONTAINER: DSHOW=True
+OVERLAY='--overlay' in sys.argv
+STARTUP_OVERLAY='--startup-overlay' in sys.argv
+STARTUP='--startup' in sys.argv or STARTUP_OVERLAY
+if STARTUP and (MF or LAYOUT or DSHOW or CONTAINER or OVERLAY):
+ raise SystemExit('--startup is a separate read-only log collection diagnostic')
+if OVERLAY and (MF or LAYOUT or DSHOW or CONTAINER):
+ raise SystemExit('--overlay is a separate TEST-ONLY diagnostic; do not combine test modes')
+if CONTAINER or OVERLAY: DSHOW=True
 ENV={**os.environ,'DEVELOPER_DIR':'/Library/Developer/CommandLineTools','STEAMAC_DEFAULTS_DOMAIN':'local.ryuu.steamac-lite.camera-synthetic-test','STEAMAC_GAME_STATS_FILE':str(W/'synthetic-stats.json'),'STEAMAC_SENTRY':'0','STEAMAC_CAMERA_PATTERN_SECONDS':'0' if MF or DSHOW else '9'}
 assert not subprocess.run(['pgrep','-x','steamac-vm'],capture_output=True).stdout.strip(),'Stop other SteamOS VMs first'
 assert subprocess.run(['/usr/local/bin/docker','info'],capture_output=True).returncode!=0,'Stop Docker Desktop first'
@@ -18,19 +25,33 @@ assert not subprocess.run(['lsof','-t',str(DISK)],capture_output=True).stdout.st
 subprocess.run(['defaults','write',ENV['STEAMAC_DEFAULTS_DOMAIN'],'checkForUpdates','-bool','false'],check=True)
 layer='camera-dshow-selftest.img' if DSHOW else 'camera-layout-selftest.img' if LAYOUT else ('camera-mf-selftest.img' if MF else 'camera-selftest.img')
 if CONTAINER: layer='camera-container-selftest.img'
-cmd=[str(APP/'Contents/MacOS/steamac-vm'),'--headless','--no-sound','--no-ssh','--no-vr','--no-crash-reports','--camera-test-pattern','--disk',str(DISK),'--disk',str(W/layer)+':ro','--cmdline','console=hvc0 loglevel=4 rootwait virtio_snd.msg_timeout_ms=10000 steamac.vrchat_setup=0'+(' systemd.unit=multi-user.target' if LAYOUT else '')]
+if OVERLAY: layer='camera-overlay-selftest.img'
+if STARTUP: layer='camera-startup-selftest.img'
+cmd=[str(APP/'Contents/MacOS/steamac-vm'),'--headless','--no-sound','--no-ssh','--no-vr','--no-crash-reports','--camera-test-pattern','--disk',str(DISK),'--disk',str(W/layer)+':ro','--cmdline','console=hvc0 loglevel=4 rootwait virtio_snd.msg_timeout_ms=10000 steamac.vrchat_setup=0'+(' systemd.unit=multi-user.target' if LAYOUT or OVERLAY or STARTUP else '')+(' steamac.camera_stock_overlay=1' if STARTUP_OVERLAY else '')]
 log=W/('dshow-console.log' if DSHOW else ('layout-console.log' if LAYOUT else ('mf-console.log' if MF else 'synthetic-console.log')));started=time.monotonic();forced=False
 if CONTAINER: log=W/'container-console.log'
+if OVERLAY: log=W/'overlay-console.log'
+if STARTUP: log=W/'startup-console.log'
 with log.open('w') as out:
  process=subprocess.Popen(cmd,stdout=out,stderr=subprocess.STDOUT,env=ENV,start_new_session=True)
  try:
-  while time.monotonic()-started<(380 if CONTAINER else (230 if MF or DSHOW else 145)):
+  while time.monotonic()-started<(550 if OVERLAY else (380 if CONTAINER else (230 if MF or DSHOW else 145))):
    if process.poll() is not None:break
    time.sleep(.5)
  finally:
-  if process.poll() is None:process.terminate()
-  try:process.wait(timeout=50)
+  if process.poll() is None:
+   forced=True
+   process.terminate()
+  try:process.wait(timeout=40 if OVERLAY else 50)
   except subprocess.TimeoutExpired:forced=True;os.killpg(process.pid,signal.SIGKILL);process.wait()
 s=log.read_text(errors='replace');passed=('VIDEO_LAYOUT_EXIT=0' if LAYOUT else 'CAMERA_TEST_EXIT=0') in s and process.returncode==0 and not forced and (not MF or 'MF_CAMERA_PASS' in s) and (not DSHOW or 'DS_CAMERA_CAPTURE_PASS' in s)
-record={'passed':passed,'camera_hardware_opened':False,'real_camera_permission_requested':False,'exit_code':process.returncode,'forced_shutdown':forced,'elapsed_seconds':round(time.monotonic()-started,1),'checks':[line for line in s.splitlines() if any(k in line for k in ['CAMERA_TEST','CAMERA_PROBE','CAMERA_READ_PROBE','MF_CAMERA','CAMERA_MF','DS_CAMERA','CAMERA_DSHOW','CAMERA_CONTAINER','camera guest:','camera: synthetic'])]}
-(W/('container-validation.json' if CONTAINER else ('dshow-validation.json' if DSHOW else ('layout-validation.json' if LAYOUT else ('mf-validation.json' if MF else 'synthetic-validation.json'))))).write_text(json.dumps(record,indent=2)+'\n');print(json.dumps(record,indent=2));raise SystemExit(0 if passed else 1)
+if STARTUP:
+ passed=passed and '"kind": "end"' in s
+ if STARTUP_OVERLAY: passed=passed and 'CAMERA_STOCK_OVERLAY active:' in s
+if OVERLAY:
+ expected_cases=['A1-capture-rgb24','A1-preview-rgb32']+[f'B{i}-{name}' for i in (1,2) for name in ('capture-rgb24','preview-any','preview-rgb24','preview-rgb32')]+['A2-preview-rgb32','A2-capture-rgb24']
+ passed=passed and all(f'CAMERA_OVERLAY_CASE_RESULT {label} passed=1 ' in s for label in expected_cases) and all(marker in s for marker in ('CAMERA_OVERLAY_BIND_READONLY','CAMERA_OVERLAY_RESTORED','CAMERA_OVERLAY_ABA_RESULT=0','CAMERA_OVERLAY_EXIT=0'))
+record={'passed':passed,'camera_hardware_opened':False,'real_camera_permission_requested':False,'exit_code':process.returncode,'forced_shutdown':forced,'elapsed_seconds':round(time.monotonic()-started,1),'checks':[line for line in s.splitlines() if any(k in line for k in ['CAMERA_TEST','CAMERA_PROBE','CAMERA_READ_PROBE','MF_CAMERA','CAMERA_MF','DS_CAMERA','CAMERA_DSHOW','CAMERA_CONTAINER','CAMERA_OVERLAY','camera guest:','camera: synthetic'])]}
+if OVERLAY: record.update(diagnostic='TEST-ONLY PE-bind A/B/A',synthetic_only=True,expected_cases=expected_cases)
+target='startup-validation.json' if STARTUP else ('overlay-validation.json' if OVERLAY else ('container-validation.json' if CONTAINER else ('dshow-validation.json' if DSHOW else ('layout-validation.json' if LAYOUT else ('mf-validation.json' if MF else 'synthetic-validation.json')))))
+(W/target).write_text(json.dumps(record,indent=2)+'\n');print(json.dumps(record,indent=2));raise SystemExit(0 if passed else 1)

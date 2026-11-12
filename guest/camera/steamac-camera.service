@@ -1,7 +1,11 @@
 [Unit]
+Before=user@1000.service
 Description=steamac experimental camera bridge
-After=systemd-udevd.service
+After=local-fs.target systemd-udevd.service
+RequiresMountsFor=/home/steamos/.local/share/Steam
 [Service]
+# Complete the opt-in mount before the user session may start Steam.
+ExecStartPre=/usr/bin/python3 /usr/lib/steamac/camera/stock-overlay.py
 ExecStart=/usr/lib/steamac/camera/start-camera
 Restart=on-failure
 RestartSec=3

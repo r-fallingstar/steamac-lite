@@ -1,0 +1,287 @@
+#!/bin/bash
+# TEST-ONLY A/B/A: one PE file, private mounts, stock Unix backend, synthetic input.
+set -euo pipefail
+exec 2>&1
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+steam=/home/steamos/.local/share/Steam
+runtime="$steam/steamapps/common/SteamLinuxRuntime_4"
+fex="$steam/steamapps/common/FEX-Emu"
+proton="$steam/steamapps/common/Proton - Experimental"
+stock_pe=e2e95abf6567edabdfc9756ee8c1cd54101c5102bd556eb1d01df86f279c246c
+stock_so=b9090cf3952a4adcb3ce6a9fe8e155d52ec59f0aa405bbaf923386230a5847b3
+patched_pe=c891f99919668872a2acc7d8f5843fc1b52b52034c6f066039df9e89fe2e4365
+lib=/usr/lib/steamac/camera
+
+check_hash() {
+    local path=$1 expected=$2 actual
+    actual=$(sha256sum "$path") || return 1
+    actual=${actual%% *}
+    printf 'CAMERA_OVERLAY_HASH path=%s sha256=%s expected=%s\n' "$path" "$actual" "$expected"
+    [[ $actual == "$expected" ]]
+}
+
+# Runs inside pressure-vessel, using exactly the dedicated prefix and stock tool.
+if [[ ${1:-} == --pv-case ]]; then
+    shift
+    pe=$1 so=$2 expected=$3 label=$4 area=$5
+    shift 5
+    stop_session() {
+        local k=0 w=0
+        timeout -k 1s 5s "$proton/files/bin/wineserver" -k || k=$?
+        timeout -k 1s 5s "$proton/files/bin/wineserver" -w || w=$?
+        echo "CAMERA_OVERLAY_SESSION_STOP label=$label kill=$k wait=$w"
+        ((k == 0 && w == 0))
+    }
+    finish_case() {
+        local result=$? stopped=0
+        trap - EXIT
+        stop_session || stopped=$?
+        if ((stopped != 0)); then result=90; fi
+        echo "CAMERA_OVERLAY_PV_EXIT label=$label result=$result"
+        exit "$result"
+    }
+    trap finish_case EXIT
+    check_hash "$pe" "$expected"
+    check_hash "$so" "$stock_so"
+    echo "CAMERA_OVERLAY_PV_VERIFIED label=$label pe=$expected so=$stock_so"
+    # No DLL override or alternate Proton selection: the bind is the sole variable.
+    timeout -k 2s 30s "$proton/files/bin/wine" "$area/dshow-camera-test.exe" --fps=15 "$@"
+    exit $?
+fi
+
+if [[ ${1:-} != --private ]]; then
+    echo CAMERA_TEST_BEGIN
+    echo CAMERA_OVERLAY_TEST_ONLY
+    result=0
+    # Parent remains outside the namespace so shutdown still works after teardown.
+    timeout -k 5s 540s unshare --mount --propagation private -- "$0" --private || result=$?
+    echo "CAMERA_OVERLAY_EXIT=$result"
+    echo "CAMERA_TEST_EXIT=$result"
+    systemctl poweroff
+    exit "$result"
+fi
+
+mount --make-rprivate /
+[[ $(readlink /proc/self/ns/mnt) != $(readlink /proc/1/ns/mnt) ]]
+echo "CAMERA_OVERLAY_PRIVATE_NAMESPACE $(readlink /proc/self/ns/mnt)"
+
+# Agent2 owns this optional read-only startup collector. Invoke once as root.
+if [[ -f $lib/collect-startup.py ]]; then
+    echo CAMERA_OVERLAY_STARTUP_BEGIN
+    timeout -k 1s 15s python3 "$lib/collect-startup.py" || echo "CAMERA_OVERLAY_STARTUP_EXIT=$?"
+    echo CAMERA_OVERLAY_STARTUP_END
+fi
+
+pe=$(readlink -e "$proton/files/lib/wine/x86_64-windows/qcap.dll")
+so=$(readlink -e "$proton/files/lib/wine/x86_64-unix/qcap.so")
+replacement="$lib/overlay/files/lib/wine/x86_64-windows/qcap.dll"
+check_hash "$pe" "$stock_pe"
+check_hash "$so" "$stock_so"
+check_hash "$replacement" "$patched_pe"
+[[ $pe == "$proton/"* && $so == "$proton/"* && $pe != "$so" ]]
+
+for ((i=0;i<60;i++)); do [[ ! -f /run/steamac-camera-device ]] || break; sleep 1; done
+device=$(cat /run/steamac-camera-device)
+[[ $device =~ ^/dev/video[0-9]$ ]]
+[[ $(cat "/sys/class/video4linux/${device##*/}/name") == 'steamac Built-in Camera Test' ]]
+sleep 2
+"$lib/camera-agent" --probe-read "$device"
+
+base=/home/steamos/.local/share/steamac-camera-overlay-test
+mkdir -p "$base"
+area=$(mktemp -d "$base/run-XXXXXXXX")
+prefix="$area/pfx"
+mkdir -p "$prefix" "$area/cache" "$area/fex-config" /run/user/1000
+cp "$lib/dshow-camera-test.exe" "$area/dshow-camera-test.exe"
+cp "$0" "$area/overlay-test-runner"
+chown -R 1000:1000 "$area"
+chown 1000:1000 /run/user/1000
+chmod 700 /run/user/1000
+echo "CAMERA_OVERLAY_FRESH_PREFIX $prefix"
+bound=0
+observer=
+cleanup() {
+    local result=$?
+    trap - EXIT
+    if [[ -n $observer ]]; then kill "$observer" 2>/dev/null || :; wait "$observer" 2>/dev/null || :; fi
+    if ((bound)); then umount "$pe" || result=91; fi
+    echo "CAMERA_OVERLAY_NAMESPACE_EXIT=$result"
+    exit "$result"
+}
+trap cleanup EXIT
+
+# Observe only processes with this fresh diagnostic prefix; never inspect a game.
+observe() {
+    exec python3 - "$prefix" "$1" <<'PY'
+from pathlib import Path
+import hashlib, json, os, sys, time
+prefix, label = sys.argv[1:]
+seen = set()
+end = time.monotonic() + 48
+while time.monotonic() < end:
+    for process in Path('/proc').iterdir():
+        if not process.name.isdecimal():
+            continue
+        try:
+            if process.stat().st_uid != 1000:
+                continue
+            if ('WINEPREFIX=' + prefix).encode() not in (process/'environ').read_bytes().split(b'\0'):
+                continue
+            for line in (process/'maps').read_text().splitlines():
+                fields = line.split(maxsplit=5)
+                if len(fields) != 6 or Path(fields[5]).name not in ('qcap.dll', 'qcap.so'):
+                    continue
+                path = fields[5]
+                if '/i386-windows/' in path or '/i386-unix/' in path:
+                    continue  # Prefix bootstrap may load 32-bit registration helpers.
+                key = (process.name, path, fields[3], fields[4])
+                if key in seen:
+                    continue
+                mapped = process/'root'/path.lstrip('/')
+                major, minor = (int(part, 16) for part in fields[3].split(':'))
+                with mapped.open('rb') as source:
+                    info = os.fstat(source.fileno())
+                    if (info.st_dev, info.st_ino) != (os.makedev(major, minor), int(fields[4])):
+                        continue  # Hash only the inode actually present in this mapping.
+                    digest = hashlib.file_digest(source, 'sha256').hexdigest()
+                seen.add(key)
+                print('CAMERA_OVERLAY_PROC ' + json.dumps(dict(
+                    label=label, pid=int(process.name), pathname=path,
+                    sha256=digest, device=fields[3], inode=info.st_ino)), flush=True)
+        except (OSError, ValueError):
+            pass
+    time.sleep(.02)
+PY
+}
+
+run_case() {
+    local label=$1 expected=$2 outcome=$3 bytes=$4 code=0
+    shift 4
+    echo "CAMERA_OVERLAY_CASE $label expected=$outcome sample_bytes=$bytes"
+    observe "$label" > "$area/$label.proc.log" 2>&1 &
+    observer=$!
+    setpriv --reuid=1000 --regid=1000 --init-groups env \
+        HOME=/home/steamos USER=steamos LOGNAME=steamos XDG_RUNTIME_DIR=/run/user/1000 \
+        STEAM_COMPAT_MACHINE_ARCHITECTURE=aarch64-linux-gnu \
+        STEAM_COMPAT_EMULATOR="$fex/emulator.json" \
+        STEAM_COMPAT_GRAPHICS_PROVIDER=/usr/share/guestos/fex-mesa/graphics_provider.json \
+        STEAM_COMPAT_TOOL_PATHS="$proton:$runtime:$fex" \
+        STEAM_COMPAT_CLIENT_INSTALL_PATH="$steam" SteamAppId=0 SteamGameId=0 \
+        FEX_PORTABLE=1 FEX_APP_CONFIG_LOCATION="$area/fex-config/" \
+        XDG_CACHE_HOME="$area/cache" WINEPREFIX="$prefix" \
+        WINEDEBUG=err+all,warn+quartz,fixme+quartz WINEDLLOVERRIDES=winemenubuilder.exe=d WINEESYNC=0 WINEFSYNC=0 \
+        timeout -k 2s 45s "$runtime/_v2-entry-point" --verb=run -- \
+        /bin/bash "$area/overlay-test-runner" --pv-case "$pe" "$so" "$expected" "$label" "$area" "$@" \
+        > "$area/$label.log" 2>&1 || code=$?
+    kill "$observer" 2>/dev/null || :
+    wait "$observer" 2>/dev/null || :
+    observer=
+    cat "$area/$label.log" "$area/$label.proc.log"
+    # Cleanup is mandatory even for the deliberately failing RGB32 control.
+    if ! grep -Fxq "CAMERA_OVERLAY_SESSION_STOP label=$label kill=0 wait=0" "$area/$label.log"; then
+        echo "CAMERA_OVERLAY_SESSION_UNCONFIRMED $label"
+        return 90
+    fi
+    if ! grep -Fxq "CAMERA_OVERLAY_PV_VERIFIED label=$label pe=$expected so=$stock_so" "$area/$label.log"; then
+        echo "CAMERA_OVERLAY_PV_HASH_UNCONFIRMED $label"
+        return 91
+    fi
+    python3 - "$area/$label.log" "$label" "$outcome" "$bytes" "$code" "$expected" "$stock_so" <<'PY'
+from pathlib import Path
+import json, re, sys
+path, label, outcome, size, code, pe_sha, so_sha = sys.argv[1:]
+text = Path(path).read_text(errors='replace')
+lines = text.splitlines()
+records = [json.loads(line.removeprefix('CAMERA_OVERLAY_PROC '))
+           for line in Path(path).with_suffix('.proc.log').read_text().splitlines()
+           if line.startswith('CAMERA_OVERLAY_PROC ')]
+expected_modules = {'qcap.dll': pe_sha, 'qcap.so': so_sha}
+observed = {name: any(row.get('label') == label and Path(row.get('pathname', '')).name == name
+                     and row.get('sha256') == digest for row in records)
+            for name, digest in expected_modules.items()}
+# Require both modules in the same diagnostic process, and reject any wrong hash.
+pids = {row['pid'] for row in records}
+loaded = (any(all(any(row['pid'] == pid and row.get('label') == label
+                     and Path(row.get('pathname', '')).name == name and row.get('sha256') == digest
+                     for row in records) for name, digest in expected_modules.items()) for pid in pids)
+          and all(row.get('sha256') == expected_modules.get(Path(row.get('pathname', '')).name)
+                  for row in records))
+print('CAMERA_OVERLAY_LOADED ' + json.dumps(dict(label=label, verified=loaded, modules=observed)), flush=True)
+if outcome == 'render-failure':
+    ok = (code == '1' and 'DS_CAMERA_FAIL render-preview-stream hr=0x80040217' in lines
+          and 'DS_CAMERA_CAPTURE_FAIL' in lines and 'DS_CAMERA_PASS' not in lines
+          and 'DS_CAMERA_CAPTURE_PASS' not in lines and 'DS_CAMERA_ENUM_PASS' in lines
+          and 'CAMERA_OVERLAY_PV_EXIT label=' + label + ' result=1' in lines)
+else:
+    samples = [dict(re.findall(r'(\w+)=(\d+)', line)) for line in lines
+               if line.startswith('DS_CAMERA_FRAMES ')]
+    # Match the media type printed immediately after GetConnectedMediaType.
+    negotiated = next((i for i, line in enumerate(lines) if line.startswith('DS_CAMERA_NEGOTIATED ')), None)
+    formats = [] if negotiated is None else [line for line in lines[negotiated + 1:]
+                                             if line.startswith('DS_CAMERA_FORMAT ')]
+    format_ok = False
+    if formats:
+        header = dict(re.findall(r'(\w+)=([^ ]+)', formats[0]))
+        actual = int(header.get('sample_bytes', 0))
+        bits = int(header.get('bits', 0))
+        if size == 'auto':
+            size = str(actual)
+        format_ok = (actual in (230400, 307200) and actual == int(size)
+                     and header.get('width') == '320' and header.get('height') in ('240', '-240')
+                     and bits in (24, 32) and actual == 320 * 240 * (bits // 8)
+                     and header.get('image_bytes') == size
+                     and header.get('subtype_name') == ('RGB24' if bits == 24 else 'RGB32'))
+    ok = (code == '0' and 'DS_CAMERA_PASS' in lines and 'DS_CAMERA_CAPTURE_PASS' in lines
+          and not any(line.startswith('DS_CAMERA_FAIL ') for line in lines)
+          and len(samples) == 1 and int(samples[0].get('frames', 0)) >= 8
+          and int(samples[0].get('nonzero_frames', 0)) >= 8
+          and samples[0].get('sample_errors') == '0'
+          and samples[0].get('last_sample_bytes') == size
+          and samples[0].get('expected_sample_bytes') in ('0', size)
+          and int(samples[0].get('bytes', 0)) == int(samples[0].get('frames', 0)) * int(size)
+          and format_ok
+          and 'CAMERA_OVERLAY_PV_EXIT label=' + label + ' result=0' in lines)
+ok = ok and loaded
+print(f'CAMERA_OVERLAY_CASE_RESULT {label} passed={int(ok)} exit={code}', flush=True)
+sys.exit(0 if ok else 1)
+PY
+}
+
+failed=0
+checked_case() {
+    local result=0
+    run_case "$@" || result=$?
+    case $result in
+        0) ;;
+        1) failed=1 ;;
+        *) exit "$result" ;;  # Abort before another case or bind if cleanup is uncertain.
+    esac
+}
+checked_case A1-capture-rgb24 "$stock_pe" success 230400 --subtype=rgb24
+checked_case A1-preview-rgb32 "$stock_pe" render-failure 0 --preview --subtype=rgb32
+# Never change a bind while a prior Wine server might still be using it.
+grep -Fxq 'CAMERA_OVERLAY_SESSION_STOP label=A1-preview-rgb32 kill=0 wait=0' "$area/A1-preview-rgb32.log"
+mount --bind "$replacement" "$pe"
+bound=1
+mount -o remount,bind,ro "$pe"
+[[ ,$(findmnt -n -o VFS-OPTIONS --target "$pe"), == *,ro,* ]]
+check_hash "$pe" "$patched_pe"
+check_hash "$so" "$stock_so"
+echo CAMERA_OVERLAY_BIND_READONLY
+# Repeat the entire B matrix, including the 307200-byte RGB32 samples.
+for iteration in 1 2; do
+    checked_case "B$iteration-capture-rgb24" "$patched_pe" success 230400 --subtype=rgb24
+    checked_case "B$iteration-preview-any" "$patched_pe" success auto --preview
+    checked_case "B$iteration-preview-rgb24" "$patched_pe" success 230400 --preview --subtype=rgb24
+    checked_case "B$iteration-preview-rgb32" "$patched_pe" success 307200 --preview --subtype=rgb32
+done
+grep -Fxq 'CAMERA_OVERLAY_SESSION_STOP label=B2-preview-rgb32 kill=0 wait=0' "$area/B2-preview-rgb32.log"
+umount "$pe"
+bound=0
+check_hash "$pe" "$stock_pe"
+check_hash "$so" "$stock_so"
+echo CAMERA_OVERLAY_RESTORED
+checked_case A2-preview-rgb32 "$stock_pe" render-failure 0 --preview --subtype=rgb32
+checked_case A2-capture-rgb24 "$stock_pe" success 230400 --subtype=rgb24
+echo "CAMERA_OVERLAY_ABA_RESULT=$failed"
+exit "$failed"
