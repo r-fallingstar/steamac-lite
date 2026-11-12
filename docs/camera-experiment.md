@@ -41,3 +41,19 @@ python3 scripts/camera/launch-experiment.py
 
 Linux側は`fx.camera`専用ポートとv4l2loopbackを使います。カーネル設定を一致させてモジュールをビルドし、実際のゲストで読み込めることを確認しています。
 ビルド元とハッシュは実験版の`steamac-camera-build.json`に記録します。
+
+## カメラ一覧に出ない場合の調査
+
+初回のVRChatテストではカメラが候補に表示されませんでした。実験版が使っていた
+`/dev/video20`は、WineのDirectShow列挙が調べる`/dev/video0`〜`/dev/video9`の範囲外でした。
+空いている0〜9の番号を使うよう変更し、使用中のデバイスを置き換えないようにしています。
+カメラ名に含まれる空白も、カーネルのモジュール引数として保持するよう修正しました。
+
+根拠は[Wineのカメラ列挙](https://github.com/wine-mirror/wine/blob/7384c8babcaa411a0014bf223068a633d7bfa899/dlls/devenum/createdevenum.c#L714-L763)と
+[Linux側のデバイス番号との対応](https://github.com/SpookySkeletons/wine/blob/fd920bd63abb7bf8b52b0f8e40da922ab9e784a4/dlls/avicap32/v4l.c#L69-L118)です。
+これは列挙対象に入れる修正であり、VRChatでの映像取得成功を意味しません。
+
+Media Foundation側は[映像デバイス列挙が未実装の経路](https://github.com/ValveSoftware/wine/blob/5b557605b4e51f0853ec8e0e4f0eb536c669fae3/dlls/mf/main.c#L933-L955)があるため、
+`MFEnumDeviceSources`の結果だけではDirectShowの動作を判断できません。
+`guest/camera/dshow-camera-test.c`はDirectShowの列挙とフィルターへの接続を調べる別の診断です。
+コンパイルは通過していますが、ゲームと同じ起動環境での実行は未確認です。

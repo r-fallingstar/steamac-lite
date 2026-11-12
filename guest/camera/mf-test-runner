@@ -2,9 +2,10 @@
 exec 2>&1
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 echo CAMERA_TEST_BEGIN
-for ((i=0;i<60;i++)); do [[ ! -c /dev/video20 ]] || break; sleep 1; done
+for ((i=0;i<60;i++)); do [[ ! -f /run/steamac-camera-device ]] || break; sleep 1; done
+device=$(cat /run/steamac-camera-device)
 sleep 2
-/usr/lib/steamac/camera/camera-agent --probe /dev/video20
+/usr/lib/steamac/camera/camera-agent --probe "$device"
 native=$?
 steam=/home/steamos/.local/share/Steam
 proton="$steam/steamapps/common/Proton - Experimental"

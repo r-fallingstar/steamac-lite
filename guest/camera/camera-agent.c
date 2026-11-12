@@ -49,14 +49,14 @@ static int probe(const char *device,int expect_black){
 }
 int main(int argc,char **argv){
  if(argc==3&&(!strcmp(argv[1],"--probe")||!strcmp(argv[1],"--probe-black")))return probe(argv[2],!strcmp(argv[1],"--probe-black"));
- const char *port=argc>1?argv[1]:"/dev/virtio-ports/fx.camera";const char *device=argc>2?argv[2]:"/dev/video20";
+ const char *port=argc>1?argv[1]:"/dev/virtio-ports/fx.camera";const char *device=argc>2?argv[2]:"/dev/video9";
  int input=open(port,O_RDWR|O_NONBLOCK);if(input<0)fail("camera port");int output=open(device,O_WRONLY|O_NONBLOCK);if(output<0)fail("video output");
  struct v4l2_format fmt={.type=V4L2_BUF_TYPE_VIDEO_OUTPUT};fmt.fmt.pix.width=W;fmt.fmt.pix.height=H;fmt.fmt.pix.pixelformat=V4L2_PIX_FMT_NV12;fmt.fmt.pix.field=V4L2_FIELD_NONE;fmt.fmt.pix.bytesperline=W;fmt.fmt.pix.sizeimage=BYTES;fmt.fmt.pix.colorspace=V4L2_COLORSPACE_REC709;
  if(xio(output,VIDIOC_S_FMT,&fmt)<0||fmt.fmt.pix.sizeimage!=BYTES)fail("set NV12");
  struct v4l2_streamparm parm={.type=V4L2_BUF_TYPE_VIDEO_OUTPUT};parm.parm.output.timeperframe.numerator=1;parm.parm.output.timeperframe.denominator=15;if(xio(output,VIDIOC_S_PARM,&parm)<0)fail("set fps");
  struct v4l2_control c={.id=V4L2_CID_USER_BASE|0xf000,.value=1};if(xio(output,VIDIOC_S_CTRL,&c)<0)fail("keep format");
  unsigned char *frame=malloc(BYTES),*rx=malloc(BYTES*3);if(!frame||!rx)fail("allocate");blank(frame);
- size_t used=0;uint64_t received=0,last=0,next=0;dprintf(input,"READY /dev/video20 NV12 640x480 15fps\n");fprintf(stderr,"camera-agent: ready (black until enabled)\n");
+ size_t used=0;uint64_t received=0,last=0,next=0;dprintf(input,"READY %s NV12 640x480 15fps\n",device);fprintf(stderr,"camera-agent: ready (black until enabled)\n");
  for(;;){
   struct pollfd p={input,POLLIN,0};poll(&p,1,15);
   if(p.revents&POLLIN){

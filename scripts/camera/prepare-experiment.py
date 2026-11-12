@@ -22,16 +22,21 @@ exec 2>&1
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 echo CAMERA_TEST_BEGIN
 uname -r
-for ((i=0;i<60;i++)); do [[ ! -c /dev/video20 ]] || break; sleep 1; done
+for ((i=0;i<60;i++)); do [[ ! -f /run/steamac-camera-device ]] || break; sleep 1; done
+device=$(cat /run/steamac-camera-device)
+label=$(cat /sys/class/video4linux/${device##*/}/name)
+echo "CAMERA_DEVICE $device label=$label"
+[[ $device =~ ^/dev/video[0-9]$ && $label == 'steamac Built-in Camera Test' ]]
+enumerable=$?
 sleep 2
-/usr/lib/steamac/camera/camera-agent --probe /dev/video20
+/usr/lib/steamac/camera/camera-agent --probe "$device"
 live=$?
 sleep 8
-/usr/lib/steamac/camera/camera-agent --probe-black /dev/video20
+/usr/lib/steamac/camera/camera-agent --probe-black "$device"
 black=$?
-echo CAMERA_TEST_RESULT live=$live black=$black
+echo CAMERA_TEST_RESULT live=$live black=$black enumerable=$enumerable
 journalctl -b --no-pager -u steamac-camera.service -n30
-if ((live==0 && black==0)); then echo CAMERA_TEST_EXIT=0; else echo CAMERA_TEST_EXIT=1; fi
+if ((live==0 && black==0 && enumerable==0)); then echo CAMERA_TEST_EXIT=0; else echo CAMERA_TEST_EXIT=1; fi
 systemctl poweroff
 ''');runner.chmod(0o755)
 (units/'steamac-camera-test.service').write_text('''[Unit]

@@ -128,6 +128,33 @@ def collect(steam):
             item['sha256'] = digest.hexdigest()
         result['libraries'].append(item)
     result['video_links'] = [describe(p) for p in sorted((steam / 'steamrt64/video').glob('*.so*'))[:32]]
+    result['proton_binaries'] = []
+    for proton in sorted(common.glob('*Proton*')) + sorted(common.glob('*proton*')):
+        if not proton.is_dir():
+            continue
+        record = {'path': str(proton), 'binaries': [], 'version': ''}
+        version = proton / 'version'
+        if version.is_file():
+            record['version'] = version.read_text(errors='replace')[:4096]
+        for relative in ('files/bin/wine', 'files/bin/wine64', 'files/bin/wine-preloader',
+                         'files/bin/wineserver', 'proton', 'toolmanifest.vdf'):
+            record['binaries'].append(describe(proton / relative))
+        result['proton_binaries'].append(record)
+    result['graphics_providers'] = []
+    for base in (steam / 'steamrt64', common / 'FEX-Emu', Path('/usr/share/fex-emu'), Path('/usr/lib/fex-emu')):
+        for path in list(base.glob('**/*graphics*provider*.json'))[:20]:
+            if path.is_file():
+                result['graphics_providers'].append({'path': str(path), 'content': path.read_text(errors='replace')[:65536]})
+    result['prefix_metadata'] = {}
+    for relative in ('config_info', 'version'):
+        path = steam / 'steamapps/compatdata/438100' / relative
+        if path.is_file():
+            result['prefix_metadata'][relative] = path.read_text(errors='replace')[:8192]
+    result['camera_devices'] = []
+    for path in sorted(Path('/sys/class/video4linux').glob('video*')):
+        result['camera_devices'].append({'device': '/dev/' + path.name,
+            'name': (path / 'name').read_text().strip(),
+            'index': (path / 'index').read_text().strip()})
     for key in ('FEX_ROOTFS', 'STEAM_COMPAT_GRAPHICS_PROVIDER', 'STEAM_COMPAT_EMULATOR'):
         result[key] = os.environ.get(key)
     return result
