@@ -22,7 +22,7 @@ Lite.9以降は新しいReleaseをアプリ内で通知します。「アップ�
 
 VRChatの動画再生で、固定した専用Protonランチャーから専用のFFmpeg 4.4.8を優先して使うようにしました。従来はゲームがSteam標準のFFmpeg avcodec58を読み込み、EPERMで失敗していました。Steam・Proton本体のファイルは変更しません。
 
-作者のM1・RAM 8 GBのMacで、Tokyo Sky HomeのYamaPlayer（AVPro）とUnityの動画再生について、映像・音声・再生速度を確認しました。音声速度専用の修正はありません。[Issue #1](https://github.com/r-fallingstar/steamac-lite/issues/1)を報告した方は、この版で再確認をお願いします。Issueは未解決のまま継続します。
+訂正：以前のAVPro再生成功という記載を撤回します。作者のM1・RAM 8 GBのMacでは、インストール済みの通常版v1.9.8-lite.4で、Tokyo Sky HomeのYamaPlayer（AVPro）が引き続き黒画面・無音です。旧版での結果ではありません。Unityの現在の再生状態はまだ再確認できていません。デコーダーの優先順位修正は提供済みですが、単体でのデコーダー初期化成功や専用ライブラリの読込確認は、実際のAVPro再生成功を意味しません。AVPro再生は未解決で、調査と[Issue #1](https://github.com/r-fallingstar/steamac-lite/issues/1)を継続します。音声速度専用の修正はなく、N倍速問題の解消も主張しません。現時点では報告者への再テストはお願いしません。
 
 同じアプリの標準アップデートです。カメラ転送・入力マイクの選択・レンダリング解像度（px）、既存のSteamOSディスク・ゲーム・設定を引き継ぎます。カメラの自動テスト5項目も通過しました。「アップデートを確認…」、またはDMGの「インストールして開く」で更新できます。既存の自動更新とBOOTHのネットインストーラーも最新版を取得します。[更新内容](docs/release-notes-1.9.8-lite.4.md)。
 

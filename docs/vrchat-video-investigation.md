@@ -1,8 +1,13 @@
 # VRChat video investigation (issue #1)
 
-Status: open for reporter confirmation. The maintainer confirmed AVPro and Unity
-playback in Tokyo Sky Home on an M1 / 8 GB test clone after the private decoder
-priority fix. The separate N-times-speed audio report has not been reproduced in
+Status: unresolved; issue #1 remains open and investigation continues. The earlier
+AVPro playback-pass statement is withdrawn. The maintainer confirms that AVPro
+still shows a black screen with no audio in Tokyo Sky Home's YamaPlayer on the
+installed standard v1.9.8-lite.4 on an M1 / 8 GB Mac, not an old version. Unity's
+current playback status has not yet been reconfirmed. The private decoder-priority
+fix is delivered, but standalone decoder initialization and private-library
+mappings do not establish actual AVPro playback. No reporter retest is requested
+at this stage. The separate N-times-speed audio report has not been reproduced in
 an actual multiple-AudioSource player; no dedicated audio-speed patch is claimed.
 Do not treat the reporter's Steam-client licensing
 hypothesis as an established cause. An unsuccessful `avcodec_open2` does not by itself
@@ -289,13 +294,22 @@ is not a playback pass.
 
 The third GUI run then recorded all four actual game mappings in the private
 tool, matching the verified build: avcodec `e82ac2ca…`, avutil `59c790c3…`,
-avformat `20db0db1…`, and avfilter `0f4badeb…`. On November 13, 2026 (JST), the
-maintainer tested the requested AVPro → Unity sequence in Tokyo Sky Home and
-reported “動きました！すべて大丈夫そうです！” in response to the video, audio and
-playback-speed check. This is an owner-confirmed game playback pass on that
-machine/world, not a claim that every stream or the original reporter's separate
-multiple-AudioSource speed issue is resolved. Keep issue #1 open pending the
-reporter's retest.
+avformat `20db0db1…`, and avfilter `0f4badeb…`. This establishes private-library
+selection in that run, not successful playback. On November 13, 2026 (JST), the
+maintainer initially replied “動きました！すべて大丈夫そうです！” to the requested
+AVPro → Unity video, audio and playback-speed check in Tokyo Sky Home. That reply
+was too broad, and its interpretation as an AVPro playback pass is withdrawn.
+The maintainer subsequently confirmed that AVPro still shows a black screen with
+no audio on the installed standard v1.9.8-lite.4, not an old version. Unity's
+current playback status has not yet been reconfirmed; the earlier reply must not
+be used as a current Unity success or failure result.
+
+The decoder-priority fix is delivered. The mapped-library evidence and successful
+standalone decoder-initialization controls remain valid within their scope, but
+neither establishes real AVPro playback. AVPro's black screen and missing audio
+remain unresolved. Investigation continues; keep issue #1 open without requesting
+a reporter retest at this stage. There is no dedicated audio-speed patch or claim
+that the separate multiple-AudioSource speed issue is fixed.
 
 The packaged synthetic camera regression also passed all five cases after this
 change (stock RGB32 negative control, private RGB24 capture, RGB24/RGB32 preview,

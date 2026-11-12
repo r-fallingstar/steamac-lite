@@ -12,7 +12,7 @@
 
 VRChat video playback now gives private FFmpeg 4.4.8 priority through a pinned private Proton launcher. The game previously loaded Steam’s stock FFmpeg avcodec58 and returned EPERM. Steam and Proton’s own files are unchanged.
 
-On an M1 Mac with 8 GB RAM, the owner confirmed video, audio and playback speed in Tokyo Sky Home’s YamaPlayer (AVPro) and Unity video playback. There is no dedicated audio-speed patch. The original [Issue #1](https://github.com/r-fallingstar/steamac-lite/issues/1) reporter is asked to retest; the issue stays open.
+Correction: the earlier claim of successful AVPro playback is withdrawn. On the owner’s M1 Mac with 8 GB RAM, Tokyo Sky Home’s YamaPlayer (AVPro) still shows a black screen with no audio in the installed standard v1.9.8-lite.4, not an old version. Unity’s current playback status has not yet been reconfirmed. The decoder-priority fix is delivered, but successful standalone decoder initialization and private-library mappings do not establish actual AVPro playback. AVPro playback remains unresolved; investigation continues and [Issue #1](https://github.com/r-fallingstar/steamac-lite/issues/1) stays open. There is no dedicated audio-speed patch or claim that the N-times-speed audio issue is fixed. No reporter retest is requested at this stage.
 
 This is a standard update to the same app, keeping camera forwarding, microphone selection, rendering resolution (px), SteamOS disks, games and settings. All five automated camera regression cases passed. Use **Check for Updates…**, or open the DMG and choose **Install and Open**. The existing updater and BOOTH online installer obtain the latest release. See [release notes](docs/release-notes-1.9.8-lite.4.md).
 
