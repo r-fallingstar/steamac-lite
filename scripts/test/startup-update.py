@@ -7,7 +7,7 @@ ROOT=Path(__file__).resolve().parents[2]
 APP=Path(sys.argv[1]) if len(sys.argv)>1 else ROOT/'work/out/SteamAC Lite.app'
 DOMAIN='steamac.lite.startup-test.'+uuid.uuid4().hex
 ENV={**os.environ,'DEVELOPER_DIR':'/Library/Developer/CommandLineTools','STEAMAC_DEFAULTS_DOMAIN':DOMAIN,'STEAMAC_SENTRY':'0'}
-version='1.9.8-lite.2';name=f'SteamAC-Lite-{version}-macos-arm64.dmg'
+version=plistlib.loads((APP/'Contents/Info.plist').read_bytes())['CFBundleShortVersionString'];name=f'SteamAC-Lite-{version}-macos-arm64.dmg'
 fixture=[{'tag_name':'v'+version,'draft':False,'prerelease':True,'assets':[{'name':name,'state':'uploaded','size':100,'digest':'sha256:'+'a'*64,'browser_download_url':f'https://github.com/r-fallingstar/steamac-lite/releases/download/v{version}/{name}'}]}]
 class Handler(BaseHTTPRequestHandler):
     requests=0
