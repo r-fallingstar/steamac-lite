@@ -23,8 +23,7 @@ src=$work/proton build=$work/build
 
 prepare_proton_checkout "$src" "$PROTON_REPO" "$PROTON_COMMIT"
 # Patches may already be applied by a previous invocation, but reject unrelated source edits.
-git -C "$src" submodule update --init --recursive --depth 1 --jobs 8 ||
-    git -C "$src" submodule update --init --recursive --jobs 8
+update_proton_submodules "$src"
 for p in "$here"/patches/*.patch; do
     if git -C "$src" apply --check "$p"; then
         git -C "$src" apply --index "$p"
