@@ -9,6 +9,10 @@
 # Then tests/run.sh WORK <guest/vr build> checks the result under the Wine that was just built.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
+if [[ $(uname -s) != Linux || $(uname -m) != x86_64 ]]; then
+    echo "proton-vrclient needs x86_64 Linux (on Apple Silicon, use an amd64 Linux VM). See guest/proton-vrclient/README.md." >&2
+    exit 1
+fi
 work=${1:-$HOME/.cache/steamac/proton-vrclient}
 . "$here/pin.env"
 . "$here/source.sh"
@@ -18,7 +22,14 @@ work=$(cd "$work" && pwd)
 out=${2:-$work/out}
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
-engine=${CONTAINER_ENGINE:-$(basename "$(command -v podman || command -v docker)")}
+engine=${CONTAINER_ENGINE:-}
+if [[ -z $engine ]]; then
+    engine=$(command -v podman || command -v docker || true)
+fi
+[[ -n $engine ]] && command -v "$engine" >/dev/null || {
+    echo "Install podman or docker, or set CONTAINER_ENGINE to an installed engine." >&2
+    exit 1
+}
 src=$work/proton build=$work/build
 
 prepare_proton_checkout "$src" "$PROTON_REPO" "$PROTON_COMMIT"
