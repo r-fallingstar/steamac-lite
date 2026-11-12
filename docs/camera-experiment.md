@@ -35,7 +35,8 @@ python3 scripts/camera/launch-experiment.py
 - 映像データの形式・解像度指定・設定の保存と読み込みの自動チェックは通過。
 - 設定画面のカメラタブが画面内に収まることを確認。
 - 複製したSteamOSでテスト映像をV4L2のMMAP経由で取得できること、停止後に黒い映像になることを確認。
-- 実際の内蔵カメラの許可・撮影・VRChatのSelfie Expressionは利用者の確認待ち。
+- M1・8 GBの実機で内蔵カメラの許可とプレビュー、SteamOS受信フレーム数の増加を確認。初回の「プレビューは見えるが受信が0」の症状は、出力サイズを明示した修正版で解消。
+- VRChatのSelfie Expressionは利用者の確認待ち。
 - 単体のWindows Media Foundation診断はFEX/Protonの起動条件が整わず実行できていないため、VRChatでの動作可否は未確認。
 
 Linux側は`fx.camera`専用ポートとv4l2loopbackを使います。カーネル設定を一致させてモジュールをビルドし、実際のゲストで読み込めることを確認しています。
