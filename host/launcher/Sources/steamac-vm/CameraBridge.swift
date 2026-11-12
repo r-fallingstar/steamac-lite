@@ -154,9 +154,9 @@ final class CameraBridge: NSObject, ObservableObject, NSWindowDelegate {
         case .notDetermined:
             busy = true
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in DispatchQueue.main.async {
-                guard let self else { return }; busy = false
-                if granted && wanted { startAuthorized() }
-                else { wanted = false; message = String(localized: "Camera access is not allowed. Check macOS Camera settings.") }
+                guard let self else { return }; self.busy = false
+                if granted && self.wanted { self.startAuthorized() }
+                else { self.wanted = false; self.message = String(localized: "Camera access is not allowed. Check macOS Camera settings.") }
             } }
         default: wanted = false; message = String(localized: "Camera access is not allowed. Check macOS Camera settings.")
         }
