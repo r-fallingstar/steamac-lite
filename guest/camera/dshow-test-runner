@@ -10,6 +10,21 @@ proton="$steam/steamapps/common/Proton - Experimental"
 root=/tmp/steamac-camera-rootfs
 prefix=/home/steamos/.local/share/steamac-camera-dshow-test
 echo CAMERA_TEST_BEGIN
+python3 - <<'PY'
+from pathlib import Path
+import re
+logs=Path('/home/steamos/.local/share/Steam/steamapps/compatdata/438100/pfx/drive_c/users/steamuser/AppData/LocalLow/VRChat/VRChat')
+files=sorted(logs.glob('output_log_*.txt'),key=lambda p:p.stat().st_mtime,reverse=True)[:3]
+for path in files:
+    print('VRC_CAMERA_LOG_FILE '+path.name,flush=True)
+    with path.open('rb') as f:
+        f.seek(max(0,path.stat().st_size-5*1024*1024));text=f.read().decode(errors='replace')
+    lines=[line for line in text.splitlines() if any(word in line.lower() for word in ['selfie','webcam','mediapipe','video capture','capturedevice','camera device'])]
+    for line in lines[-80:]:
+        line=re.sub(r'https?://\S+','[URL omitted]',line)
+        line=re.sub(r'usr_[0-9a-f-]+','[user omitted]',line)
+        print('VRC_CAMERA_LOG '+line[:1800],flush=True)
+PY
 for ((i=0;i<60;i++)); do [[ ! -f /run/steamac-camera-device ]] || break; sleep 1; done
 device=$(cat /run/steamac-camera-device)
 sleep 2
