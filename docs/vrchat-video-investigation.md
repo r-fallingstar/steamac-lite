@@ -1,5 +1,20 @@
 # VRChat video investigation (issue #1)
 
+## November 13: packaged standard v1.9.8-lite.5 owner test
+
+The owner accepted the same playback checks in the packaged standard app built
+from `61c3994`, with diagnostic logging removed. AVPro video and audio played at
+normal speed in Tokyo Sky Home’s YamaPlayer using
+`https://vrc.gate.vrtv.jp/live?p=g&u=d`; Stop and playlist switching worked.
+Unity playback of an ordinary YouTube video also passed. The private Proton
+schema 3 → 4 upgrade was observed on an APFS clone of the normal disk. Existing
+camera/CORE and private FFmpeg files were retained, and stock Proton files stayed
+unchanged. The normal disk and preferences were not modified by validation.
+
+This is a pass for that M1 / 8 GB setup. It does not establish a general fix for
+the separate N-times-speed audio report with multiple AudioSources. Issue #1
+remains open. The historical v4 correction below is retained for that version.
+
 ## November 13: diagnostic candidate owner test
 
 The owner confirmed AVPro video and audio in Tokyo Sky Home, followed by working
@@ -15,15 +30,16 @@ before MediaEngine opened the stream, while memory and I/O pressure increased.
 This sequence supports investigating the lost controls separately from frame
 transfer; it does not prove that memory pressure caused the Udon failures.
 
-This is an owner pass for the diagnostic candidate, not a new public-release
-claim. The packaged build without diagnostics must still pass the same checks
-after the existing-installation upgrade. The historical v1.9.8-lite.4 correction
-below remains applicable to that published version. A dedicated general fix for
-the reported N-times audio speed has not been established.
+This diagnostic pass was followed by the packaged standard-app pass recorded
+above. The historical v1.9.8-lite.4 correction below remains applicable to that
+version. A dedicated general fix for the reported N-times audio speed has not
+been established.
 
 See [private video build and upgrade details](video-build.md).
 
-Status: unresolved; issue #1 remains open and investigation continues. The earlier
+## Historical v1.9.8-lite.4 status (before v5)
+
+At v4, playback was unresolved; issue #1 remained open for investigation. The earlier
 AVPro playback-pass statement is withdrawn. The maintainer confirms that AVPro
 still shows a black screen with no audio in Tokyo Sky Home's YamaPlayer on the
 installed standard v1.9.8-lite.4 on an M1 / 8 GB Mac, not an old version. Unity's

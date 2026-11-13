@@ -8,17 +8,23 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.8-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.4/SteamAC-Lite-1.9.8-lite.4-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.5/SteamAC-Lite-1.9.8-lite.5-macos-arm64.dmg)**
 
 初回の案内ではマイクとカメラの許可を確認します。許可が残っていれば聞き直さず、更新などで以前の許可が外れた場合は再案内します。自動使用をオフにした選択や許可しなかった機能も聞き直しません。Lite.6の録音処理の修正も含みます。[原因と確認内容](docs/microphone-fix.md)。
 
-DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.4)
+DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.5)
 
 macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 
 Lite.9以降は新しいReleaseをアプリ内で通知します。「アップデート」で取得し、「更新して開き直す」で反映します。SteamOSのディスクと設定は引き継ぎます。Lite.8以前は最初の1回だけ手動でLite.9以降へ更新してください。[更新のしくみ](docs/in-app-updates.md)。
 
-## v1.9.8-lite.4
+## v1.9.8-lite.5
+
+Wine MediaEngineとWineGStreamerの映像の受け渡しと再生処理を修正しました。作者のM1・RAM 8 GBのMacで、配布用の通常版を確認しました。Tokyo Sky HomeのYamaPlayer（AVPro）で映像・音声・停止・プレイリスト切り替えが動作し、Unityでも通常のYouTube動画を再生できました。既存の専用Protonを更新した環境で、診断をオフにして確認しています。
+
+「アップデートを確認…」、またはDMGの「インストールして開く」で更新できます。BOOTHのネットインストーラーもこの版を取得します。SteamOSのディスク・ゲーム・設定は引き継ぎます。複数スピーカーで音声がN倍速になるという別の報告は調査中のため、[Issue #1](https://github.com/r-fallingstar/steamac-lite/issues/1)は開いたまま継続します。[更新内容](docs/release-notes-1.9.8-lite.5.md)。
+
+## v1.9.8-lite.4（過去の確認結果）
 
 VRChatの動画再生で、固定した専用Protonランチャーから専用のFFmpeg 4.4.8を優先して使うようにしました。従来はゲームがSteam標準のFFmpeg avcodec58を読み込み、EPERMで失敗していました。Steam・Proton本体のファイルは変更しません。
 

@@ -6,9 +6,15 @@
 
 [Update support](https://r-fallingstar.github.io/steamac-lite/en/support/) covers in-app and DMG updates, microphone access, and troubleshooting.
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.4/SteamAC-Lite-1.9.8-lite.4-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.4) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.5/SteamAC-Lite-1.9.8-lite.5-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.5) · [はじめての導入手順](docs/quick-start.ja.md)
 
-## v1.9.8-lite.4
+## v1.9.8-lite.5
+
+Updated Wine MediaEngine and WineGStreamer to fix video frame transfer and playback. On the author’s M1 Mac with 8 GB RAM, the packaged standard app played video and audio in Tokyo Sky Home’s YamaPlayer (AVPro), with working Stop and playlist switching. Unity playback of an ordinary YouTube video also passed. These checks ran after upgrading an existing private Proton, with diagnostics off.
+
+Use **Check for Updates…**, or open the DMG and choose **Install and Open**. The BOOTH online installer also selects this version. Existing SteamOS disks, games and settings are retained. The separate report of N-times-speed audio with multiple speakers remains under investigation; [Issue #1](https://github.com/r-fallingstar/steamac-lite/issues/1) stays open. See [release notes](docs/release-notes-1.9.8-lite.5.md).
+
+## v1.9.8-lite.4 (historical result)
 
 VRChat video playback now gives private FFmpeg 4.4.8 priority through a pinned private Proton launcher. The game previously loaded Steam’s stock FFmpeg avcodec58 and returned EPERM. Steam and Proton’s own files are unchanged.
 
