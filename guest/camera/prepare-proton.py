@@ -31,6 +31,8 @@ PINS = {"version": "stock_version_sha256", PE: "stock_pe_sha256", UNIX: "stock_u
 CORE = ("version", PE, UNIX, "proton", "toolmanifest.vdf", "compatibilitytool.vdf")
 VIDEO = tuple("files/lib/x86_64-linux-gnu/" + name for name in (
     "libavcodec.so.58", "libavformat.so.58", "libavfilter.so.7", "libavutil.so.56"))
+MEDIA = tuple("files/lib/wine/x86_64-windows/" + name for name in (
+    "mfmediaengine.dll", "winegstreamer.dll"))
 VIDEO_ANCHOR = (
     b'            # add Steam ffmpeg libraries to path\n'
     b'            prepend_to_env_str(g_session.env, ld_path_var, steam_linux_path + "/ubuntu12_64/video/:" + steam_linux_path + "/ubuntu12_32/video/:" + steam_linux_path + "/steamrtarm64/video/", ":")\n')
@@ -176,6 +178,65 @@ def read_video(bundle):
     return manifest
 
 
+def validate_media(manifest):
+    """Only the two bounded PE replacements belong to the media upgrade."""
+    if (not isinstance(manifest, dict)
+            or set(manifest) != {"schema", "source_version_sha256", "files"}
+            or type(manifest["schema"]) is not int or manifest["schema"] != 1
+            or not isinstance(manifest["source_version_sha256"], str)
+            or not re.fullmatch(r"[0-9a-f]{64}", manifest["source_version_sha256"])):
+        raise ValueError("invalid media manifest schema or source version")
+    files = manifest["files"]
+    if not isinstance(files, dict) or set(files) != set(MEDIA):
+        raise ValueError("media manifest must contain exactly the two supported PE modules")
+    for hashes in files.values():
+        if (not isinstance(hashes, dict) or set(hashes) != {"stock_sha256", "patched_sha256"}
+                or any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value)
+                       for value in hashes.values())
+                or hashes["stock_sha256"] == hashes["patched_sha256"]):
+            raise ValueError("invalid media stock/patched checksums")
+
+
+def read_media(bundle):
+    path = bundle / "proton-media.json"
+    if not present(path):
+        return None
+    path = contained(bundle, "proton-media.json")
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("media manifest must be a regular file")
+    manifest = json.loads(path.read_text())
+    validate_media(manifest)
+    payloads = [contained(bundle, "proton-media/" + Path(key).name) for key in MEDIA]
+    if any(not path.is_file() or path.is_symlink() for path in payloads):
+        raise ValueError("media payload must be regular files")
+    if sum(path.stat().st_size for path in payloads) > RUNTIME_LIMIT:
+        raise ValueError("media payload exceeds runtime size limit")
+    for relative, path in zip(MEDIA, payloads):
+        if digest(path) != manifest["files"][relative]["patched_sha256"]:
+            raise ValueError("bundled media checksum mismatch: " + relative)
+    return manifest
+
+
+def verify_media_source(source, manifest, pins, owned):
+    """Legacy receipts own neither PE: require stock before taking ownership.
+
+    Schema 4 instead validates against its own receipt, never the new payload's
+    hashes. A replacement bundle must still target that same stock revision.
+    """
+    if manifest["source_version_sha256"] != pins["stock_version_sha256"]:
+        raise ValueError("media source version does not match private Proton")
+    for relative, hashes in manifest["files"].items():
+        if owned and owned["schema"] >= 4:
+            expected_stock = owned["media"]["files"][relative]["stock_sha256"]
+            if hashes["stock_sha256"] != expected_stock:
+                raise ValueError("media bundle targets different stock: " + relative)
+            expected = owned["files"][relative]
+        else:
+            expected = hashes["stock_sha256"]
+        if digest(contained(source, relative)) != expected:
+            raise ValueError("unknown media source checksum: " + relative)
+
+
 def validate_launcher_policy(policy):
     if (not isinstance(policy, dict) or set(policy) != {"schema", "policy_version", "source_sha256"}
             or type(policy["schema"]) is not int or policy["schema"] != 1
@@ -205,7 +266,7 @@ def patch_video_launcher(source, policy):
 
 
 def original_video_launcher(patched, launcher):
-    """Validate a schema-3 receipt independently of the currently bundled policy."""
+    """Validate a schema-3+ receipt independently of the currently bundled policy."""
     if not isinstance(launcher, dict) or set(launcher) != {"policy", "patched_sha256"}:
         raise ValueError("invalid private launcher receipt")
     validate_launcher_policy(launcher["policy"])
@@ -236,6 +297,7 @@ def snapshot_receipt(target):
 
     Schema 1 owns CORE only (legacy camera). Schema 2 adds the four codecs.
     Schema 3 also binds the private launcher insertion to its pinned source.
+    Schema 4 additionally owns both media PE modules and their source revision.
     These hashes detect damage; receipts are local ownership markers, not signed
     attestations of authenticity.
     """
@@ -243,7 +305,7 @@ def snapshot_receipt(target):
         raise ValueError("private tool is not an owned directory")
     receipt = json.loads(contained(target, RECEIPT).read_text())
     if (not isinstance(receipt, dict) or type(receipt.get("schema")) is not int
-            or receipt["schema"] not in (1, 2, 3) or receipt.get("tool") != NAME):
+            or receipt["schema"] not in (1, 2, 3, 4) or receipt.get("tool") != NAME):
         raise ValueError("invalid private receipt identity")
     pins, files = receipt["pins"], receipt["files"]
     validate_pins(pins)
@@ -254,6 +316,13 @@ def snapshot_receipt(target):
         validate_video(receipt["video"])
         keys.update(VIDEO)
         expected.update(receipt["video"]["files"])
+    if receipt["schema"] >= 4:
+        validate_media(receipt["media"])
+        if receipt["media"]["source_version_sha256"] != pins["stock_version_sha256"]:
+            raise ValueError("private media receipt disagrees with source version")
+        keys.update(MEDIA)
+        expected.update({key: hashes["patched_sha256"]
+                         for key, hashes in receipt["media"]["files"].items()})
     if not isinstance(files, dict) or set(files) != keys:
         raise ValueError("invalid private receipt file set")
     if any(files[key] != checksum for key, checksum in expected.items()):
@@ -264,7 +333,7 @@ def snapshot_receipt(target):
             raise ValueError("private snapshot checksum mismatch: " + key)
     if (target / "compatibilitytool.vdf").read_text() != DESCRIPTOR:
         raise ValueError("private descriptor changed")
-    if receipt["schema"] == 3:
+    if receipt["schema"] >= 3:
         original_video_launcher(contained(target, "proton").read_bytes(), receipt["launcher"])
         if files["proton"] != receipt["launcher"]["patched_sha256"]:
             raise ValueError("private launcher receipt disagrees with file manifest")
@@ -460,10 +529,15 @@ def prepare(steam, stock, *, bundle=HERE, vdf=None, clone=clone_reflink,
                 raise ValueError("existing private tool has no valid owned receipt; leaving it unchanged")
             video = read_video(bundle)
             policy = read_launcher_policy(bundle) if video else None
-            # Absence preserves camera-only behavior; never downgrade an existing
-            # valid video snapshot merely because a later bundle omits the option.
-            if owned and (video is None or (owned["schema"] == 3 and owned["video"] == video
-                                           and owned["launcher"]["policy"] == policy)):
+            media = read_media(bundle)
+            # Omitted options retain the snapshot's existing features. Match the
+            # complete desired schema, including newly requested media ownership.
+            expected_schema = max(owned["schema"] if owned else 1,
+                                  4 if media else 3 if video else 1)
+            if (owned and owned["schema"] == expected_schema
+                    and (video is None or (owned["video"] == video
+                                           and owned["launcher"]["policy"] == policy))
+                    and (media is None or owned["media"] == media)):
                 return NAME
             if owned:
                 upgrade_guard()
@@ -474,11 +548,15 @@ def prepare(steam, stock, *, bundle=HERE, vdf=None, clone=clone_reflink,
                 source, pins = stock, read_pins(bundle)
                 verify_stock(source, pins)
             check_links(source)
+            if media:
+                if not video and not (owned and owned["schema"] >= 3):
+                    raise ValueError("media upgrade requires codecs and a private launcher policy")
+                verify_media_source(source, media, pins, owned)
             patched_launcher = None
             if video:
                 launcher_input = contained(source, "proton").read_bytes()
                 original_launcher = launcher_input
-                if owned and owned["schema"] == 3:
+                if owned and owned["schema"] >= 3:
                     original_launcher = original_video_launcher(original_launcher, owned["launcher"])
                 patched_launcher = patch_video_launcher(original_launcher, policy)
             with tempfile.TemporaryDirectory(prefix=".steamac-camera-stage-", dir=tools) as temporary:
@@ -486,6 +564,9 @@ def prepare(steam, stock, *, bundle=HERE, vdf=None, clone=clone_reflink,
                 stage.mkdir()
                 extra = sum((bundle / "proton-video" / Path(key).name).stat().st_size
                             for key in VIDEO) if video else 0
+                if media:
+                    extra += sum((bundle / "proton-media" / Path(key).name).stat().st_size
+                                 for key in MEDIA)
                 clone_budget(source, stage, extra)
                 clone(source, stage)
                 check_links(stage, source)
@@ -501,13 +582,20 @@ def prepare(steam, stock, *, bundle=HERE, vdf=None, clone=clone_reflink,
                             raise ValueError("stock changed during clone: " + relative)
                     replace_payload(stage, PE, contained(bundle, "proton/qcap.dll"), pins["patched_pe_sha256"])
                     vdf["atomic_write"](stage / "compatibilitytool.vdf", DESCRIPTOR)
+                if media:
+                    verify_media_source(stage, media, pins, owned)
+                    verify_media_source(source, media, pins, owned)
+                    for relative, hashes in media["files"].items():
+                        replace_payload(stage, relative,
+                                        contained(bundle, "proton-media/" + Path(relative).name),
+                                        hashes["patched_sha256"])
                 if video:
                     for relative, checksum in video["files"].items():
                         replace_payload(stage, relative,
                                         contained(bundle, "proton-video/" + Path(relative).name), checksum)
                 files = {relative: digest(contained(stage, relative)) for relative in CORE}
                 if owned and any(files[key] != owned["files"][key] for key in CORE):
-                    raise ValueError("camera core changed during video upgrade")
+                    raise ValueError("camera core changed during upgrade")
                 if video:
                     # Replace only the staged entry; preserve mode and never write
                     # through a source hardlink/symlink or an installed Proton path.
@@ -519,16 +607,25 @@ def prepare(steam, stock, *, bundle=HERE, vdf=None, clone=clone_reflink,
                     replace_payload(stage, "proton", launcher_payload, files["proton"])
                 if files[PE] != pins["patched_pe_sha256"]:
                     raise ValueError("staged camera payload checksum mismatch")
-                receipt = {"schema": 1, "tool": NAME, "pins": pins, "files": files}
+                receipt = {"schema": expected_schema, "tool": NAME, "pins": pins, "files": files}
                 if video:
-                    receipt.update(schema=3, video=video,
+                    receipt.update(video=video,
                                    launcher={"policy": policy, "patched_sha256": files["proton"]})
-                    files.update({relative: digest(contained(stage, relative)) for relative in VIDEO})
+                elif owned and owned["schema"] >= 3:
+                    receipt.update(video=owned["video"], launcher=owned["launcher"])
+                if expected_schema >= 2:
+                    files.update(receipt["video"]["files"])
+                if expected_schema >= 4:
+                    receipt["media"] = media if media else owned["media"]
+                    files.update({key: hashes["patched_sha256"]
+                                  for key, hashes in receipt["media"]["files"].items()})
                 vdf["atomic_write"](stage / RECEIPT, json.dumps(receipt, sort_keys=True) + "\n")
                 verify_owned(stage, receipt)
                 check_links(stage, source)
                 if owned:
                     verify_owned(source, owned)
+                    if media:
+                        verify_media_source(source, media, pins, owned)
                     upgrade_guard()
                     if present(backup):
                         raise ValueError("private backup appeared during preparation")
@@ -548,6 +645,8 @@ def prepare(steam, stock, *, bundle=HERE, vdf=None, clone=clone_reflink,
                     cleanup_backup(target, backup, vdf, upgrade_guard,
                                    previous=owned, published=receipt)
                 else:
+                    if media:
+                        verify_media_source(source, media, pins, owned)
                     if is_busy():
                         raise ValueError("Steam/FEX/Wine started during preparation")
                     if present(target) or present(backup):

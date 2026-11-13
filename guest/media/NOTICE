@@ -1,0 +1,16 @@
+steamac Lite private Wine media compatibility modules
+
+Wine, ValveSoftware/wine commit e8ca5806eec488f5916e83d655ffc5349b6b1702
+Copyright the Wine project contributors. GNU Lesser General Public License 2.1
+or later; see COPYING.LIB. Corresponding source, local patches and the executed
+build recipe accompany the release.
+
+The MediaEngine patch adapts autoplay, stream attributes/selection and frame
+bridging changes from GE-Proton commit 88af667340f311b380357da1f46bb25e1ec30938,
+with local transfer bounds and buffer layout checks. The WineGStreamer patch
+falls back to system-memory NV12 samples only when D3D allocation reports
+E_INVALIDARG. Diagnostic instrumentation is not included.
+
+Only mfmediaengine.dll and winegstreamer.dll in the managed private Proton tool
+are replaced. Original Steam/Proton files and the WineGStreamer Unix module are
+unchanged. The existing camera and FFmpeg components retain their own notices.

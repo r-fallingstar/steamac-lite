@@ -82,6 +82,7 @@ python3 scripts/test/low-memory-swap.py
 python3 scripts/test/keyboard-setup.py
 bash scripts/lite/build-audio-library.sh
 bash guest/video/build-codecs.sh
+bash guest/media/build-runtime.sh
 LIBKRUN_OVERRIDE="$PWD/work/out/host/lib/libkrun.1.dylib" bash scripts/lite/build-app.sh
 ```
 

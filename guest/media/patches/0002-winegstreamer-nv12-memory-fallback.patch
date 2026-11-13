@@ -1,0 +1,26 @@
+--- a/dlls/winegstreamer/video_decoder.c
++++ b/dlls/winegstreamer/video_decoder.c
+@@ -460,7 +460,22 @@
+ 
+     if (FAILED(hr = IMFVideoSampleAllocatorEx_InitializeSampleAllocatorEx(decoder->allocator, 10, 10,
+             decoder->attributes, decoder->output_type)))
+-        return hr;
++    {
++        GUID subtype;
++        /* DXMT does not expose planar NV12 textures. Keep providing samples,
++         * but use regular 2D buffers when that exact surface allocation fails. */
++        if (hr != E_INVALIDARG || !(decoder->output_info.dwFlags & MFT_OUTPUT_STREAM_PROVIDES_SAMPLES)
++                || FAILED(IMFMediaType_GetGUID(decoder->output_type, &MF_MT_SUBTYPE, &subtype))
++                || !IsEqualGUID(&subtype, &MFVideoFormat_NV12))
++            return hr;
++        WARN("NV12 D3D allocator unsupported; retrying with system-memory samples.\n");
++        IMFVideoSampleAllocatorEx_UninitializeSampleAllocator(decoder->allocator);
++        if (FAILED(hr = IMFVideoSampleAllocatorEx_SetDirectXManager(decoder->allocator, NULL)))
++            return hr;
++        if (FAILED(hr = IMFVideoSampleAllocatorEx_InitializeSampleAllocatorEx(decoder->allocator, 10, 10,
++                decoder->attributes, decoder->output_type)))
++            return hr;
++    }
+     decoder->allocator_initialized = TRUE;
+     return S_OK;
+ }

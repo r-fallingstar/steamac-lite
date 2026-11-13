@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/ValveSoftware/wine",
+  "commit": "e8ca5806eec488f5916e83d655ffc5349b6b1702",
+  "archive_sha256": "e05dcfb965b294e5c69e0a643a0595e12b74c7878e78827485a21aed1c784a16",
+  "builder_image": "steamac-media-builder:trixie",
+  "builder_image_id": "sha256:264e04d85f8f87e3cf79b85da9686db745df5841f8f4830ba97b6aea6f329eb1",
+  "source_version_sha256": "503c72483de03a9c63dda987ba1374002bfca48fb24858d5793db0c05f3342f8",
+  "stock_files": {
+    "files/lib/wine/x86_64-windows/mfmediaengine.dll": "1f8e05f056e2806f2e4a655807053f4942f7e30c4b3d4fe07f69f675cab8a1f9",
+    "files/lib/wine/x86_64-windows/winegstreamer.dll": "1be7478fc97efedd79f17ecc3a7dbb5b3b4578f3e655a6d9f56810c72e329c88"
+  },
+  "patches": {
+    "guest/media/patches/0001-mediaengine-playback-and-frame-transfer.patch": "c24b4efa83b3c18fdf399effecc941ef768206a296b288bdfd0cefc6cc506489",
+    "guest/media/patches/0002-winegstreamer-nv12-memory-fallback.patch": "dd0851cb83d73ccddb6d6d38c2505819ee23a9c069130de6b8ba21775950582d"
+  },
+  "source_files": {
+    "dlls/mfmediaengine/main.c": {
+      "stock_sha256": "d3bae3759059889b039d4d633ac105aab28972ace9afe0924a43ad5c8addb670",
+      "patched_sha256": "552ef5d9984b34b2a3f8106e4b4ac88299c233bdbe22aaca84ec8e23c5308760"
+    },
+    "dlls/winegstreamer/video_decoder.c": {
+      "stock_sha256": "20ee3ad5f4a41df480aa1ecb18e17e808a216e4f419152d78e26e94bc148243d",
+      "patched_sha256": "516ac6fc1cd726ecfe21c2a03237a70ea98bbfe76afbf03a75246ca25a7f6a03"
+    }
+  },
+  "basis": "MediaEngine autoplay, media-type attributes/selection and frame bridges adapted from GE-Proton commit 88af667340f311b380357da1f46bb25e1ec30938; local frame bounds/layout validation and NV12 allocator fallback."
+}

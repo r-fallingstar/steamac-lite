@@ -475,16 +475,17 @@ class PreparationTest(unittest.TestCase):
         (self.bundle / "proton-video.json").write_text(json.dumps(manifest))
         return manifest
 
-    def assert_video(self, manifest):
+    def assert_video(self, manifest, media=None):
         self.assertTrue(m.ready_tool(self.steam))
         receipt = json.loads((self.target / m.RECEIPT).read_text())
-        self.assertEqual(receipt["schema"], 3)
+        self.assertEqual(receipt["schema"], 4 if media else 3)
         self.assertEqual(receipt["video"], manifest)
         self.assertEqual(receipt["launcher"]["policy"], self.policy)
         self.assertEqual(receipt["launcher"]["patched_sha256"], m.digest(self.target / "proton"))
         self.assertEqual(m.original_video_launcher((self.target / "proton").read_bytes(),
                                                   receipt["launcher"]), LAUNCHER)
-        self.assertEqual(set(receipt["files"]), set(m.CORE) | set(m.VIDEO))
+        self.assertEqual(set(receipt["files"]), set(m.CORE) | set(m.VIDEO)
+                         | (set(m.MEDIA) if media else set()))
         for relative in m.VIDEO:
             self.assertEqual(m.digest(self.target / relative), manifest["files"][relative])
             self.assertEqual(receipt["files"][relative], manifest["files"][relative])
@@ -1516,6 +1517,459 @@ class PreparationTest(unittest.TestCase):
         self.assertEqual((self.target / "proton").read_bytes(), launcher)
         self.assertEqual(launcher.count(m.VIDEO_PRIORITY), 1)
         self.assertEqual(self.clone_count, 2)
+
+    def add_stock_media(self):
+        # Legacy camera/video fixtures need no media modules unless an optional
+        # production media bundle is being exercised.
+        for relative in m.MEDIA:
+            (self.stock / relative).write_bytes(b"stock media: " + Path(relative).name.encode())
+        self.source_before = self.inventory(self.stock)
+
+    def add_media(self, suffix=b""):
+        files = {}
+        for relative in m.MEDIA:
+            path = self.bundle / "proton-media" / Path(relative).name
+            path.parent.mkdir(exist_ok=True)
+            path.write_bytes(b"patched media: " + path.name.encode() + suffix)
+            files[relative] = {"stock_sha256": m.digest(self.stock / relative),
+                               "patched_sha256": m.digest(path)}
+        manifest = {"schema": 1, "source_version_sha256": self.pins["stock_version_sha256"],
+                    "files": files}
+        (self.bundle / "proton-media.json").write_text(json.dumps(manifest))
+        return manifest
+
+    def media_upgrade_fixture(self):
+        self.add_stock_media()
+        video = self.add_video()
+        self.assertEqual(self.auto(), m.NAME)
+        return self.inventory(self.target), video, self.add_media()
+
+    def assert_media(self, video, media):
+        self.assert_video(video, media)
+        receipt = m.snapshot_receipt(self.target)
+        self.assertEqual(receipt["media"], media)
+        for relative in m.MEDIA:
+            checksum = media["files"][relative]["patched_sha256"]
+            self.assertEqual(receipt["files"][relative], checksum)
+            self.assertEqual(m.digest(self.target / relative), checksum)
+            self.assertFalse((self.target / relative).is_symlink())
+
+    def assert_media_failure_unchanged(self, before, config, clones):
+        self.assertIsNone(self.auto())
+        self.assertEqual(self.inventory(self.target), before)
+        self.assertEqual(self.config.read_bytes(), config)
+        self.assertEqual(self.local.read_text(), LOCAL)
+        self.assertEqual(self.clone_count, clones)
+        self.assertFalse((self.target.parent / m.BACKUP).exists())
+        self.assertFalse((self.target.parent / m.CLEANUP).exists())
+        self.assertFalse(list(self.target.parent.glob(".steamac-camera-stage-*")))
+        self.assert_source_unchanged()
+
+    def test_media_fresh_schema4_owns_exact_two_private_pe_modules(self):
+        self.add_stock_media()
+        video, media = self.add_video(), self.add_media()
+        self.assertEqual(self.auto(), m.NAME)
+        self.assert_media(video, media)
+        self.assert_source_unchanged()
+        self.assertEqual(self.clone_count, 1)
+        for relative in m.MEDIA:
+            self.assertFalse(os.path.samestat((self.target / relative).stat(),
+                                             (self.stock / relative).stat()))
+            self.assertEqual((self.stock / relative).read_bytes(),
+                             b"stock media: " + Path(relative).name.encode())
+
+    def test_media_schema3_upgrade_uses_stock_modules_and_preserves_core_and_codecs(self):
+        before, video, media = self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        rename = m.os.rename
+        def observe(source, destination):
+            if source == self.target:
+                self.assertEqual(self.inventory(source), before)
+            rename(source, destination)
+        with patch.object(m.os, "rename", side_effect=observe):
+            self.assertEqual(self.auto(), m.NAME)
+        self.assert_media(video, media)
+        for relative in (*m.CORE, *m.VIDEO):
+            self.assertEqual((self.target / relative).read_bytes(), before[relative][0])
+            self.assertEqual((self.target / relative).stat().st_mode, before[relative][1])
+        self.assertEqual(self.config.read_bytes(), config)
+        self.assertEqual(self.clone_count, 2)
+        self.assert_source_unchanged()
+
+    def test_media_legacy_schema1_and_schema2_upgrade_to_schema4(self):
+        self.add_stock_media()
+        for schema in (1, 2):
+            with self.subTest(schema=schema):
+                if schema == 1:
+                    self.assertEqual(self.auto(), m.NAME)
+                    video = self.add_video()
+                else:
+                    shutil.rmtree(self.target)
+                    self.config.write_text(ORIGINAL)
+                    (self.bundle / "proton-media.json").unlink()
+                    _, video = self.schema2_fixture()
+                self.assertEqual(m.snapshot_receipt(self.target)["schema"], schema)
+                before = self.inventory(self.target)
+                media = self.add_media()
+                self.assertEqual(self.auto(), m.NAME)
+                self.assert_media(video, media)
+                for relative in (key for key in m.CORE if key != "proton"):
+                    self.assertEqual((self.target / relative).read_bytes(), before[relative][0])
+                self.assert_source_unchanged()
+
+    def test_media_schema4_idempotent_and_validates_payload_before_reuse(self):
+        self.add_stock_media()
+        video, media = self.add_video(), self.add_media()
+        self.assertEqual(self.auto(), m.NAME)
+        before, config = self.inventory(self.target), self.config.read_bytes()
+        times = {path: path.stat().st_mtime_ns for path in
+                 (self.config, self.target / m.RECEIPT, *(self.target / key for key in m.MEDIA))}
+        self.assertEqual(self.auto(), m.NAME)
+        self.assertEqual(self.inventory(self.target), before)
+        self.assertEqual({path: path.stat().st_mtime_ns for path in times}, times)
+        self.assertEqual(self.clone_count, 1)
+        self.assert_media(video, media)
+        for relative in m.MEDIA:
+            payload = self.bundle / "proton-media" / Path(relative).name
+            original = payload.read_bytes()
+            payload.write_bytes(b"tampered current payload")
+            self.assert_media_failure_unchanged(before, config, 1)
+            payload.write_bytes(original)
+
+    def test_media_upgrade_validates_payloads_before_cloning(self):
+        before, _, _ = self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        for relative in m.MEDIA:
+            path = self.bundle / "proton-media" / Path(relative).name
+            original = path.read_bytes()
+            for replacement in (b"tampered", None, "symlink", "directory"):
+                with self.subTest(relative=relative, replacement=replacement):
+                    path.unlink()
+                    if replacement == "symlink":
+                        saved = self.bundle / "saved-media.dll"
+                        saved.write_bytes(original)
+                        path.symlink_to("../saved-media.dll")
+                    elif replacement == "directory":
+                        path.mkdir()
+                    elif replacement is not None:
+                        path.write_bytes(replacement)
+                    self.assert_media_failure_unchanged(before, config, 1)
+                    if path.is_dir():
+                        path.rmdir()
+                    elif path.is_symlink() or path.exists():
+                        path.unlink()
+                    path.write_bytes(original)
+
+    def test_media_manifest_requires_exact_keys_two_files_and_distinct_hashes(self):
+        before, _, manifest = self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        bad = [[], {}, dict(manifest, schema=True), dict(manifest, schema=2),
+               dict(manifest, extra="unexpected"), dict(manifest, files=[])]
+        for checksum in (None, True, "bad", "F" * 64):
+            bad.append(dict(manifest, source_version_sha256=checksum))
+        for relative in m.MEDIA:
+            files = dict(manifest["files"])
+            del files[relative]
+            bad.append(dict(manifest, files=files))
+            for hashes in (None, {}, dict(manifest["files"][relative], extra="unexpected"),
+                           dict.fromkeys(("stock_sha256", "patched_sha256"), "0" * 64)):
+                bad.append(dict(manifest, files=dict(manifest["files"], **{relative: hashes})))
+            for key in ("stock_sha256", "patched_sha256"):
+                for checksum in (None, True, "bad", "F" * 64):
+                    hashes = dict(manifest["files"][relative], **{key: checksum})
+                    bad.append(dict(manifest, files=dict(manifest["files"], **{relative: hashes})))
+        for relative in ("../escape", "/tmp/escape", "files/lib/wine/x86_64-windows/other.dll"):
+            bad.append(dict(manifest, files=dict(manifest["files"], **{
+                relative: dict(manifest["files"][m.MEDIA[0]])})))
+        path = self.bundle / "proton-media.json"
+        for value in bad:
+            with self.subTest(value=value):
+                path.write_text(json.dumps(value))
+                self.assert_media_failure_unchanged(before, config, 1)
+        path.write_text('{invalid JSON')
+        self.assert_media_failure_unchanged(before, config, 1)
+        path.unlink()
+        saved = self.bundle / "saved-media.json"
+        saved.write_text(json.dumps(manifest))
+        path.symlink_to(saved.name)
+        self.assert_media_failure_unchanged(before, config, 1)
+
+    def test_media_unowned_legacy_edits_to_either_pe_fail_before_clone(self):
+        self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        for relative in m.MEDIA:
+            path = self.target / relative
+            original = path.read_bytes()
+            for replacement in (b"isolated diagnostic edit", None):
+                with self.subTest(relative=relative, replacement=replacement):
+                    if replacement is None:
+                        path.unlink()
+                    else:
+                        path.write_bytes(replacement)
+                    self.assertTrue(m.valid_snapshot(self.target))  # Legacy receipt does not own these.
+                    before = self.inventory(self.target)
+                    self.assert_media_failure_unchanged(before, config, 1)
+                    path.write_bytes(original)
+
+    def test_media_source_version_and_stock_hash_must_match_before_first_ownership(self):
+        before, _, manifest = self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        bad = [dict(manifest, source_version_sha256="0" * 64)]
+        for relative in m.MEDIA:
+            hashes = dict(manifest["files"][relative], stock_sha256="0" * 64)
+            bad.append(dict(manifest, files=dict(manifest["files"], **{relative: hashes})))
+        for value in bad:
+            (self.bundle / "proton-media.json").write_text(json.dumps(value))
+            self.assert_media_failure_unchanged(before, config, 1)
+
+    def test_media_fresh_unknown_modules_or_version_never_publish(self):
+        self.add_stock_media()
+        self.add_video()
+        manifest = self.add_media()
+        path = self.bundle / "proton-media.json"
+        path.write_text(json.dumps(dict(manifest, source_version_sha256="0" * 64)))
+        self.assertIsNone(self.auto())
+        self.assertEqual(self.clone_count, 0)
+        self.assert_not_published()
+        path.write_text(json.dumps(manifest))
+        for relative in m.MEDIA:
+            file = self.stock / relative
+            original = file.read_bytes()
+            file.write_bytes(b"unknown stock module")
+            before = self.inventory(self.stock)
+            self.assertIsNone(self.auto())
+            self.assertEqual(self.clone_count, 0)
+            self.assertFalse(self.target.exists())
+            self.assertEqual(self.inventory(self.stock), before)
+            self.assertEqual(self.config.read_text(), ORIGINAL)
+            file.write_bytes(original)
+
+    def test_media_requires_video_and_launcher_for_schema4(self):
+        self.add_stock_media()
+        self.add_media()
+        self.assertIsNone(self.auto())
+        self.assertEqual(self.clone_count, 0)
+        self.assert_not_published()
+
+    def test_media_only_upgrade_can_use_owned_schema3_codecs_and_launcher(self):
+        before, video, media = self.media_upgrade_fixture()
+        (self.bundle / "proton-video.json").unlink()
+        (self.bundle / "video-launcher.json").unlink()
+        self.assertEqual(self.auto(), m.NAME)
+        self.assert_media(video, media)
+        for relative in (*m.CORE, *m.VIDEO):
+            self.assertEqual((self.target / relative).read_bytes(), before[relative][0])
+        media = self.add_media(b" media-only update")
+        self.assertEqual(self.auto(), m.NAME)
+        self.assert_media(video, media)
+        for relative in (*m.CORE, *m.VIDEO):
+            self.assertEqual((self.target / relative).read_bytes(), before[relative][0])
+        self.assertEqual(self.clone_count, 3)
+        self.assert_source_unchanged()
+
+    def test_media_payloads_are_included_in_clone_space_budget(self):
+        before, _, _ = self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        source_size = sum(path.stat().st_size for path in self.target.rglob("*")
+                          if not path.is_symlink() and path.is_file())
+        codec_size = sum((self.bundle / "proton-video" / Path(key).name).stat().st_size
+                         for key in m.VIDEO)
+        media_size = sum((self.bundle / "proton-media" / Path(key).name).stat().st_size
+                         for key in m.MEDIA)
+        # Enough for a video-only upgrade, one byte short of this media upgrade.
+        free = source_size + codec_size + media_size + 512 * 1024**2 - 1
+        with patch.object(m.shutil, "disk_usage", return_value=SimpleNamespace(free=free)):
+            self.assert_media_failure_unchanged(before, config, 1)
+        self.assertTrue(any("not enough space" in message for message in self.messages))
+
+    def test_media_schema4_updates_from_receipt_hashes_without_current_stock(self):
+        self.add_stock_media()
+        video = self.add_video()
+        self.add_media()
+        self.assertEqual(self.auto(), m.NAME)
+        manifest = self.add_media(b" next media revision")
+        # Current modules are patched, so using new stock_sha256 to validate the
+        # owned source would reject a legitimate update. Today's Steam is unused.
+        (self.bundle / "proton-camera.json").write_text('{}')
+        (self.bundle / "proton/qcap.dll").unlink()
+        shutil.rmtree(self.stock)
+        self.manifest.unlink()
+        self.assertEqual(self.auto(), m.NAME)
+        self.assert_media(video, manifest)
+        self.assertEqual(self.clone_count, 2)
+
+    def test_media_schema4_snapshot_validation_does_not_trust_new_bundle(self):
+        self.add_stock_media()
+        self.add_video()
+        self.add_media()
+        self.assertEqual(self.auto(), m.NAME)
+        old_receipt = m.snapshot_receipt(self.target)
+        new_media = self.add_media(b" newer media")
+        self.assertTrue(m.valid_snapshot(self.target))
+        self.assertEqual(m.snapshot_receipt(self.target), old_receipt)
+        config = self.config.read_bytes()
+        for relative in m.MEDIA:
+            file = self.target / relative
+            original = file.read_bytes()
+            # Even matching the new bundle cannot legitimize edits to the old tree.
+            file.write_bytes((self.bundle / "proton-media" / Path(relative).name).read_bytes())
+            self.assertEqual(m.digest(file), new_media["files"][relative]["patched_sha256"])
+            self.assertFalse(m.valid_snapshot(self.target))
+            self.assert_media_failure_unchanged(self.inventory(self.target), config, 1)
+            file.write_bytes(original)
+
+    def test_media_schema4_incompatible_bundle_cannot_replace_owned_snapshot(self):
+        self.add_stock_media()
+        self.add_video()
+        self.add_media()
+        self.assertEqual(self.auto(), m.NAME)
+        before, config = self.inventory(self.target), self.config.read_bytes()
+        manifest = self.add_media(b" future payload")
+        bad = [dict(manifest, source_version_sha256="0" * 64)]
+        for relative in m.MEDIA:
+            hashes = dict(manifest["files"][relative], stock_sha256="0" * 64)
+            bad.append(dict(manifest, files=dict(manifest["files"], **{relative: hashes})))
+        for value in bad:
+            (self.bundle / "proton-media.json").write_text(json.dumps(value))
+            self.assert_media_failure_unchanged(before, config, 1)
+
+    def test_media_schema4_receipt_binds_both_files_version_and_launcher(self):
+        self.add_stock_media()
+        self.add_video()
+        self.add_media()
+        self.assertEqual(self.auto(), m.NAME)
+        path = self.target / m.RECEIPT
+        original = path.read_text()
+        bad = []
+        for field in ("media", "launcher", "video"):
+            value = json.loads(original)
+            del value[field]
+            bad.append(value)
+        value = json.loads(original)
+        value["media"]["source_version_sha256"] = "0" * 64
+        bad.append(value)
+        for relative in m.MEDIA:
+            value = json.loads(original)
+            del value["files"][relative]
+            bad.append(value)
+            value = json.loads(original)
+            value["media"]["files"][relative]["patched_sha256"] = "0" * 64
+            bad.append(value)
+        value = json.loads(original)
+        value["files"]["files/lib/wine/x86_64-windows/other.dll"] = "0" * 64
+        bad.append(value)
+        value = json.loads(original)
+        value["launcher"]["policy"]["source_sha256"] = "0" * 64
+        bad.append(value)
+        for value in bad:
+            path.write_text(json.dumps(value))
+            self.assertFalse(m.valid_snapshot(self.target))
+            self.assert_media_failure_unchanged(self.inventory(self.target), self.config.read_bytes(), 1)
+        path.write_text(original)
+        (self.bundle / "proton-media.json").write_text('{}')
+        self.assertTrue(m.valid_snapshot(self.target))
+
+    def test_media_omission_preserves_schema4_through_video_update_and_camera_only_bundle(self):
+        self.add_stock_media()
+        self.add_video()
+        media = self.add_media()
+        self.assertEqual(self.auto(), m.NAME)
+        (self.bundle / "proton-media.json").unlink()
+        shutil.rmtree(self.bundle / "proton-media")
+        video = self.add_video(b" new codecs only")
+        self.assertEqual(self.auto(), m.NAME)
+        self.assert_media(video, media)
+        self.assertEqual(self.clone_count, 2)
+        before = self.inventory(self.target)
+        (self.bundle / "proton-video.json").unlink()
+        (self.bundle / "video-launcher.json").unlink()
+        self.assertEqual(self.auto(), m.NAME)
+        self.assertEqual(self.inventory(self.target), before)
+        self.assertEqual(self.clone_count, 2)
+        self.assert_media(video, media)
+        self.assert_source_unchanged()
+
+    def test_media_changed_after_preflight_discards_stage(self):
+        before, _, _ = self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        def changing(source, stage):
+            self.clone(source, stage)
+            (self.bundle / "proton-media" / Path(m.MEDIA[-1]).name).write_bytes(b"raced payload")
+        self.assertIsNone(self.auto(clone=changing))
+        self.assertEqual(self.inventory(self.target), before)
+        self.assertEqual(self.config.read_bytes(), config)
+        self.assertFalse(list(self.target.parent.glob(".steamac-camera-stage-*")))
+        self.assert_source_unchanged()
+
+    def test_media_unowned_source_change_during_clone_cannot_be_hidden_by_replacement(self):
+        before, _, _ = self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        def changing(source, stage):
+            self.clone(source, stage)
+            (stage / m.MEDIA[0]).write_bytes(b"clone changed unowned module")
+        self.assertIsNone(self.auto(clone=changing))
+        self.assertEqual(self.inventory(self.target), before)
+        self.assertEqual(self.config.read_bytes(), config)
+        self.assertFalse((self.target.parent / m.BACKUP).exists())
+
+    def test_media_legacy_source_is_rechecked_before_retirement(self):
+        self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        write = VDF["atomic_write"]
+        changed = {}
+        def change_source_after_staged_receipt(path, text):
+            write(path, text)
+            if path.name == m.RECEIPT:
+                (self.target / m.MEDIA[-1]).write_bytes(b"concurrent unowned edit")
+                changed.update(self.inventory(self.target))
+        self.assertIsNone(self.auto(vdf=dict(VDF, atomic_write=change_source_after_staged_receipt)))
+        self.assertTrue(changed)
+        self.assertEqual(self.inventory(self.target), changed)
+        self.assertEqual(self.config.read_bytes(), config)
+        self.assertFalse((self.target.parent / m.BACKUP).exists())
+        self.assertFalse(list(self.target.parent.glob(".steamac-camera-stage-*")))
+        self.assert_source_unchanged()
+
+    def test_media_failed_publication_rolls_back_and_retry_upgrades(self):
+        before, video, media = self.media_upgrade_fixture()
+        config = self.config.read_bytes()
+        rename = m.os.rename
+        def fail(source, destination):
+            if source.name == "tool":
+                raise OSError("media publication unavailable")
+            rename(source, destination)
+        with patch.object(m.os, "rename", side_effect=fail):
+            self.assertIsNone(self.auto())
+        self.assertEqual(self.inventory(self.target), before)
+        self.assertEqual(self.config.read_bytes(), config)
+        self.assertFalse((self.target.parent / m.BACKUP).exists())
+        self.assertFalse(list(self.target.parent.glob(".steamac-camera-stage-*")))
+        self.assert_source_unchanged()
+        self.assertEqual(self.auto(), m.NAME)
+        self.assert_media(video, media)
+
+    def test_media_schema4_failed_rollback_recovers_owned_backup(self):
+        self.add_stock_media()
+        video = self.add_video()
+        self.add_media()
+        self.assertEqual(self.auto(), m.NAME)
+        before, config = self.inventory(self.target), self.config.read_bytes()
+        media = self.add_media(b" updated media")
+        backup = self.target.parent / m.BACKUP
+        rename = m.os.rename
+        def fail(source, destination):
+            if source.name == "tool" or source == backup:
+                raise OSError("media publication and rollback unavailable")
+            rename(source, destination)
+        with patch.object(m.os, "rename", side_effect=fail):
+            self.assertIsNone(self.auto())
+        self.assertFalse(self.target.exists())
+        self.assertEqual(self.inventory(backup), before)
+        self.assertTrue(m.valid_snapshot(backup))
+        self.assertEqual(self.config.read_bytes(), config)
+        self.assertEqual(self.auto(), m.NAME)
+        self.assert_media(video, media)
+        self.assert_source_unchanged()
 
     def test_bundled_launcher_policy_pins_live_source_not_reference(self):
         policy = m.read_launcher_policy(ROOT / "guest/camera")

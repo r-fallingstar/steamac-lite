@@ -1,5 +1,28 @@
 # VRChat video investigation (issue #1)
 
+## November 13: diagnostic candidate owner test
+
+The owner confirmed AVPro video and audio in Tokyo Sky Home, followed by working
+Stop and playlist switching. The reply also accepted the requested audio-speed
+and Unity regression checks. In the successful run, MediaEngine diagnostics
+recorded BGRA 1280×720 D3D11 frames copied on the game's own device, with
+successful transfer results and advancing timestamps. The game log recorded
+AVPro VideoStart and Stop; it contained no Udon 10-second execution-limit error.
+
+The preceding candidate had produced normal audio but black video, with Stop
+and playlist controls unresponsive. Six Udon execution-limit errors occurred
+before MediaEngine opened the stream, while memory and I/O pressure increased.
+This sequence supports investigating the lost controls separately from frame
+transfer; it does not prove that memory pressure caused the Udon failures.
+
+This is an owner pass for the diagnostic candidate, not a new public-release
+claim. The packaged build without diagnostics must still pass the same checks
+after the existing-installation upgrade. The historical v1.9.8-lite.4 correction
+below remains applicable to that published version. A dedicated general fix for
+the reported N-times audio speed has not been established.
+
+See [private video build and upgrade details](video-build.md).
+
 Status: unresolved; issue #1 remains open and investigation continues. The earlier
 AVPro playback-pass statement is withdrawn. The maintainer confirms that AVPro
 still shows a black screen with no audio in Tokyo Sky Home's YamaPlayer on the

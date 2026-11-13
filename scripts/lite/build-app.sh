@@ -63,9 +63,9 @@ import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='steamac Lite',
-         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.8-lite.4',
+         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.8-lite.5',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='198005', SteamacCameraSupport=True,
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='198006', SteamacCameraSupport=True,
          NSCameraUsageDescription='The built-in camera is sent to games in the SteamOS virtual machine only while a game uses it or a manual preview is open. Video is not saved.',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
          LSMinimumSystemVersion='15.5')
@@ -160,7 +160,8 @@ install -m644 "$VR_RUNTIME" "$LAYER/usr/lib/steamac/vr/runtime/bin/linux64/vrcli
 cp "$VR_MANIFEST" "$APP/Contents/Resources/steamac-vr-build.json"
 python3 scripts/lite/stage-camera.py "$LAYER" "$APP"
 python3 scripts/lite/stage-video.py "$LAYER" "$APP"
-echo 'steamac-lite v1.9.8-lite.4 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz private-video-codecs' >> "$LAYER/usr/lib/steamac/layer-release"
+python3 scripts/lite/stage-media.py "$LAYER" "$APP"
+echo 'steamac-lite v1.9.8-lite.5 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz private-video-codecs private-media-engine' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"
