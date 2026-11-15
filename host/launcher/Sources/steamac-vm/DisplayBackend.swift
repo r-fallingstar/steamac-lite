@@ -176,6 +176,11 @@ final class Scanout {
         }
     }
 
+    /// Generation of the frame `take()` would return, or nil if none is ready.
+    var readyGeneration: Int? {
+        locked { ready == nil ? nil : generation }
+    }
+
     func release(_ frame: TakenFrame) {
         locked {
             if frame.generation == generation { displaying = nil }

@@ -9,11 +9,17 @@ import os
 final class Presenter: DisplaySink {
     let display: DisplayBackend
     let renderer: Renderer
-    weak var view: VMView?
+    weak var view: VMView? {
+        didSet { view?.scanoutCatchUp = { [weak self] force in self?.catchUp(force: force) ?? false } }
+    }
     var onScanoutResize: ((Int, Int) -> Void)?
     private var lock = os_unfair_lock()
     private var pending = false
     private(set) var framesShown: UInt64 = 0
+    /// Frames left in the scanout mailbox while an opaque game layer hides the guest picture.
+    private(set) var framesDeferred: UInt64 = 0
+    /// A frame arrived while the picture was hidden and has not been shown since (main thread).
+    private var deferring = false
     /// Main thread, one-shot: runs after the next guest frame is on screen.
     var onNextFrame: (() -> Void)?
 
@@ -57,7 +63,48 @@ final class Presenter: DisplaySink {
         os_unfair_lock_lock(&lock)
         pending = false
         os_unfair_lock_unlock(&lock)
-        guard let f = scanout.take() else { return }
+        // An opaque remoted game layer (DXMT) covers the whole view: the guest picture under it
+        // cannot be seen, so its upload and draw (a full-size copy and a render pass per frame)
+        // are skipped. The frame stays in the mailbox, where libkrun keeps every buffer complete
+        // and Scanout unions the damage, so the next shown frame is exact. Not skipped with perf
+        // stats on (their scanout figures stay as before) or after a geometry change (the
+        // texture size drives pointer mapping, `fitRect`).
+        if let view, view.scanoutHidden, PerfStats.shared == nil,
+           let generation = scanout.readyGeneration, generation == renderer.generation {
+            framesDeferred &+= 1
+            if !deferring {
+                deferring = true
+                log("display: guest picture hidden by the game layer; scanout frames deferred")
+            }
+            runNextFrame()
+            return
+        }
+        _ = show()
+    }
+
+    /// The picture may be visible again (game layer hidden or released), or a capture needs the
+    /// current frame (`force`). Returns true if a frame was drawn.
+    @discardableResult
+    func catchUp(force: Bool) -> Bool {
+        guard deferring else { return false }
+        guard force || !(view?.scanoutHidden ?? false) else { return false }
+        deferring = false
+        if !force { log("display: guest picture visible again (\(framesDeferred) frames deferred so far)") }
+        if show() { return true }
+        view?.redraw()
+        return true
+    }
+
+    private func runNextFrame() {
+        if let next = onNextFrame {
+            onNextFrame = nil
+            next()
+        }
+    }
+
+    /// Uploads and draws the ready frame, if any.
+    private func show() -> Bool {
+        guard let f = scanout.take() else { return false }
         let perf = PerfStats.shared
         var stamp = perf?.frameTaken() ?? PerfStats.FrameStamp()
         let t0 = perf != nil ? CACurrentMediaTime() : 0
@@ -70,10 +117,8 @@ final class Presenter: DisplaySink {
         scanout.release(f)
         framesShown &+= 1
         view?.redraw(stamp: stamp)
-        if let next = onNextFrame {
-            onNextFrame = nil
-            next()
-        }
+        runNextFrame()
+        return true
     }
 }
 
@@ -302,6 +347,18 @@ final class VMView: NSView {
         }
     }
 
+    /// Set by the presenter: show a deferred guest frame (`force`: even while it is hidden, for a
+    /// capture). Returns true if something was drawn.
+    var scanoutCatchUp: ((_ force: Bool) -> Bool)?
+
+    /// The guest picture is entirely behind a shown, opaque game layer that covers the view and
+    /// has a drawable size (wmtr's overlay layers are opaque, fill the view and autoresize).
+    var scanoutHidden: Bool {
+        guard gameLayersVisible, let game = activeGameLayer, game.isOpaque,
+              game.drawableSize.width > 0, game.drawableSize.height > 0 else { return false }
+        return game.frame.insetBy(dx: -0.5, dy: -0.5).contains(metalLayer.bounds)
+    }
+
     /// The topmost remoted game layer (DXMT): it would cover the guest's cursor.
     private var activeGameLayer: CAMetalLayer? {
         (metalLayer.sublayers ?? [])
@@ -389,6 +446,8 @@ final class VMView: NSView {
             }
             controller?.refreshHostCursor()
             updateCursorLayer()
+            // Also runs on wmtr's attach / release notifications (KVC on this property).
+            _ = scanoutCatchUp?(false)
         }
     }
 

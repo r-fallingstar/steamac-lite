@@ -651,7 +651,8 @@ final class WindowController: NSObject, NSWindowDelegate {
             }
         }
         view.metalLayer.framebufferOnly = false   // readable drawable for this one capture
-        view.redraw()
+        // A frame deferred behind the game layer is drawn first, so the capture is current.
+        if !(view.scanoutCatchUp?(true) ?? false) { view.redraw() }
     }
 
     /// The window as the window server composites it, Metal HUD included (the HUD is not part of

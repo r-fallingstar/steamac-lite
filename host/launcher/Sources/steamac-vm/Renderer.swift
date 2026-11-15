@@ -21,6 +21,11 @@ final class Renderer {
         var user: MTLCommandBuffer?
         /// Commit order of `user`, to pick the oldest slot when all of them are still in flight.
         var seq = 0
+        /// Area where this slot's texels differ from the newest uploaded frame (frames uploaded
+        /// to other slots since this one was written). Ignored while `stale`.
+        var owed: DamageRect?
+        /// Never written in this geometry, or a frame of unknown damage went elsewhere: full upload.
+        var stale = true
         var busy: Bool { user.map { $0.status != .completed } ?? false }
     }
     private var slots: [FrameSlot] = []
@@ -114,11 +119,18 @@ final class Renderer {
         }
     }
 
+    /// Generation of the frames in the ring (-1: none), for the presenter.
+    var generation: Int { textureGeneration }
+
     /// Upload the damaged part of `frame` (everything if the texture is new) into a free ring
     /// slot: only when every slot is still being sampled does this wait for the GPU.
+    ///
+    /// Each slot remembers the damage of the frames that went to other slots since it was last
+    /// written, so switching to another slot (the current one still being sampled) copies only
+    /// that union instead of the whole frame. This relies on every frame buffer holding the
+    /// complete picture (libkrun copies each buffer the damage it owes, patch 0019).
     func upload(_ frame: TakenFrame) {
         let b = frame.buffer
-        var full = frame.damage == nil
         if texture == nil || textureGeneration != frame.generation
             || texture!.width != b.width || texture!.height != b.height {
             let (pf, swizzle) = Renderer.textureLayout(for: b.format)
@@ -131,31 +143,39 @@ final class Renderer {
             }
             currentSlot = 0
             textureGeneration = frame.generation
-            full = true
         }
         guard !slots.isEmpty else { return }
+        // Every slot now lacks this frame's change.
+        for i in slots.indices {
+            if let d = frame.damage {
+                slots[i].owed = slots[i].owed.map { $0.union(d) } ?? d
+            } else {
+                slots[i].stale = true
+            }
+        }
         var chosen = currentSlot
         if slots[chosen].busy {
             if let free = slots.indices.first(where: { !slots[$0].busy }) {
-                // A free slot's texels are not the frame the damage rect was measured against.
                 chosen = free
             } else {
                 // Every slot is in flight: wait for the oldest command buffer, as before.
                 chosen = slots.indices.min { slots[$0].seq < slots[$1].seq } ?? chosen
                 slots[chosen].user?.waitUntilCompleted()
             }
-            full = true
             currentSlot = chosen
         }
         slots[chosen].user = nil
         let rect: DamageRect
-        if full {
+        if slots[chosen].stale {
             rect = DamageRect(x0: 0, y0: 0, x1: b.width, y1: b.height)
-        } else if let r = frame.damage!.clamped(width: b.width, height: b.height) {
+        } else if let r = slots[chosen].owed?.clamped(width: b.width, height: b.height) {
             rect = r
         } else {
+            slots[chosen].owed = nil
             return
         }
+        slots[chosen].stale = false
+        slots[chosen].owed = nil
         let src = b.ptr.advanced(by: rect.y0 * b.stride + rect.x0 * 4)
         slots[chosen].texture.replace(region: MTLRegionMake2D(rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0),
                                       mipmapLevel: 0, withBytes: src, bytesPerRow: b.stride)

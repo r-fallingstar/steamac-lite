@@ -1,3 +1,4 @@
+import CKrun
 import AppKit
 import QuartzCore
 
@@ -114,6 +115,57 @@ enum GameLayerSelfTest {
         progress.guestLine("future-cursor-command ignored")
         check(images == 2 && positions == 1 && visible == [true, false] && ready == 1,
               "cursor protocol validation / forward compatibility")
+        // Guest frames behind an opaque game layer stay in the mailbox and are shown once it hides.
+        let display = DisplayBackend()
+        let deferView = VMView(frame: CGRect(x: 0, y: 0, width: 640, height: 400),
+                               renderer: Renderer(), contentPixelSize: CGSize(width: 640, height: 400))
+        let presenter = Presenter(display: display, renderer: deferView.renderer)
+        presenter.view = deferView
+        // The guest picture; like libkrun (patch 0019) every frame buffer receives all of it, and
+        // a frame changes only its damage rect.
+        var picture = [UInt8](repeating: 0, count: 640 * 400 * 4)
+        func guestFrame(_ value: UInt8, rect: DamageRect?) {
+            let r = rect ?? DamageRect(x0: 0, y0: 0, x1: 640, y1: 400)
+            for y in r.y0..<r.y1 { for x in r.x0..<r.x1 { for c in 0..<4 { picture[(y * 640 + x) * 4 + c] = value } } }
+            let s = display.scanouts[0]
+            guard let (id, ptr, len) = s.alloc() else { return check(false, "no free scanout buffer") }
+            picture.withUnsafeBytes { ptr.copyMemory(from: $0.baseAddress!, byteCount: min(len, $0.count)) }
+            check(s.present(frameId: id, rect: rect), "present rejected")
+            presenter.consume()
+        }
+        _ = display.configureScanout(id: 0, displayWidth: 640, displayHeight: 400, width: 640, height: 400,
+                                     format: UInt32(KRUN_DISPLAY_FORMAT_B8G8R8X8_UNORM))
+        guestFrame(10, rect: nil)
+        check(presenter.framesShown == 1 && presenter.framesDeferred == 0, "first frame not shown")
+        let opaqueGame = CAMetalLayer()
+        opaqueGame.frame = deferView.bounds
+        opaqueGame.isOpaque = true
+        opaqueGame.drawableSize = CGSize(width: 640, height: 400)
+        deferView.metalLayer.addSublayer(opaqueGame)
+        deferView.gameLayersVisible = true
+        check(deferView.scanoutHidden, "opaque full-view game layer does not hide the scanout")
+        guestFrame(20, rect: DamageRect(x0: 0, y0: 0, x1: 64, y1: 64))
+        guestFrame(30, rect: DamageRect(x0: 100, y0: 100, x1: 200, y1: 200))
+        check(presenter.framesShown == 1 && presenter.framesDeferred == 2, "hidden frames were uploaded")
+        var resumed = false
+        presenter.onNextFrame = { resumed = true }
+        guestFrame(40, rect: DamageRect(x0: 0, y0: 0, x1: 8, y1: 8))
+        check(resumed, "onNextFrame (resume chip) not run for a deferred frame")
+        deferView.gameLayersVisible = false
+        check(!deferView.scanoutHidden && presenter.framesShown == 2, "deferred frame not shown when the game hid")
+        let shown = deferView.renderer.renderOffscreen(width: 640, height: 400)
+        // (150,150) changed only in a deferred frame (30), (40,40) in frame 20, (4,4) in 40;
+        // (300,300) kept frame 10's value. The catch-up upload must carry every deferred change.
+        for (x, y, v) in [(150, 150, 30), (40, 40, 20), (4, 4, 40), (300, 300, 10)] as [(Int, Int, UInt8)] {
+            let i = (y * 640 + x) * 4
+            check(shown[i] == v && shown[i + 1] == v && shown[i + 2] == v,
+                  "pixel \(x),\(y) is \(shown[i]) after catch-up, expected \(v)")
+        }
+        opaqueGame.isOpaque = false
+        deferView.gameLayersVisible = true
+        check(!deferView.scanoutHidden, "translucent game layer treated as hiding the scanout")
+        guestFrame(50, rect: nil)
+        check(presenter.framesShown == 3, "frame under a translucent game layer not shown")
         log(failures == 0 ? "selftest-game-layers: PASS" : "selftest-game-layers: \(failures) FAILED")
         exit(failures == 0 ? 0 : 1)
     }
