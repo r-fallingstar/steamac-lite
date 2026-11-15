@@ -119,6 +119,22 @@ enum CameraCapturePolicy {
     static func requested(ready: Bool, preview: Bool, automatic: Bool, demand: Bool, paused: Bool = false) -> Bool {
         ready && !paused && (preview || (automatic && demand))
     }
+    /// A game's request (automatic mode) asks macOS once while access is undecided: otherwise a
+    /// permission lost or never granted for this version (the startup notice shows once per version,
+    /// or the camera was turned on later in Settings) leaves the game without a camera and no prompt.
+    /// The manual preview asks in `start()`; a pending request is not repeated.
+    static func asksOnDemand(_ status: AVAuthorizationStatus, preview: Bool, pending: Bool) -> Bool {
+        status == .notDetermined && !preview && !pending
+    }
+    static func describe(_ status: AVAuthorizationStatus) -> String {
+        switch status {
+        case .authorized: return "allowed"
+        case .denied: return "denied"
+        case .restricted: return "restricted"
+        case .notDetermined: return "not requested yet"
+        @unknown default: return "unknown (\(status.rawValue))"
+        }
+    }
     static func selfCheck() -> [String] {
         let cases: [(Bool, Bool, Bool, Bool, Bool)] = [
             (true, false, true, false, false), // Permission/automatic mode alone never captures.
@@ -135,6 +151,18 @@ enum CameraCapturePolicy {
             if requested(ready: true, preview: preview, automatic: true, demand: true, paused: true) {
                 failures.append("camera captured while VM paused")
             }
+        }
+        let asks: [(AVAuthorizationStatus, Bool, Bool, Bool)] = [
+            (.notDetermined, false, false, true),   // a game's request asks once
+            (.notDetermined, false, true, false),   // never while a request is pending
+            (.notDetermined, true, false, false),   // the manual preview asks in start()
+            (.denied, false, false, false),         // a refusal is never asked again
+            (.restricted, false, false, false),
+            (.authorized, false, false, false)
+        ]
+        for (index, item) in asks.enumerated()
+        where asksOnDemand(item.0, preview: item.1, pending: item.2) != item.3 {
+            failures.append("camera on-demand permission policy \(index)")
         }
         return failures
     }
@@ -156,6 +184,8 @@ final class CameraBridge: ObservableObject {
     private var wanted = false
     private var manualPreview = false
     private var guestDemand = false
+    /// The current request was already logged as lacking camera access (once per request).
+    private var loggedNoAccess = false
     private var paused = false
     @Published var automaticCaptureEnabled = true {
         didSet {
@@ -201,15 +231,34 @@ final class CameraBridge: ObservableObject {
         let requested = CameraCapturePolicy.requested(ready: ready, preview: manualPreview,
             automatic: automaticCaptureEnabled, demand: guestDemand, paused: paused)
         guard requested else {
+            loggedNoAccess = false
             if wanted || running { stopCapture() }
             if ready && !paused && automaticCaptureEnabled && AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
                 message = String(localized: "Camera is allowed and waiting for a game.")
             }
             return
         }
-        guard AVCaptureDevice.authorizationStatus(for: .video) == .authorized else {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        guard status == .authorized else {
             if wanted || running { stopCapture() }
-            message = String(localized: "Camera access is not allowed. Check macOS Camera settings.")
+            if CameraCapturePolicy.asksOnDemand(status, preview: manualPreview, pending: permissionRequestPending) {
+                permissionRequestPending = true; busy = true
+                log("camera: a game requested the camera; asking macOS for camera access")
+                AVCaptureDevice.requestAccess(for: .video) { granted in DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    self.permissionRequestPending = false; self.busy = false
+                    log("camera: macOS camera access \(granted ? "allowed" : "not allowed")")
+                    self.reconcileCapture()
+                } }
+                return
+            }
+            if !permissionRequestPending {
+                if !loggedNoAccess {
+                    loggedNoAccess = true
+                    log("camera: a game requested the camera, but camera access is \(CameraCapturePolicy.describe(status))")
+                }
+                message = String(localized: "Camera access is not allowed. Check macOS Camera settings.")
+            }
             return
         }
         wanted = true

@@ -28,6 +28,10 @@ final class CapturePermissionNotice: NSObject {
                             cameraSelected: Bool, cameraWasAuthorized: Bool, cameraStatus: AVAuthorizationStatus) -> Bool {
         guard boot == 1 else { return false }
         guard let lastNotice else { return true }
+        // Automatic camera use is on but macOS has never been asked (access reset, a copy with another
+        // signature, or never granted before an update): ask at startup, not first in a game. Unchecking
+        // the camera here or declining in macOS ends this (not selected / not undetermined).
+        if cameraSelected && cameraStatus == .notDetermined { return true }
         guard lastNotice != version else { return false }
         return (microphoneSelected && microphoneWasAuthorized && microphoneStatus != .authorized)
             || (cameraSelected && cameraWasAuthorized && cameraStatus != .authorized)
@@ -209,8 +213,16 @@ final class CapturePermissionNotice: NSObject {
             || notice("old", boot: 2, mic: .denied) || !notice("old", mic: .notDetermined)
             || !notice("old", cam: .denied) || notice("old", micSelected: false, mic: .denied)
             || notice("old", camSelected: false, cam: .denied)
-            || notice("old", micWas: false, mic: .denied, camWas: false, cam: .notDetermined) {
+            || !notice("old", micWas: false, mic: .denied, camWas: false, cam: .notDetermined) {
             failures.append("capture permission update policy")
+        }
+        // An undecided camera with automatic use on is asked at startup whatever version was noticed;
+        // an unchecked camera, a decided status or a later boot is not.
+        if !notice("new", cam: .notDetermined) || !notice("new", camWas: false, cam: .notDetermined)
+            || notice("new", camSelected: false, cam: .notDetermined)
+            || notice("new", cam: .denied) || notice("new", camWas: false, cam: .restricted)
+            || notice("new", boot: 2, cam: .notDetermined) {
+            failures.append("undecided camera startup notice")
         }
         let states: [AVAuthorizationStatus] = [.notDetermined, .authorized, .denied, .restricted]
         for microphoneState in states {
