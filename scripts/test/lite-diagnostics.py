@@ -94,7 +94,7 @@ print("diagnostics-core: PASS (\(checks) assertions)")
         'CFBundleIdentifier': env['STEAMAC_DEFAULTS_DOMAIN'], 'CFBundleExecutable': 'steamac-vm',
         'CFBundlePackageType': 'APPL', 'CFBundleShortVersionString': '1.9.8-lite.7',
         'SteamacLiteBuild': True, 'SteamacGitCommit': 'abcdef1234', 'LSUIElement': True}))
-    subprocess.run(['xcrun', 'swiftc', '-swift-version', '5', str(core), str(permissions), str(ROOT / 'host/diagnostics/main.swift'),
+    subprocess.run(['xcrun', 'swiftc', '-swift-version', '5', str(core), str(permissions), str(ROOT / 'host/diagnostics/FirstRunWizard.swift'), str(ROOT / 'host/diagnostics/main.swift'),
                     '-o', str(binary / 'steamac-vm')], env=env, check=True)
     runtime = d / 'runtime.c'
     runtime.write_text('''#include <signal.h>
@@ -110,6 +110,8 @@ int main(int n, char **v) {
 ''')
     subprocess.run(['xcrun', 'clang', str(runtime), '-o', str(binary / 'steamac-runtime')], env=env, check=True)
     wrapper = binary / 'steamac-vm'
+    for lang in ['ja', 'en']:
+        subprocess.run([str(wrapper), '--selftest-wizard-layout', '--selftest-out', str(d/lang), '-AppleLanguages', '('+lang+')'], env=env, check=True)
     assert subprocess.run([str(wrapper), '--selftest-fixture'], env=env).returncode == 23
     assert subprocess.run([str(wrapper)], env=env).returncode == 0  # opt-out exec path
     subprocess.run([str(helper), 'on'], env=env, check=True)

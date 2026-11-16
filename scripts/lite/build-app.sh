@@ -116,7 +116,7 @@ cp "$BIN" "$APP/Contents/MacOS/steamac-runtime"
 cp "$PLIST" "$APP/Contents/Info.plist"
 swiftc -O -swift-version 5 -target arm64-apple-macosx15.5 \
     -debug-prefix-map "$ROOT=/src/steamac-lite" -file-prefix-map "$ROOT=/src/steamac-lite" -sdk "$SDK" \
-    host/launcher/Sources/steamac-vm/LiteDiagnostics.swift host/diagnostics/StartupPermissions.swift host/diagnostics/main.swift \
+    host/launcher/Sources/steamac-vm/LiteDiagnostics.swift host/diagnostics/StartupPermissions.swift host/diagnostics/FirstRunWizard.swift host/diagnostics/main.swift \
     -o "$APP/Contents/MacOS/steamac-vm"
 strip -S "$APP/Contents/MacOS/steamac-vm"
 codesign --force --sign - "$APP/Contents/MacOS/steamac-vm"

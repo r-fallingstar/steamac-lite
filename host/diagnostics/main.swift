@@ -14,86 +14,34 @@ func execRuntime() -> Never {
     _ = "steamac Lite: cannot start runtime (errno \(errno))\n".withCString { write(STDERR_FILENO, $0, strlen($0)) }
     exit(127)
 }
+if arguments.contains("--selftest-wizard-layout") {
+    _ = NSApplication.shared
+    let wizard = FirstRunWizard(arguments: [])
+    let failures = wizard.layoutFailures()
+    if let index = arguments.firstIndex(of: "--selftest-out"), index + 1 < arguments.count {
+        let directory = URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let data = try JSONSerialization.data(withJSONObject: ["passed": failures.isEmpty, "failures": failures,
+                "window_width": wizard.window.frame.width, "window_height": wizard.window.frame.height], options: [.prettyPrinted])
+            try data.write(to: directory.appendingPathComponent("layout-validation.json"), options: .atomic)
+        } catch { print("wizard-layout: FAIL \(error)"); exit(1) }
+    }
+    print(failures.isEmpty ? "wizard-layout: PASS" : "wizard-layout: FAIL " + failures.joined(separator: "; "))
+    exit(failures.isEmpty ? 0 : 1)
+}
 let utility = arguments.contains { $0.hasPrefix("--selftest") || $0.hasPrefix("--sentry-test") ||
     ["--help", "-h", "--headless", "--preview-update", "--ssh-password", "--create-disk", "--grow-disk"].contains($0) }
 if utility || ProcessInfo.processInfo.environment["STEAMAC_VM_CHILD"] == "1" { execRuntime() }
 
-let ja = Locale.preferredLanguages.first?.hasPrefix("ja") == true
-let wizardKey = "liteFirstRunWizardVersion"
-final class PrivacySettings: NSObject {
-    @objc func microphone() { NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!) }
-    @objc func camera() { NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")!) }
-}
 if LiteDiagnostics.defaults.integer(forKey: LiteDiagnostics.consentKey) != LiteDiagnostics.consentVersion
-    || LiteDiagnostics.defaults.integer(forKey: wizardKey) != 1 {
+    || LiteDiagnostics.defaults.integer(forKey: FirstRunWizard.versionKey) != 1 {
     let app = NSApplication.shared
     app.setActivationPolicy(.regular)
-    DispatchQueue.main.async {
-        let d = LiteDiagnostics.defaults
-        let alert = NSAlert()
-        alert.messageText = ja ? "steamac Liteの初回設定" : "Welcome to steamac Lite"
-        alert.informativeText = ja
-            ? "表示言語と、使用する機能を選んでください。マイク・カメラを選ぶとmacOSの許可を確認します。許可だけでは撮影・録音を始めません。あとからアプリの設定で変更できます。macOSで拒否済みの権限は、下の設定ボタンから変更してください。"
-            : "Choose a language and optional features. Selected microphone/camera access is requested from macOS; permission alone does not start capture. Change choices later in Settings. If macOS previously denied access, use the privacy settings buttons below."
-        let names = ["日本語", "English", "한국어", "Русский", "简体中文"]
-        let codes = ["ja", "en", "ko", "ru", "zh-Hans"]
-        let language = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 420, height: 28))
-        language.addItems(withTitles: names)
-        let preferred = d.string(forKey: "applicationLanguage") ?? Locale.preferredLanguages.first ?? "en"
-        language.selectItem(at: codes.firstIndex(where: { preferred.hasPrefix($0 == "zh-Hans" ? "zh" : $0) }) ?? 1)
-        language.setAccessibilityLabel("表示言語 / Language")
-        let microphone = NSButton(checkboxWithTitle: ja ? "マイクの使用許可を確認する（ボイスチャット用）" : "Request microphone access for voice chat", target: nil, action: nil)
-        let camera = NSButton(checkboxWithTitle: ja ? "ゲームで使うカメラの使用許可を確認する" : "Request camera access for games", target: nil, action: nil)
-        let diagnostics = NSButton(checkboxWithTitle: ja ? "クラッシュレポートと診断を送信する（任意）" : "Send crash reports and diagnostics (optional)", target: nil, action: nil)
-        diagnostics.state = .off
-        let audioStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-        let videoStatus = AVCaptureDevice.authorizationStatus(for: .video)
-        microphone.state = (audioStatus == .authorized || audioStatus == .notDetermined) ? .on : .off
-        camera.state = (d.object(forKey: "cameraAutomaticCapture") == nil || d.bool(forKey: "cameraAutomaticCapture")) ? .on : .off
-        let privacy = PrivacySettings()
-        let buttons = NSStackView()
-        buttons.orientation = .horizontal; buttons.spacing = 12
-        for (title, selector) in [(ja ? "マイクの設定…" : "Microphone Settings…", #selector(PrivacySettings.microphone)),
-                                  (ja ? "カメラの設定…" : "Camera Settings…", #selector(PrivacySettings.camera))] {
-            buttons.addArrangedSubview(NSButton(title: title, target: privacy, action: selector))
-        }
-        let detail = NSTextField(wrappingLabelWithString: ja
-            ? "診断を有効にすると、3分以上進まない起動や異常終了の情報を作者の非公開GitHubへ送信します。版番号、Macの型番・チップ・メモリ、起動段階、終了理由を含みます。名前、アカウント、画面、ファイル内容、ログ全文は自動送信しません。解除は「設定 → 一般」から。"
-            : "If enabled, stalls over 3 minutes and abnormal exits are sent to the author's private GitHub: versions, Mac model/chip/RAM, startup stage and exit reason. Names, accounts, screens, file contents and full logs are not sent automatically. Turn off in Settings > General.")
-        detail.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        let stack = NSStackView(views: [NSTextField(labelWithString: "表示言語 / Language"), language,
-            microphone, camera, buttons, diagnostics, detail])
-        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 10
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.widthAnchor.constraint(equalToConstant: 420).isActive = true
-        detail.widthAnchor.constraint(equalToConstant: 420).isActive = true
-        stack.frame.size = stack.fittingSize
-        alert.accessoryView = stack
-        alert.addButton(withTitle: ja ? "続ける" : "Continue")
-        alert.addButton(withTitle: ja ? "終了" : "Quit")
-        app.activate()
-        guard alert.runModal() == .alertFirstButtonReturn else { exit(0) }
-        let selected = codes[language.indexOfSelectedItem]
-        d.set(selected, forKey: "applicationLanguage"); d.set([selected], forKey: "AppleLanguages")
-        let useMicrophone = microphone.state == .on, useCamera = camera.state == .on
-        d.set(useMicrophone, forKey: "microphonePermissionSelected")
-        d.set(useCamera, forKey: "cameraAutomaticCapture")
-        LiteDiagnostics.consent(diagnostics.state == .on)
-        func finish() {
-            d.set(1, forKey: wizardKey)
-            d.set(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development", forKey: "capturePermissionsNoticeVersion")
-            d.set(useMicrophone && AVCaptureDevice.authorizationStatus(for: .audio) == .authorized, forKey: "microphoneWasAuthorized")
-            d.set(useCamera && AVCaptureDevice.authorizationStatus(for: .video) == .authorized, forKey: "cameraCaptureWasAuthorized")
-            d.synchronize()
-            let config = NSWorkspace.OpenConfiguration()
-            config.createsNewApplicationInstance = true; config.activates = true
-            config.arguments = arguments; config.environment = ProcessInfo.processInfo.environment
-            NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: config) { _, error in exit(error == nil ? 0 : 1) }
-        }
-        StartupPermissions.resolve(microphone: useMicrophone, camera: useCamera, completion: finish)
-        withExtendedLifetime(privacy) {}
-    }
-    app.run(); exit(0)
+    let wizard = FirstRunWizard(arguments: arguments)
+    DispatchQueue.main.async { wizard.show() }
+    withExtendedLifetime(wizard) { app.run() }
+    exit(0)
 }
 
 guard LiteDiagnostics.allowed else { LiteDiagnostics.clearQueue(); execRuntime() }
