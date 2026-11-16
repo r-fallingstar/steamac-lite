@@ -103,7 +103,7 @@ Only users who opt in send automatic diagnostic records. Manual reports are expl
 
 The intake validates a strict schema, stores no IP address, and retains its delivery queue for seven days. GitHub reports remain private. A scheduled Actions job imports the queue, using the short-lived repository GITHUB_TOKEN. The application and intake do not contain a GitHub PAT. No report is sent to upstream Sentry.
 
-Actions run approximately every five minutes; GitHub may delay scheduled runs. The report ID shown in the app confirms intake acceptance, not immediate Issue creation. Existing reports can be managed here by the repository owner. Turning reporting off stops future automatic sends and deletes the local queue; it does not retract reports already received.
+Actions run approximately once per hour; GitHub may delay scheduled runs. The report ID shown in the app confirms intake acceptance, not immediate Issue creation. Existing reports can be managed here by the repository owner. Turning reporting off stops future automatic sends and deletes the local queue; it does not retract reports already received.
 '''
 for path, content in [('README.md', readme), ('import-to-github.py', (SERVICE / 'import-to-github.py').read_text()),
                       ('.github/workflows/import.yml', (SERVICE / 'inbox-workflow.yml').read_text())]:

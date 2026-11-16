@@ -6,7 +6,11 @@
 
 [Update support](https://r-fallingstar.github.io/steamac-lite/en/support/) covers in-app and DMG updates, microphone access, and troubleshooting.
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.6/SteamAC-Lite-1.9.8-lite.6-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.6) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.7/SteamAC-Lite-1.9.8-lite.7-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.7) · [はじめての導入手順](docs/quick-start.ja.md)
+
+## v1.9.8-lite.7
+
+The first-run wizard now combines language, microphone/camera access and optional diagnostics. Reporting is off by default and goes to the author’s private GitHub instead of upstream Sentry. Turn off in Settings → General. The wizard paints its contents before requesting permissions after Continue. See [release notes](docs/release-notes-1.9.8-lite.7.md).
 
 ## v1.9.8-lite.6
 

@@ -82,6 +82,11 @@ def synchronize(endpoint, reader_token, repo, github_token, request=api):
 
 
 if __name__ == '__main__':
-    count = synchronize(os.environ['DIAGNOSTICS_ENDPOINT'].rstrip('/'),
-        os.environ['DIAGNOSTICS_READER_TOKEN'], os.environ['GITHUB_REPOSITORY'], os.environ['GH_TOKEN'])
-    print('Reports delivered:', count)  # Never print report bodies or secrets into Actions logs.
+    total = 0
+    for _ in range(5):  # Drain bursts without an unbounded job or many idle runs.
+        count = synchronize(os.environ['DIAGNOSTICS_ENDPOINT'].rstrip('/'),
+            os.environ['DIAGNOSTICS_READER_TOKEN'], os.environ['GITHUB_REPOSITORY'], os.environ['GH_TOKEN'])
+        total += count
+        if count < 20:
+            break
+    print('Reports delivered:', total)  # Never print report bodies or secrets into Actions logs.
