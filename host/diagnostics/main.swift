@@ -33,6 +33,9 @@ if arguments.contains("--selftest-wizard-layout") {
 let utility = arguments.contains { $0.hasPrefix("--selftest") || $0.hasPrefix("--sentry-test") ||
     ["--help", "-h", "--headless", "--preview-update", "--ssh-password", "--create-disk", "--grow-disk"].contains($0) }
 if utility || ProcessInfo.processInfo.environment["STEAMAC_VM_CHILD"] == "1" { execRuntime() }
+// Preserve Finder-launch error dialogs when the real runtime's parent is now
+// this bootstrap rather than launchd. Command-line utilities keep terminal errors.
+if getppid() == 1 { setenv("STEAMAC_GUI_LAUNCH", "1", 1) }
 
 if LiteDiagnostics.defaults.integer(forKey: LiteDiagnostics.consentKey) != LiteDiagnostics.consentVersion
     || LiteDiagnostics.defaults.integer(forKey: FirstRunWizard.versionKey) != 1 {

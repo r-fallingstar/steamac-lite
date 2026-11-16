@@ -131,7 +131,7 @@ enum AppBundle {
     /// on screen; a shell launch has the message on stderr).
     @MainActor
     static func alertIfLaunchedFromFinder(_ title: LocalizedStringResource, _ message: String) {
-        guard resources != nil && getppid() == 1 else { return }
+        guard resources != nil && (getppid() == 1 || ProcessInfo.processInfo.environment["STEAMAC_GUI_LAUNCH"] == "1") else { return }
         let alert = NSAlert()
         alert.messageText = String(localized: title)
         alert.informativeText = message
