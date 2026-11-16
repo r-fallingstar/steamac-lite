@@ -1,0 +1,21 @@
+name = "steamac-lite-diagnostics"
+main = "src/index.js"
+compatibility_date = "2026-11-16"
+
+[observability]
+enabled = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "steamac-lite-diagnostics"
+# Set by the deployment script after creating the database.
+database_id = "debd58bc-64a8-4a6b-9694-b9a48642d4d5"
+migrations_dir = "migrations"
+
+[[ratelimits]]
+name = "POST_LIMITER"
+namespace_id = "1002"
+simple = { limit = 4, period = 60 }
+
+[triggers]
+crons = ["17 * * * *"]

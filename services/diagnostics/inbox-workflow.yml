@@ -1,0 +1,26 @@
+name: Import private diagnostics
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: private-diagnostics-import
+  cancel-in-progress: false
+jobs:
+  import:
+    if: vars.DIAGNOSTICS_READY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Deliver queued reports to this private repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIAGNOSTICS_ENDPOINT: ${{ secrets.DIAGNOSTICS_ENDPOINT }}
+          DIAGNOSTICS_READER_TOKEN: ${{ secrets.DIAGNOSTICS_READER_TOKEN }}
+        run: python3 import-to-github.py

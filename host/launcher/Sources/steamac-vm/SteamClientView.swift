@@ -26,7 +26,9 @@ struct SteamClientPicker: View {
         let host = NSHostingView(rootView: VStack(alignment: .leading, spacing: 12) {
             SteamClientPicker(settings: settings)
             VRChatSetupToggle(settings: settings)
-            CrashReportsToggle(settings: settings, checkbox: true)
+            if !LiteDiagnostics.isLite || settings.defaults.integer(forKey: LiteDiagnostics.consentKey) != LiteDiagnostics.consentVersion {
+                CrashReportsToggle(settings: settings, checkbox: true)
+            }
         }
         .frame(width: width, alignment: .leading))
         host.frame.size = host.fittingSize

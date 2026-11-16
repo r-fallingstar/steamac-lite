@@ -21337,6 +21337,286 @@
           }
         }
       }
+    },
+    "Optional: send startup stalls and crash diagnostics to the author's private GitHub. Off by default.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "任意で、起動停止やクラッシュの診断情報を作者の非公開GitHubに送信します。既定はオフです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택 사항: 시작 중단 및 충돌 진단을 제작자의 비공개 GitHub로 보냅니다. 기본값은 꺼짐입니다。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可选：将启动停滞和崩溃诊断发送到作者的私有 GitHub。默认关闭。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "По желанию отправлять сведения о зависании запуска и сбоях в закрытый GitHub автора. По умолчанию выключено."
+          }
+        }
+      }
+    },
+    "App and macOS versions, Mac model, chip and RAM; startup stage, elapsed time and abnormal exit code or signal.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリとmacOSの版、Macの型番・チップ・メモリ、起動段階、経過時間、異常終了のコードまたはシグナル。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱·macOS 버전, Mac 모델·칩·메모리, 시작 단계, 경과 시간, 비정상 종료 코드 또는 신호입니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用和 macOS 版本、Mac 型号、芯片和内存、启动阶段、耗时、异常退出代码或信号。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версии приложения и macOS, модель Mac, чип и память, этап запуска, время ожидания, код или сигнал завершения."
+          }
+        }
+      }
+    },
+    "Sent after 3 minutes without startup progress, an unresponsive app, or an abnormal exit. Waiting for your input does not count as a startup stall.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "起動が3分間進まない場合、アプリが応答しない場合、異常終了した場合に送信します。確認画面で操作を待つ時間は起動停止として扱いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시작이 3분간 진행되지 않거나 앱이 응답하지 않거나 비정상 종료되면 보냅니다. 사용자 입력 대기는 시작 중단으로 보지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动 3 分钟无进展、应用无响应或异常退出时发送。等待用户操作不算启动停滞。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отправляется при отсутствии прогресса запуска в течение 3 минут, зависании или аварийном завершении. Ожидание ввода не считается зависанием запуска."
+          }
+        }
+      }
+    },
+    "No names, accounts, screenshots, file contents or full logs are sent automatically. Reports use a random report ID, without a persistent device ID.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名前・アカウント・画面写真・ファイル内容・ログ全文は自動送信しません。報告ごとにランダムなIDを使い、端末を継続識別するIDは使いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이름·계정·스크린샷·파일 내용·전체 로그는 자동 전송하지 않습니다. 보고마다 임의 ID를 쓰며 영구 기기 ID는 쓰지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不会自动发送姓名、账户、截图、文件内容或完整日志。每份报告使用随机 ID，不使用持久设备 ID。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имена, учётные записи, снимки экрана, содержимое файлов и полные журналы автоматически не отправляются. Для каждого отчёта используется случайный ID, без постоянного ID устройства."
+          }
+        }
+      }
+    },
+    "Turn off to stop future automatic sends and delete queued reports. Monitoring starts on the next app launch. Reports already received remain in the author's private repository.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オフにすると以後の自動送信を停止し、未送信分を削除します。監視は次回起動から始まります。受信済みの報告は作者の非公開リポジトリに残ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "끄면 이후 자동 전송을 중지하고 대기 중 보고를 삭제합니다. 모니터링은 다음 실행부터 시작합니다. 이미 받은 보고는 제작자의 비공개 저장소에 남습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭后停止后续自动发送并删除待发送报告。监测从下次启动开始。已接收的报告保留在作者的私有仓库中。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выключение останавливает последующие отправки и удаляет очередь. Наблюдение начинается со следующего запуска. Уже полученные отчёты остаются в закрытом репозитории автора."
+          }
+        }
+      }
+    },
+    "Off applies now; monitoring starts next launch.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オフはすぐに反映。監視は次回起動から。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "끄기는 즉시 적용되며 모니터링은 다음 실행부터 시작합니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭立即生效；监测从下次启动开始。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выключение действует сразу; наблюдение — со следующего запуска."
+          }
+        }
+      }
+    },
+    "Reports are relayed to the author's private GitHub. You do not need a GitHub account. Optional reports are separate from update checks.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "報告は中継サーバーを通して作者の非公開GitHubへ届きます。GitHubアカウントは不要です。この任意の報告は更新確認とは別です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보고는 중계 서버를 통해 제작자의 비공개 GitHub에 전달됩니다. GitHub 계정은 필요하지 않습니다. 선택적 보고는 업데이트 확인과 별개입니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "报告经中转服务器传送到作者的私有 GitHub。无需 GitHub 账户。可选报告与更新检查相互独立。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отчёты передаются через сервер в закрытый GitHub автора. Аккаунт GitHub не нужен. Отправка отчётов не связана с проверкой обновлений."
+          }
+        }
+      }
+    },
+    "Send your description, optional email and selected launcher log excerpt to the author's private GitHub. Review the preview before sending.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "説明、任意のメールアドレス、選択したランチャーログの抜粋を作者の非公開GitHubに送信します。送信前にプレビューを確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설명, 선택적 이메일과 선택한 런처 로그 발췌를 제작자의 비공개 GitHub에 보냅니다. 보내기 전에 미리보기를 확인하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将说明、可选邮箱和选中的启动器日志节选发送到作者的私有 GitHub。发送前请检查预览。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Описание, необязательный email и выбранный фрагмент журнала отправляются в закрытый GitHub автора. Перед отправкой просмотрите данные."
+          }
+        }
+      }
+    },
+    "A shortened, redacted launcher log excerpt (up to 24 KB). Screenshots and SteamOS logs are not included.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "個人情報などを伏せたランチャーログの抜粋（最大24 KB）。画面写真とSteamOSログは含みません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개인정보를 가린 런처 로그 발췌(최대 24KB)입니다. 스크린샷과 SteamOS 로그는 포함하지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "经过脱敏的启动器日志节选（最多 24 KB），不含截图或 SteamOS 日志。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сокращённый и очищенный фрагмент журнала (до 24 КБ), без снимков экрана и журналов SteamOS."
+          }
+        }
+      }
+    },
+    "Included: app/macOS versions and Mac model, chip and RAM. Email is optional. Report ID confirms receipt; GitHub delivery may take several minutes.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "含まれる情報：アプリ・macOSの版とMacの型番・チップ・メモリ。メールアドレスは任意です。報告IDは受信確認用で、GitHubへの反映には数分以上かかる場合があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱·macOS 버전과 Mac 모델·칩·메모리가 포함됩니다. 이메일은 선택 사항입니다. 보고 ID는 수신 확인용이며 GitHub 반영에는 수 분 이상 걸릴 수 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包含应用和 macOS 版本及 Mac 型号、芯片和内存。邮箱可不填。报告 ID 确认已接收；同步到 GitHub 可能需要数分钟或更久。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включены версии приложения/macOS, модель Mac, чип и память. Email необязателен. ID подтверждает приём; передача в GitHub может занять несколько минут или дольше."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

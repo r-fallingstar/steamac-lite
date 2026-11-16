@@ -55,7 +55,7 @@ capture signing-info.txt 10 /usr/bin/codesign --display --verbose=2 "$app"
 capture quarantine.txt 5 /usr/bin/xattr -p com.apple.quarantine "$app"
 
 typeset -a pids
-pids=( ${(f)"$(/usr/bin/pgrep -x -u "$UID" steamac-vm 2>/dev/null)"} )
+pids=( ${(f)"$(/usr/bin/pgrep -x -u "$UID" 'steamac-(vm|runtime)' 2>/dev/null)"} )
 if (( ${#pids} == 0 )); then
   print -r -- 'No running steamac-vm found. Run this collector while the app is unresponsive.' > "$out/processes.txt"
 else

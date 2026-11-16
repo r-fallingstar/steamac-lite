@@ -19,6 +19,7 @@ enum DmgInstall {
         let source = Bundle.main.bundleURL.standardizedFileURL
         let readOnly = (try? source.resourceValues(forKeys: [.volumeIsReadOnlyKey]))?.volumeIsReadOnly == true
         guard review || needsInstallation(source, readOnly: readOnly) else { return }
+        LiteDiagnostics.checkpoint("install", waiting: true)
 
         let target: URL
         if review {
@@ -53,6 +54,7 @@ enum DmgInstall {
         alert.addButton(withTitle: String(localized: "Install and Open"))
         alert.addButton(withTitle: String(localized: "Quit"))
         guard alert.runModal() == .alertFirstButtonReturn else { NSApp.terminate(nil); return }
+        LiteDiagnostics.checkpoint("install")
 
         let progress = NSAlert()
         progress.messageText = String(localized: "Installing steamac Lite…")

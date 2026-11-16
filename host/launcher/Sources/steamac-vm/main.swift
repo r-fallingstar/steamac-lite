@@ -8,6 +8,8 @@ import Foundation
 // in the middle of the guest's shutdown). Before CrashReporting.setUp: Sentry's crash handler
 // leaves an ignored SIGPIPE alone. The VM process gets it ignored from the supervisor too.
 signal(SIGPIPE, SIG_IGN)
+LiteDiagnostics.checkpoint("main")
+LiteDiagnostics.startHeartbeat()
 
 // Automated checks must never write to the installed app's preference domain.
 if CommandLine.arguments.contains(where: { $0.hasPrefix("--selftest-") }), getenv("STEAMAC_DEFAULTS_DOMAIN") == nil {
@@ -21,17 +23,21 @@ if CommandLine.arguments.contains(where: { $0.hasPrefix("--selftest-") }), geten
 }
 
 // Offer installation before language selection, disk setup, or any VM process starts.
+LiteDiagnostics.checkpoint("install")
 MainActor.assumeIsolated { DmgInstall.runIfNeeded(CommandLine.arguments) }
 
 // Finder / `open` launch of the .app: console + launcher log go to ~/Library/Logs/es.fxgam.steamac.
 if !Supervisor.isChild { AppBundle.redirectOutputIfLaunchedFromFinder() }
 
+LiteDiagnostics.checkpoint("language")
 MainActor.assumeIsolated { ApplicationLanguage.chooseOnFirstLaunch(CommandLine.arguments) }
 
+LiteDiagnostics.checkpoint("settings")
 let settings = LauncherSettings.shared
 var options: Options
 var settingsOverrides: [LauncherSettings.Key: String]
 do {
+    LiteDiagnostics.checkpoint("options")
     (options, settingsOverrides) = try Options.resolve(CommandLine.arguments, settings: settings)
 } catch {
     FileHandle.standardError.write("steamac-vm: \(error)\n\n\(Options.usage)\n".data(using: .utf8)!)
@@ -104,6 +110,7 @@ if options.previewUpdate {
     exit(0)
 }
 // Before CrashReporting's GPU tags, the window or either Vulkan driver can initialise Metal.
+LiteDiagnostics.checkpoint("metal-cache")
 MetalCompilerCache.prepare()
 
 // MoltenVK (loaded by virglrenderer in this process) logs every instance/device creation at info
@@ -121,6 +128,7 @@ if Supervisor.isChild && !options.headless { setenv("MTL_HUD_ENABLED", "1", 1) }
 if Supervisor.isChild { PointerInput.configure() }
 
 // Crash reporting (Settings > General; both the supervisor and each VM process).
+LiteDiagnostics.checkpoint("crash-reporting")
 CrashReporting.setUp(options: options, settings: settings)
 CrashReporting.runTests(&options)
 
@@ -156,9 +164,11 @@ if let disk = options.showSSHPassword {
 // The process the user runs supervises one VM process per boot (see Supervisor); it re-reads
 // the settings before every boot.
 if !Supervisor.isChild {
+    LiteDiagnostics.checkpoint("supervisor")
     Supervisor.run { try Options.resolve(CommandLine.arguments, settings: LauncherSettings()).0 }
 }
 if options.needsDisk { FirstRun.run(settings: settings) }
+LiteDiagnostics.checkpoint("vm-setup")
 settings.noteBoot(overrides: settingsOverrides, autoCapture: options.autoCapture)
 
 // After a guest reboot, boot at the size the window had (the guest display followed it).
@@ -524,6 +534,7 @@ do {
     let wc = WindowController(title: windowTitle, width: options.displayWidth, height: options.displayHeight,
                               pixelScale: options.pixelScale * options.renderScale, renderer: renderer, inputs: inputs,
                               mouseMode: options.mouseMode, keyboardLayout: options.effectiveKeyboardLayout, renderPixels: options.renderPixels)
+    LiteDiagnostics.checkpoint("window")
     if let f = Supervisor.windowFrame, !f.isEmpty { wc.window.setFrame(NSRectFromString(f), display: false) }
     presenter.view = wc.view
     PerfStats.instance.attach(view: wc.view)
@@ -653,6 +664,7 @@ do {
     DispatchQueue.main.async { [wc] in
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development"
         let start = {
+            LiteDiagnostics.checkpoint("vm-start")
             if !options.cameraTestPattern { camera?.applyBootPermissions() }
             vm.start()
             if options.experimentalCamera && !options.cameraTestPattern { settingsWindow.show(tab: .camera) }
@@ -661,9 +673,11 @@ do {
         if options.cameraTestPattern {
             start()
         } else if camera != nil {
+            LiteDiagnostics.checkpoint("permission", waiting: true)
             CapturePermissionNotice.prepareForBoot(on: wc.window, boot: Supervisor.bootNumber,
                 defaults: settings.defaults, version: version, completion: start)
         } else {
+            LiteDiagnostics.checkpoint("permission", waiting: true)
             MicrophonePermission.shared.prepareForBoot(on: wc.window, boot: Supervisor.bootNumber,
                 defaults: settings.defaults, version: version, completion: start)
         }

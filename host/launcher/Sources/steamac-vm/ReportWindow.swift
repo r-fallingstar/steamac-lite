@@ -27,10 +27,12 @@ final class ReportModel: ObservableObject {
     init(context: ReportContext) {
         self.context = context
         email = LauncherSettings.shared.defaults.string(forKey: ReportModel.emailKey) ?? ""
+        if LiteDiagnostics.isLite { choices.guestLogs = false; choices.screenshot = false }
     }
 
     var emailValid: Bool {
-        email.trimmingCharacters(in: .whitespaces).range(of: "^[^@\\s]+@[^@\\s]+\\.[A-Za-z]{2,}$", options: .regularExpression) != nil
+        if LiteDiagnostics.isLite && email.trimmingCharacters(in: .whitespaces).isEmpty { return true }
+        return email.trimmingCharacters(in: .whitespaces).range(of: "^[^@\\s]+@[^@\\s]+\\.[A-Za-z]{2,}$", options: .regularExpression) != nil
     }
     var textValid: Bool { text.trimmingCharacters(in: .whitespacesAndNewlines).count >= 10 }
     var canSend: Bool { emailValid && textValid && phase == .editing }
@@ -149,7 +151,9 @@ struct ReportView: View {
     private var form: some View {
         VStack(alignment: .leading, spacing: 14) {
             header("exclamationmark.bubble.fill", .accentColor, "Report a Problem",
-                   String(localized: "Describe what went wrong. Your description, your email and the items checked below go to the FX Steam Launcher developers (sentry.fxgam.es)."))
+                   LiteDiagnostics.isLite
+                   ? String(localized: "Send your description, optional email and selected launcher log excerpt to the author's private GitHub. Review the preview before sending.")
+                   : String(localized: "Describe what went wrong. Your description, your email and the items checked below go to the FX Steam Launcher developers (sentry.fxgam.es)."))
             VStack(alignment: .leading, spacing: 4) {
                 Text("Email").font(.callout.weight(.medium))
                 TextField("you@example.com", text: $model.email).textFieldStyle(.roundedBorder)
@@ -178,7 +182,9 @@ struct ReportView: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 check($model.choices.launcherLogs, "Include launcher logs",
+                      LiteDiagnostics.isLite ? String(localized: "A shortened, redacted launcher log excerpt (up to 24 KB). Screenshots and SteamOS logs are not included.") :
                       String(localized: "This session's launcher, libkrun, virglrenderer and MoltenVK messages and perf/stall lines (last ~2 MB; home folder paths shortened to ~, your user and computer names removed)."))
+                if !LiteDiagnostics.isLite {
                 check($model.choices.guestLogs, "Include SteamOS logs (system journal, Steam/Proton logs)",
                       model.context.guest != nil
                         ? String(localized: "The SteamOS console, this boot's system journal, coredumps, dmesg, Steam client logs and Proton logs. Steam IDs, account names and email addresses are removed where recognisable.")
@@ -187,10 +193,13 @@ struct ReportView: View {
                       model.hasWindow ? String(localized: "Off by default: the picture may show your Steam account name, friends or other personal information.")
                                       : String(localized: "No VM window is open."))
                     .disabled(!model.hasWindow)
+                }
             }
             .disabled(working)
             VStack(alignment: .leading, spacing: 3) {
-                Text("Always included: app, macOS and library versions, Mac model, GPU, disk sizes and the launcher settings (never passwords or Keychain items).")
+                Text(verbatim: LiteDiagnostics.isLite
+                     ? String(localized: "Included: app/macOS versions and Mac model, chip and RAM. Email is optional. Report ID confirms receipt; GitHub delivery may take several minutes.")
+                     : String(localized: "Always included: app, macOS and library versions, Mac model, GPU, disk sizes and the launcher settings (never passwords or Keychain items)."))
                 if CrashReporting.statusSummary != "on" {
                     Text("Crash reports are off. Sending this report does not turn them on: only this report is sent.")
                 }
@@ -330,6 +339,7 @@ enum CrashOffer {
     }
 
     static func run(status: Int32, options: Options, runDir: String) {
+        LiteDiagnostics.checkpoint("shutdown", waiting: true)
         let summary = CrashReporting.exitSummary(status: status)
         log("report: offering a problem report (\(summary))")
         let app = NSApplication.shared

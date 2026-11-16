@@ -204,6 +204,7 @@ final class BootProgress {
             s.logDetail = s.detail
             publish(s)
         case "ready":
+            LiteDiagnostics.checkpoint("ready")
             guard state.phase == .boot else { return }
             var s = state
             s.phase = .running
@@ -340,6 +341,7 @@ final class BootProgress {
                                   "Final Step", "Late Shutdown Services"]
 
     private func beginShutdown(reboot: Bool) {
+        LiteDiagnostics.checkpoint("shutdown")
         let reboot = reboot && !hostRequestedPowerOff
         if case .shutdown(let wasReboot) = state.phase {
             if reboot && !wasReboot {
@@ -432,6 +434,8 @@ final class BootProgress {
         // Stage/phase changes and 10% steps (guest titles can flip rapidly within a stage).
         if s.stageId != old.stageId || s.phase != old.phase
             || Int(s.fraction * 10) != Int(old.fraction * 10) {
+            if case .shutdown = s.phase { LiteDiagnostics.checkpoint("shutdown") }
+            else { LiteDiagnostics.checkpoint(s.stageId) }
             log("progress: \(s.stageId) \(Int((s.fraction * 100).rounded()))%\(s.indeterminate ? " (…)" : "") \(s.logTitle)"
                 + (s.logDetail.isEmpty ? "" : " · \(s.logDetail)"))
         }

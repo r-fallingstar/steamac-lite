@@ -29,15 +29,22 @@ enum CrashReporting {
     static let noFlag = "--no-crash-reports"
 
     /// Settings / first-run explanation (one line) and the "What is sent" list.
-    static let summary = String(localized: "Crash reports and rare errors go to the FX Steam Launcher developers (Sentry). No personal data.")
-    static let whatIsSent = [
+    static var summary: String { LiteDiagnostics.isLite
+        ? String(localized: "Optional: send startup stalls and crash diagnostics to the author's private GitHub. Off by default.")
+        : String(localized: "Crash reports and rare errors go to the FX Steam Launcher developers (Sentry). No personal data.") }
+    static var whatIsSent: [String] { LiteDiagnostics.isLite ? [
+        String(localized: "App and macOS versions, Mac model, chip and RAM; startup stage, elapsed time and abnormal exit code or signal."),
+        String(localized: "Sent after 3 minutes without startup progress, an unresponsive app, or an abnormal exit. Waiting for your input does not count as a startup stall."),
+        String(localized: "No names, accounts, screenshots, file contents or full logs are sent automatically. Reports use a random report ID, without a persistent device ID."),
+        String(localized: "Turn off to stop future automatic sends and delete queued reports. Monitoring starts on the next app launch. Reports already received remain in the author's private repository.")
+    ] : [
         String(localized: "Crash reports of the launcher and the VM process: crash reason, stack traces, loaded libraries."),
         String(localized: "A few errors: guest GPU context lost, shader pipeline compile failures (with an excerpt of the failing Metal shader source), libkrun panics, failed disk creation or first-start setup, VM stopped unexpectedly or killed (with the Mac's memory use), SteamOS not responding."),
         String(localized: "The launcher's last ~200 log lines (launcher, MoltenVK, libkrun and virglrenderer messages; home folder paths shortened to ~) and the boot stages."),
         String(localized: "Versions and setup: app, macOS, libkrun/virglrenderer/MoltenVK builds, kernel, SteamOS build, Mac model, GPU, VM CPUs/RAM/display mode, game App IDs."),
         String(localized: "A random install ID (not linked to you) to count affected Macs."),
         String(localized: "Never: your name, user or computer name, IP address, Steam account, game titles, files, or the SteamOS console."),
-    ]
+    ] }
 
     enum Role: String { case launcher, vm }
 
@@ -204,6 +211,10 @@ enum CrashReporting {
             log("crash reporting: off for this run (\(reason))")
             return
         }
+        if LiteDiagnostics.isLite {
+            log("diagnostics: \(LiteDiagnostics.allowed ? "enabled (private GitHub)" : "off")")
+            return
+        }
         if options.sentryTestCrash == "metal" { setenv("MTL_DEBUG_LAYER", "1", 1) }   // before Metal starts
         hostTags(options: options)
         if role == .vm {
@@ -221,6 +232,7 @@ enum CrashReporting {
     }
 
     private static func start() {
+        guard !LiteDiagnostics.isLite else { return }
         guard configured, runOverride == nil, !locked({ running }) else { return }
         prepareScrubber()
         try? FileManager.default.createDirectory(atPath: cacheDir, withIntermediateDirectories: true)
@@ -276,6 +288,7 @@ enum CrashReporting {
     /// For reports: on / off and why.
     static var statusSummary: String {
         if let r = runOverride { return "off for this run (\(r))" }
+        if LiteDiagnostics.isLite { return LiteDiagnostics.allowed ? "on" : "off (Settings > General)" }
         return locked({ running }) ? "on" : "off (Settings > General)"
     }
 
@@ -652,6 +665,15 @@ enum CrashReporting {
     static func report(_ kind: Kind, key: String, message: String, level: SentryLevel = .error,
                        tags extraTags: [String: String] = [:], extra: [String: String] = [:]) {
         guard configured else { return }
+        if LiteDiagnostics.isLite {
+            guard runOverride == nil, !test, LiteDiagnostics.allowed,
+                  ReportedStore.claim("lite|" + kind.rawValue, quietPeriod: kind.quietPeriod) else { return }
+            // Messages, keys, tags and extras may contain log text or paths. Only the
+            // fixed event kind crosses the automatic-report boundary.
+            LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: kind.rawValue,
+                stage: kind == .notResponding ? "ready" : "vm-setup"))
+            return
+        }
         guard locked({ running }) else { return }
         // Supervisor: the VM process's Settings window may have turned reporting off meanwhile.
         if role == .launcher { guard settingAllows else { return } }

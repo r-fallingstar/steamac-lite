@@ -13,6 +13,7 @@ APP = ROOT/'work/out/SteamAC Lite.app'
 env = {**os.environ, 'DEVELOPER_DIR': os.environ.get('DEVELOPER_DIR', '/Library/Developer/CommandLineTools')}
 info = plistlib.loads((APP/'Contents/Info.plist').read_bytes())
 version = info['CFBundleShortVersionString']
+assert info.get('SteamacDiagnosticsURL', '').startswith('https://'), 'An unconfigured diagnostics test build must not be distributed'
 receipt = json.loads((APP/'Contents/Resources/steamac-lite-provenance.json').read_text())
 head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, env=env, text=True).strip()
 assert receipt['source_commit'] == head and not receipt['working_tree_modified'], 'Build from a clean source commit first'

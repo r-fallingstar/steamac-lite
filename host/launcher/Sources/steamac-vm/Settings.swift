@@ -372,7 +372,12 @@ final class LauncherSettings: ObservableObject {
     @Published var openFullscreen = false { didSet { save(.openFullscreen, openFullscreen) } }
     @Published var perfStats = false { didSet { save(.perfStats, perfStats) } }
     /// Crash reports and diagnostics through Sentry (CrashReporting); applies now.
-    @Published var sendCrashReports = !(Bundle.main.object(forInfoDictionaryKey: "SteamacLiteBuild") as? Bool ?? false) { didSet { save(.sendCrashReports, sendCrashReports) } }
+    @Published var sendCrashReports = !(Bundle.main.object(forInfoDictionaryKey: "SteamacLiteBuild") as? Bool ?? false) {
+        didSet {
+            save(.sendCrashReports, sendCrashReports)
+            if !loading && LiteDiagnostics.isLite { LiteDiagnostics.consent(sendCrashReports) }
+        }
+    }
     /// While the app is not active: mute the guest's sound / freeze the focused game.
     @Published var muteInBackground = true { didSet { save(.muteInBackground, muteInBackground) } }
     @Published var pauseInBackground = false { didSet { save(.pauseInBackground, pauseInBackground) } }
@@ -560,6 +565,10 @@ final class LauncherSettings: ObservableObject {
         defaults = domain == Bundle.main.bundleIdentifier ? .standard : (UserDefaults(suiteName: domain) ?? .standard)
         if domain == "es.fxgam.steamac" { LauncherSettings.migrateLegacy(into: defaults) }
         load()
+        // Consent to another recipient is never silently migrated to this author's inbox.
+        if LiteDiagnostics.isLite && defaults.integer(forKey: LiteDiagnostics.consentKey) != LiteDiagnostics.consentVersion {
+            loading = true; sendCrashReports = false; loading = false
+        }
     }
 
     /// Isolated preferences for policy/persistence tests; no production domain migration.

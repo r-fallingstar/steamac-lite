@@ -136,8 +136,10 @@ private struct CreateDiskView: View {
                     SteamClientPicker(settings: model.settings)
                 }
                 .disabled(model.running)
-                Section {
-                    CrashReportsToggle(settings: model.settings, checkbox: true)
+                if !LiteDiagnostics.isLite || model.settings.defaults.integer(forKey: LiteDiagnostics.consentKey) != LiteDiagnostics.consentVersion {
+                    Section {
+                        CrashReportsToggle(settings: model.settings, checkbox: true)
+                    }
                 }
                 Section {
                     Toggle(isOn: $model.licenseAccepted) {

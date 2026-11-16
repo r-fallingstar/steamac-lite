@@ -146,6 +146,7 @@ enum AppBundle {
 /// Advanced "Disk image"); the supervisor then boots it.
 enum FirstRun {
     static func run(settings: LauncherSettings) -> Never {
+        LiteDiagnostics.checkpoint("first-run", waiting: true)
         let app = NSApplication.shared
         log("first run: no usable disk image (\(settings.diskImage.isEmpty ? "none found" : settings.diskImage)); asking the user")
         app.setActivationPolicy(.regular)

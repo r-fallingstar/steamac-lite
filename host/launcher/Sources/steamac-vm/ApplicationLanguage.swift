@@ -45,6 +45,7 @@ enum ApplicationLanguage: String, CaseIterable, Identifiable {
         let domain = LauncherSettings.domain
         let defaults = domain == Bundle.main.bundleIdentifier ? UserDefaults.standard : UserDefaults(suiteName: domain)!
         guard defaults.string(forKey: LauncherSettings.Key.applicationLanguage.rawValue) == nil else { return }
+        LiteDiagnostics.checkpoint("language", waiting: true)
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         let alert = NSAlert()

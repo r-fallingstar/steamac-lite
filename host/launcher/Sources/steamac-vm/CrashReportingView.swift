@@ -24,7 +24,8 @@ struct CrashReportsToggle: View {
                     .font(.caption)
                     .popover(isPresented: $showDetails, arrowEdge: .bottom) { WhatIsSentView() }
                 if showsApplies {
-                    Text("applies now").font(.caption).foregroundStyle(.secondary)
+                    Text(verbatim: LiteDiagnostics.isLite ? String(localized: "Off applies now; monitoring starts next launch.") : String(localized: "applies now"))
+                        .font(.caption).foregroundStyle(.secondary)
                     if let flag = settings.overrides[.sendCrashReports] {
                         Text("overridden by command line (\(flag))").font(.caption).foregroundStyle(.red)
                     }
@@ -47,7 +48,9 @@ struct WhatIsSentView: View {
                 }
                 .font(.callout)
             }
-            Text("Reports go to the developers' own Sentry server (sentry.fxgam.es). Turn this off any time in Settings > General, or for one run with --no-crash-reports / STEAMAC_SENTRY=0.")
+            Text(verbatim: LiteDiagnostics.isLite
+                 ? String(localized: "Reports are relayed to the author's private GitHub. You do not need a GitHub account. Optional reports are separate from update checks.")
+                 : String(localized: "Reports go to the developers' own Sentry server (sentry.fxgam.es). Turn this off any time in Settings > General, or for one run with --no-crash-reports / STEAMAC_SENTRY=0."))
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)

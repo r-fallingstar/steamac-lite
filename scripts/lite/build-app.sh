@@ -63,13 +63,23 @@ import os, pathlib, plistlib
 import subprocess
 p = plistlib.loads(pathlib.Path('host/launcher/Info.plist').read_bytes())
 p.update(CFBundleIdentifier='local.ryuu.steamac-lite', CFBundleName='steamac Lite',
-         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.8-lite.6',
+         CFBundleDisplayName='steamac Lite', CFBundleShortVersionString='1.9.8-lite.7',
          SteamacReleaseDefaults=True, SteamacLowMemoryDefaults=False, SteamacAdaptiveDefaults=True, SteamacLiteBuild=True,
-         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='198007', SteamacCameraSupport=True,
+         SteamacPreferencesDomain='local.ryuu.steamac-lite', CFBundleVersion='198008', SteamacCameraSupport=True,
          NSCameraUsageDescription='The built-in camera is sent to games in the SteamOS virtual machine only while a game uses it or a manual preview is open. Video is not saved.',
          SteamacGitCommit=subprocess.check_output(['git','rev-parse','--short=10','HEAD'],text=True).strip(),
          LSMinimumSystemVersion='15.5')
 p.pop('SteamacBuildOut', None)
+import json
+diagnostics = json.loads(pathlib.Path('scripts/lite/diagnostics.json').read_text())
+if diagnostics['endpoint']:
+    from urllib.parse import urlsplit
+    endpoint = urlsplit(diagnostics['endpoint'])
+    assert endpoint.scheme == 'https' and endpoint.hostname.endswith('.workers.dev') and endpoint.path == '/reports'
+    assert not endpoint.username and not endpoint.password and not endpoint.query and not endpoint.fragment and not endpoint.port
+    p['SteamacDiagnosticsURL'] = diagnostics['endpoint']
+else:
+    assert os.environ.get('STEAMAC_DIAGNOSTICS_ALLOW_UNCONFIGURED') == '1', 'Configure the diagnostics service before distribution (or explicitly allow an unconfigured local test build)'
 p['CFBundleLocalizations'] = ['en', 'ja', 'ko', 'ru', 'zh-Hans']
 pathlib.Path(os.environ['PLIST']).write_bytes(plistlib.dumps(p))
 PY
@@ -102,15 +112,21 @@ if [[ -n ${LIBKRUN_OVERRIDE:-} ]]; then
     cp "$HOST/lib/libkrun.1.dylib" "$APP/Contents/Frameworks/libkrun.1.dylib"
     cp "$(dirname "$LIBKRUN_OVERRIDE")/libkrun-lite-build.json" "$APP/Contents/Resources/steamac-audio-fix.json"
 fi
-cp "$BIN" "$APP/Contents/MacOS/steamac-vm"
+cp "$BIN" "$APP/Contents/MacOS/steamac-runtime"
 cp "$PLIST" "$APP/Contents/Info.plist"
+swiftc -O -swift-version 5 -target arm64-apple-macosx15.5 \
+    -debug-prefix-map "$ROOT=/src/steamac-lite" -file-prefix-map "$ROOT=/src/steamac-lite" -sdk "$SDK" \
+    host/launcher/Sources/steamac-vm/LiteDiagnostics.swift host/diagnostics/StartupPermissions.swift host/diagnostics/main.swift \
+    -o "$APP/Contents/MacOS/steamac-vm"
+strip -S "$APP/Contents/MacOS/steamac-vm"
+codesign --force --sign - "$APP/Contents/MacOS/steamac-vm"
 swiftc -O -debug-prefix-map "$ROOT=/src/steamac-lite" -file-prefix-map "$ROOT=/src/steamac-lite" -sdk "$SDK" host/launcher/Sources/steamac-vm/UpdateInstallSupport.swift host/launcher/updater/main.swift -o "$APP/Contents/Resources/steamac-updater"
 strip -S "$APP/Contents/Resources/steamac-updater"
 codesign --force --sign - "$APP/Contents/Resources/steamac-updater"
 python3 host/launcher/l10n.py check --strict --stringsdata "$WORK/lite-stringsdata"
 python3 host/launcher/l10n.py compile "$STAGE/localizations"
 cp -a "$STAGE/localizations/." "$APP/Contents/Resources/"
-EXE=$APP/Contents/MacOS/steamac-vm
+EXE=$APP/Contents/MacOS/steamac-runtime
 # Remove linker debug records containing this builder's object-file paths before signing.
 strip -S "$EXE"
 install_name_tool -delete_rpath "$HOST/lib" "$EXE"
@@ -161,7 +177,7 @@ cp "$VR_MANIFEST" "$APP/Contents/Resources/steamac-vr-build.json"
 python3 scripts/lite/stage-camera.py "$LAYER" "$APP"
 python3 scripts/lite/stage-video.py "$LAYER" "$APP"
 python3 scripts/lite/stage-media.py "$LAYER" "$APP"
-echo 'steamac-lite v1.9.8-lite.6 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz private-video-codecs private-media-engine' >> "$LAYER/usr/lib/steamac/layer-release"
+echo 'steamac-lite v1.9.8-lite.7 adaptive-performance detected-Mac-input-source CJK-input physical-keyboard 60Hz private-video-codecs private-media-engine private-diagnostics' >> "$LAYER/usr/lib/steamac/layer-release"
 "$MKFS" -b4096 -zlz4hc -T1767225600 --all-root -L steamac-lite \
     "$APP/Contents/Resources/steamac-layer.img.new" "$LAYER"
 mv "$APP/Contents/Resources/steamac-layer.img.new" "$APP/Contents/Resources/steamac-layer.img"

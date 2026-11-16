@@ -206,6 +206,8 @@ final class ReportBundle: @unchecked Sendable {
 
     /// Sentry event id of the feedback (32 hex digits); the first 8 are the report ID shown.
     let eventId: String
+    private let liteId: String
+    private var liteLog = ""
     let dir: String
     let choices: ReportChoices
     let context: ReportContext
@@ -214,7 +216,9 @@ final class ReportBundle: @unchecked Sendable {
     var shortId: String { String(eventId.prefix(8)) }
 
     private init(context: ReportContext, choices: ReportChoices) throws {
-        eventId = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        let uuid = UUID().uuidString.lowercased()
+        eventId = uuid.replacingOccurrences(of: "-", with: "")
+        liteId = uuid
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "yyyy-MM-dd-HHmmss"
@@ -233,6 +237,13 @@ final class ReportBundle: @unchecked Sendable {
     @MainActor
     static func collect(context: ReportContext, choices: ReportChoices, status: (String) -> Void) async throws -> ReportBundle {
         let b = try ReportBundle(context: context, choices: choices)
+        if LiteDiagnostics.isLite {
+            if choices.launcherLogs, let dir = context.runDir,
+               let data = RollingLog.tail(dir: dir, name: RollingLog.launcher.name, maxBytes: 24000) {
+                b.liteLog = ReportBundle.scrub(String(decoding: data, as: UTF8.self))
+            }
+            return b
+        }
         status(choices.launcherLogs ? String(localized: "Collecting launcher logs…") : String(localized: "Collecting system information…"))
         await Task.detached { b.writeHostFiles() }.value
         if choices.screenshot {
@@ -403,6 +414,12 @@ final class ReportBundle: @unchecked Sendable {
 
     /// The user's part (kept with the files so a saved report can be sent by hand).
     func writeReport(email: String, description: String) {
+        if LiteDiagnostics.isLite {
+            let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            try? encoder.encode(litePayload(email: email, description: description))
+                .write(to: URL(fileURLWithPath: dir + "/report.json"), options: .atomic)
+            return
+        }
         let obj: [String: Any] = [
             "report_id": shortId, "event_id": eventId, "email": email, "description": description,
             "origin": context.origin, "created": ISO8601DateFormatter().string(from: Date()),
@@ -412,6 +429,27 @@ final class ReportBundle: @unchecked Sendable {
         if let data = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys]) {
             try? data.write(to: URL(fileURLWithPath: dir + "/report.json"))
         }
+    }
+
+    func litePayload(email: String, description: String) -> LiteDiagnostics.Report {
+        func bounded(_ value: String, bytes: Int) -> String {
+            var result = String(decoding: value.utf8.prefix(bytes), as: UTF8.self)
+            for pattern in [#"(?i)(?:gh[pousr]_[a-z0-9_]+|github_pat_[a-z0-9_]+|sk-[a-z0-9_-]+)"#,
+                            #"(?i)(?:authorization|password|token|secret)\s*[:=]\s*\S+"#] {
+                result = result.replacingOccurrences(of: pattern, with: "<redacted>", options: .regularExpression)
+            }
+            return result
+        }
+        var report = LiteDiagnostics.report(kind: "manual"); report.id = liteId
+        report.feedback = LiteDiagnostics.Feedback(message: bounded(description, bytes: 8000),
+            email: String(email.prefix(254)), launcher_log: bounded(liteLog, bytes: 24000))
+        // JSON escaping can expand quotes/backslashes. Bound the encoded request,
+        // so the preview remains exactly the record accepted by the receiver.
+        while (try? JSONEncoder().encode(report).count) ?? Int.max > 46000,
+              let current = report.feedback?.launcher_log, !current.isEmpty {
+            report.feedback?.launcher_log = String(decoding: current.utf8.prefix(current.utf8.count / 2), as: UTF8.self)
+        }
+        return report
     }
 
     /// Launcher log scrubbing (home folder, emails, IPs, user/computer names) plus Steam IDs,
@@ -524,6 +562,13 @@ enum FeedbackSender {
     /// Returns the event id Sentry accepted.
     static func send(_ b: ReportBundle, email: String, description: String, test: Bool,
                      progress: @escaping @Sendable (Double) -> Void) async throws -> String {
+        if LiteDiagnostics.isLite {
+            let report = b.litePayload(email: email, description: description)
+            progress(0)
+            try await LiteDiagnostics.send(report, automatic: false)
+            progress(1)
+            return report.id.replacingOccurrences(of: "-", with: "")
+        }
         let dsn = dsnOverride ?? CrashReporting.dsn
         guard let url = URL(string: dsn), let host = url.host, let key = url.user, let scheme = url.scheme else {
             throw OptionError("bad DSN \(dsn)", localized: String(localized: "Invalid report server address: \(dsn)"))
