@@ -6,7 +6,11 @@
 
 [Update support](https://r-fallingstar.github.io/steamac-lite/en/support/) covers in-app and DMG updates, microphone access, and troubleshooting.
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.5/SteamAC-Lite-1.9.8-lite.5-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.5) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.6/SteamAC-Lite-1.9.8-lite.6-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.6) · [はじめての導入手順](docs/quick-start.ja.md)
+
+## v1.9.8-lite.6
+
+The launcher skips rendering and uploading the SteamOS picture hidden behind a full-window DXMT game layer, reducing launcher CPU use. Camera permission guidance now also covers undecided access. Existing disks, games and settings are preserved; in-app updates and the BOOTH online installer select this release. See [release notes](docs/release-notes-1.9.8-lite.6.md). The reported M3 startup hang remains under investigation.
 
 ## v1.9.8-lite.5
 
