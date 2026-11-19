@@ -3,7 +3,7 @@
   "support.description": "앱 업데이트 방법과 업데이트 후 문제가 생겼을 때 확인할 사항입니다.",
   "support.skip": "업데이트 안내로 이동",
   "support.title": "업데이트 지원",
-  "support.meta": "v1.9.8-lite.7 업데이트 안내 · 2026년 11월 16일 갱신",
+  "support.meta": "v1.9.8-lite.8 업데이트 안내 · 2026년 11월 19일 갱신",
   "support.contents": "이 페이지의 내용",
   "support.nav_app": "앱에서 업데이트",
   "support.nav_dmg": "DMG로 업데이트",
@@ -61,5 +61,6 @@
   "support.contact_error": "멈춘 화면이나 오류 문구, 가능하면 해당 스크린샷",
   "support.contact_mic": "마이크 문제라면 내장·USB·Bluetooth 등의 종류와 Mac 입력 레벨의 반응 여부",
   "support.issues": "GitHub Issues 열기",
-  "support.booth_contact": "BOOTH로 문의"
+  "support.booth_contact": "BOOTH로 문의",
+  "support.startup_collection": "첫 화면이 표시되지 않을 때 시작 로그 수집"
 }

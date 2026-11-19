@@ -186,7 +186,10 @@ enum Supervisor {
             env[profileDriverEnv] = profileBoot?.driver
             env[profileLaunchEnv] = profileBoot.map { String($0.appid) }
             CrashReporting.supervisorBoot(o, boot: boot, runDir: dir, env: &env)
+            LiteDiagnostics.checkpoint("supervisor")
+            let started = ProcessInfo.processInfo.systemUptime
             let vmExit = spawnAndWait(exe, CommandLine.arguments, env)
+            let elapsed = ProcessInfo.processInfo.systemUptime - started
             let status = vmExit.status
             childPid = 0
             if status < 0 {
@@ -200,12 +203,12 @@ enum Supervisor {
             remotePlay?.stop()
             remotePlay = nil
             gvproxy?.stop()
-            if CrashReporting.terminationSignals.contains(vmExit.signal) {
+            if LauncherExit.terminationSignals.contains(vmExit.signal) {
                 log("VM process terminated by \(CrashReporting.signalName(vmExit.signal)) (a termination request, not a crash)")
             } else if vmExit.signal == SIGPIPE {
                 log("VM process ended by SIGPIPE (an output pipe closed; not a crash)")
             }
-            CrashReporting.vmExited(vmExit)
+            let unexpected = CrashReporting.vmExited(vmExit, runDir: dir, elapsed: elapsed)
 
             let marker = rebootMarker(dir)
             if let contents = try? String(contentsOfFile: marker, encoding: .utf8) {
@@ -222,10 +225,11 @@ enum Supervisor {
             }
             // Unexpected exit (crash, error): offer Report a Problem before cleaning up (the
             // report reads this session's logs from the run dir).
-            if CrashReporting.unexpectedExit(status: status, runDir: dir), CrashOffer.wanted(o) {
-                MainActor.assumeIsolated { CrashOffer.run(status: status, options: o, runDir: dir) }
+            if unexpected, CrashOffer.wanted(o) {
+                MainActor.assumeIsolated { CrashOffer.run(outcome: vmExit.outcome, options: o, runDir: dir) }
             }
             cleanup()
+            LiteDiagnostics.markVMExitHandled(status: status)
             exit(status)
         }
     }
@@ -257,10 +261,10 @@ enum Supervisor {
         let rc = posix_spawn(&pid, exe, nil, &attr, cArgs, cEnv)
         guard rc == 0 else {
             log("error: cannot start VM process: \(String(cString: strerror(rc)))")
-            return VMExit(status: 1)
+            return VMExit()
         }
         childPid = pid
-        var exit = VMExit(status: 1, pid: pid)
+        var exit = VMExit(pid: pid)
         // NOTE_EXIT fires when the process becomes a zombie; its data carries NOTE_EXIT_DETAIL
         // bits (NOTE_EXIT_MEMORY = jetsam, the kernel's jetsam cause in the high bits). Not
         // registered if it already exited (ESRCH).
@@ -284,13 +288,11 @@ enum Supervisor {
             // A non-EINTR waitpid failure is a supervisor-side error (e.g. ECHILD), not the VM's
             // exit status: mark it so the supervisor reports it instead of "VM crashed".
             if errno != EINTR {
-                exit.status = -1
+                exit.outcome = LauncherExit(code: -1)
                 return exit
             }
         }
-        // WIFEXITED / WEXITSTATUS / WTERMSIG (macros are not imported into Swift).
-        let low = status & 0x7f
-        exit.status = low == 0 ? (status >> 8) & 0xff : 128 + low
+        exit.outcome = LauncherExit(waitStatus: status)
         return exit
     }
 }

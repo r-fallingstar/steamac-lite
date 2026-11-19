@@ -3,7 +3,7 @@
   "support.description": "How to update the app and check problems after an update.",
   "support.skip": "Skip to update help",
   "support.title": "Update support",
-  "support.meta": "Update instructions for v1.9.8-lite.7 · Updated November 16, 2026",
+  "support.meta": "Update instructions for v1.9.8-lite.8 · Updated November 19, 2026",
   "support.contents": "On this page",
   "support.nav_app": "Update in the app",
   "support.nav_dmg": "Update with a DMG",
@@ -61,5 +61,6 @@
   "support.contact_error": "Where it stops, any error text, and a screenshot if possible",
   "support.contact_mic": "For microphone problems: built-in, USB, Bluetooth, etc., and whether the Mac input meter moves",
   "support.issues": "Open GitHub Issues",
-  "support.booth_contact": "Contact through BOOTH"
+  "support.booth_contact": "Contact through BOOTH",
+  "support.startup_collection": "Collect startup logs when the first window does not appear"
 }

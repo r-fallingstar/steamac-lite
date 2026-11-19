@@ -3,7 +3,7 @@
   "support.description": "应用更新步骤，以及更新后出现问题时的检查方法。",
   "support.skip": "跳转到更新帮助",
   "support.title": "更新支持",
-  "support.meta": "v1.9.8-lite.7 更新步骤 · 更新于 2026年11月16日",
+  "support.meta": "v1.9.8-lite.8 更新步骤 · 更新于 2026年11月19日",
   "support.contents": "本页内容",
   "support.nav_app": "在应用中更新",
   "support.nav_dmg": "使用 DMG 更新",
@@ -61,5 +61,6 @@
   "support.contact_error": "停留的界面、错误信息，以及可提供的截图",
   "support.contact_mic": "麦克风问题请注明内置、USB、蓝牙等类型，以及 Mac 输入电平是否变化",
   "support.issues": "打开 GitHub Issues",
-  "support.booth_contact": "通过 BOOTH 联系"
+  "support.booth_contact": "通过 BOOTH 联系",
+  "support.startup_collection": "首次启动窗口未显示时收集日志"
 }

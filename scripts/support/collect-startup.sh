@@ -50,14 +50,10 @@ capture() {
     /usr/libexec/PlistBuddy -c "Print :$key" "$app/Contents/Info.plist" 2>&1
   done
 } > "$out/system.txt"
-capture signature.txt 30 /usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
-capture signing-info.txt 10 /usr/bin/codesign --display --verbose=2 "$app"
-capture quarantine.txt 5 /usr/bin/xattr -p com.apple.quarantine "$app"
-
 typeset -a pids
 pids=( ${(f)"$(/usr/bin/pgrep -x -u "$UID" 'steamac-(vm|runtime)' 2>/dev/null)"} )
 if (( ${#pids} == 0 )); then
-  print -r -- 'No running steamac-vm found. Run this collector while the app is unresponsive.' > "$out/processes.txt"
+  print -r -- 'No running steamac-vm or steamac-runtime found. If the app hangs, run this collector while it is unresponsive.' > "$out/processes.txt"
 else
   for pid in "${pids[@]}"; do
     [[ "$pid" == <-> ]] || continue
@@ -66,9 +62,14 @@ else
   done
 fi
 
+capture bootstrap-stages.txt 15 /usr/bin/log show --last 10m --style compact \
+  --predicate 'subsystem == "local.ryuu.steamac-lite.startup"'
 # Restrict the system-log query to this app, rather than exporting all OS logs.
 capture launch-policy.txt 15 /usr/bin/log show --last 10m --style compact --info \
-  --predicate 'process == "steamac-vm" OR ((process == "syspolicyd" OR process == "amfid" OR process == "launchservicesd" OR process == "runningboardd" OR process == "taskgated-helper") AND eventMessage CONTAINS[c] "steamac")'
+  --predicate '(process == "syspolicyd" OR process == "amfid" OR process == "launchservicesd" OR process == "runningboardd" OR process == "taskgated-helper" OR process == "kernel") AND eventMessage CONTAINS[c] "steamac"'
+capture signature.txt 30 /usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
+capture signing-info.txt 10 /usr/bin/codesign --display --verbose=2 "$app"
+capture quarantine.txt 5 /usr/bin/xattr -p com.apple.quarantine "$app"
 
 logfile="$HOME/Library/Logs/local.ryuu.steamac-lite/steamac-vm.log"
 {

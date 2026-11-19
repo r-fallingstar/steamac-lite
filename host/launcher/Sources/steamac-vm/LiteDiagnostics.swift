@@ -1,6 +1,35 @@
 import Foundation
 import Darwin
 
+/// Keep wait status and shell status distinct: exit(137) and SIGKILL both return 137 to the caller.
+struct LauncherExit {
+    static let forceQuitStatus: Int32 = 3
+    static let startupRejectedStatus: Int32 = 4
+    static let terminationSignals: Set<Int32> = [SIGTERM, SIGINT, SIGHUP]
+
+    let code: Int32
+    let signal: Int32
+    var status: Int32 { signal == 0 ? code : 128 + signal }
+
+    init(code: Int32, signal: Int32 = 0) {
+        self.code = code
+        self.signal = signal
+    }
+
+    init(waitStatus: Int32) {
+        // WEXITSTATUS and WTERMSIG are C macros, unavailable in Swift.
+        self.init(code: (waitStatus >> 8) & 0xff, signal: waitStatus & 0x7f)
+    }
+
+    func isUnexpected(userRequested: Bool, killedForMemory: Bool = false) -> Bool {
+        if signal != 0 {
+            if Self.terminationSignals.contains(signal) || signal == SIGPIPE { return false }
+            return signal != SIGKILL || !userRequested || killedForMemory
+        }
+        return code != 0 && code != Self.forceQuitStatus && code != Self.startupRejectedStatus && !userRequested
+    }
+}
+
 /// Shared by the tiny bootstrap and the runtime. Automatic reports are an
 /// allowlisted JSON record, never a log, environment dump, screenshot or disk.
 enum LiteDiagnostics {
@@ -57,9 +86,27 @@ enum LiteDiagnostics {
     static var session: URL? {
         ProcessInfo.processInfo.environment["STEAMAC_DIAGNOSTIC_SESSION"].map { URL(fileURLWithPath: $0, isDirectory: true) }
     }
+    static func sessionAllowsReporting(_ directory: URL) -> Bool {
+        allowed && !FileManager.default.fileExists(atPath: directory.appendingPathComponent("revoked").path)
+    }
+    static func readState(in directory: URL) -> State? {
+        (try? Data(contentsOf: directory.appendingPathComponent("state.json")))
+            .flatMap { try? JSONDecoder().decode(State.self, from: $0) }
+    }
+    // The supervisor classified the VM exit and will return this status to its caller.
+    // Only an ordinary exit with the matching status can use this handoff.
+    static func markVMExitHandled(status: Int32) {
+        guard isLite, let session else { return }
+        try? String(status).write(to: session.appendingPathComponent("vm-exit-status"), atomically: true, encoding: .utf8)
+    }
+    static func vmExitWasHandled(_ outcome: LauncherExit, in directory: URL) -> Bool {
+        guard outcome.signal == 0,
+              let value = try? String(contentsOf: directory.appendingPathComponent("vm-exit-status"), encoding: .utf8)
+        else { return false }
+        return Int32(value) == outcome.code
+    }
     static func checkpoint(_ stage: String, waiting: Bool = false) {
-        guard isLite, let session, stages.contains(stage), allowed,
-              !FileManager.default.fileExists(atPath: session.appendingPathComponent("revoked").path) else { return }
+        guard isLite, let session, stages.contains(stage), sessionAllowsReporting(session) else { return }
         let state = State(stage: stage, uptime: ProcessInfo.processInfo.systemUptime, waiting: waiting, pid: getpid())
         try? JSONEncoder().encode(state).write(to: session.appendingPathComponent("state.json"), options: .atomic)
     }
@@ -89,7 +136,8 @@ enum LiteDiagnostics {
         guard sysctlbyname(key, &chars, &size, nil, 0) == 0 else { return "unknown" }
         return String(cString: chars)
     }
-    static func report(kind: String, stage: String = "launcher", elapsed: Double = 0) -> Report {
+    static func report(kind: String, stage: String = "launcher", elapsed: Double = 0,
+                       outcome: LauncherExit? = nil) -> Report {
         let p = Bundle.main.infoDictionary ?? [:], v = ProcessInfo.processInfo.operatingSystemVersion
         let model = sysctlString("hw.model"), chip = sysctlString("machdep.cpu.brand_string")
         let version = p["CFBundleShortVersionString"] as? String ?? ""
@@ -101,7 +149,9 @@ enum LiteDiagnostics {
             model: matches(model, #"^Mac(?:Book(?:Air|Pro)?|mini|Pro|Studio)?\d+,\d+$"#) ? model : "unknown",
             chip: matches(chip, #"^Apple M\d+(?: (?:Pro|Max|Ultra))?$"#) ? chip : "unknown",
             ram_gb: max(1, Int(ProcessInfo.processInfo.physicalMemory >> 30)),
-            stage: stages.contains(stage) ? stage : "launcher", elapsed_s: min(604800, max(0, Int(elapsed))))
+            stage: stages.contains(stage) ? stage : "launcher", elapsed_s: min(604800, max(0, Int(elapsed))),
+            exit_code: outcome.flatMap { $0.signal == 0 ? Int($0.code) : nil },
+            signal: outcome.flatMap { $0.signal != 0 ? Int($0.signal) : nil })
     }
     static var queue: URL { root.appendingPathComponent("pending", isDirectory: true) }
     static func clearQueue() { try? FileManager.default.removeItem(at: queue) }

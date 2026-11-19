@@ -3,7 +3,7 @@
   "support.description": "アプリの更新手順と、更新後に困ったときの確認方法。",
   "support.skip": "更新手順へ移動",
   "support.title": "更新サポート",
-  "support.meta": "v1.9.8-lite.7の更新手順 · 2026年11月16日更新",
+  "support.meta": "v1.9.8-lite.8の更新手順 · 2026年11月19日更新",
   "support.contents": "このページの内容",
   "support.nav_app": "アプリから更新",
   "support.nav_dmg": "DMGで更新",
@@ -61,5 +61,6 @@
   "support.contact_error": "止まる画面や表示されたエラー、可能ならそのスクリーンショット",
   "support.contact_mic": "マイクの問題なら、内蔵・USB・Bluetoothなどの種類と、Mac側で入力レベルが動くか",
   "support.issues": "GitHubのIssuesを開く",
-  "support.booth_contact": "BOOTHで問い合わせる"
+  "support.booth_contact": "BOOTHで問い合わせる",
+  "support.startup_collection": "初回画面が出ない場合のログ採取手順"
 }

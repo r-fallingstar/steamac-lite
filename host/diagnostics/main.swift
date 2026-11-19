@@ -2,6 +2,7 @@ import AppKit
 import AVFoundation
 import Darwin
 import Foundation
+import os
 
 // CFBundleExecutable stays steamac-vm for compatibility with Lite.9's updater.
 // The old executable moves to steamac-runtime. This tiny executable never links
@@ -33,21 +34,38 @@ if arguments.contains("--selftest-wizard-layout") {
 let utility = arguments.contains { $0.hasPrefix("--selftest") || $0.hasPrefix("--sentry-test") ||
     ["--help", "-h", "--headless", "--preview-update", "--ssh-password", "--create-disk", "--grow-disk"].contains($0) }
 if utility || ProcessInfo.processInfo.environment["STEAMAC_VM_CHILD"] == "1" { execRuntime() }
+// macOS stores these fixed markers locally. They also work before any consent
+// decision, and are collected only when the user runs the support script.
+let startupLog = Logger(subsystem: "local.ryuu.steamac-lite.startup", category: "bootstrap")
+startupLog.notice("bootstrap-entered")
 // Preserve Finder-launch error dialogs when the real runtime's parent is now
 // this bootstrap rather than launchd. Command-line utilities keep terminal errors.
 if getppid() == 1 { setenv("STEAMAC_GUI_LAUNCH", "1", 1) }
 
-if LiteDiagnostics.defaults.integer(forKey: LiteDiagnostics.consentKey) != LiteDiagnostics.consentVersion
-    || LiteDiagnostics.defaults.integer(forKey: FirstRunWizard.versionKey) != 1 {
+let needsWizard = LiteDiagnostics.defaults.integer(forKey: LiteDiagnostics.consentKey) != LiteDiagnostics.consentVersion
+    || LiteDiagnostics.defaults.integer(forKey: FirstRunWizard.versionKey) != 1
+startupLog.notice("preferences-read")
+if needsWizard {
+    startupLog.notice("appkit-starting")
     let app = NSApplication.shared
     app.setActivationPolicy(.regular)
+    startupLog.notice("appkit-ready")
     let wizard = FirstRunWizard(arguments: arguments)
-    DispatchQueue.main.async { wizard.show() }
+    startupLog.notice("wizard-created")
+    DispatchQueue.main.async {
+        startupLog.notice("wizard-showing")
+        wizard.show()
+        startupLog.notice("wizard-presented")
+    }
     withExtendedLifetime(wizard) { app.run() }
     exit(0)
 }
 
-guard LiteDiagnostics.allowed else { LiteDiagnostics.clearQueue(); execRuntime() }
+guard LiteDiagnostics.allowed else {
+    LiteDiagnostics.clearQueue()
+    startupLog.notice("runtime-exec")
+    execRuntime()
+}
 
 // An OS reboot or killing the whole process group may also kill the monitor.
 // On the next opt-in launch, report only a demonstrably abandoned session, and
@@ -56,8 +74,7 @@ for old in (try? FileManager.default.contentsOfDirectory(at: LiteDiagnostics.roo
     where old.lastPathComponent.hasPrefix("session-") {
     guard let ownerText = try? String(contentsOf: old.appendingPathComponent("owner"), encoding: .utf8),
           let owner = Int32(ownerText), owner > 1, kill(owner, 0) == -1, errno == ESRCH,
-          let data = try? Data(contentsOf: old.appendingPathComponent("state.json")),
-          let state = try? JSONDecoder().decode(LiteDiagnostics.State.self, from: data),
+          let state = LiteDiagnostics.readState(in: old),
           state.pid > 1, kill(state.pid, 0) == -1, errno == ESRCH else { continue }
     if !state.waiting && state.stage != "shutdown" && !FileManager.default.fileExists(atPath: old.appendingPathComponent("revoked").path) {
         LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: "previous-session-incomplete", stage: state.stage))
@@ -100,10 +117,8 @@ func flushSoon() {
 let timer = DispatchSource.makeTimerSource(queue: events)
 timer.schedule(deadline: .now() + 5, repeating: 5, leeway: .seconds(1))
 timer.setEventHandler {
-    guard !FileManager.default.fileExists(atPath: directory.appendingPathComponent("revoked").path) else { return }
-    guard LiteDiagnostics.allowed else { LiteDiagnostics.clearQueue(); return }
-    let state = (try? Data(contentsOf: directory.appendingPathComponent("state.json")))
-        .flatMap { try? JSONDecoder().decode(LiteDiagnostics.State.self, from: $0) }
+    guard LiteDiagnostics.sessionAllowsReporting(directory) else { return }
+    let state = LiteDiagnostics.readState(in: directory)
     let heartbeat = (try? String(contentsOf: directory.appendingPathComponent("heartbeat"), encoding: .utf8)).flatMap(Double.init)
     let now = ProcessInfo.processInfo.systemUptime
     if !stopping, let kind = watch.tick(now: now, state: state, heartbeat: heartbeat) {
@@ -115,19 +130,18 @@ child.terminationHandler = { process in
     events.async {
         timer.cancel()
         let status = process.terminationStatus
-        if !stopping && LiteDiagnostics.allowed && (process.terminationReason == .uncaughtSignal || status != 0) {
-            // SIGKILL can mean force-quit or memory pressure. Report the signal,
-            // not a fabricated native crash reason. Normal requested quits are skipped.
-            var report = LiteDiagnostics.report(kind: process.terminationReason == .uncaughtSignal ? "launcher-crashed" : "vm-exited-unexpectedly",
-                                                stage: watch.stage, elapsed: ProcessInfo.processInfo.systemUptime - started)
-            if process.terminationReason == .uncaughtSignal { report.signal = Int(status) }
-            else { report.exit_code = Int(status) }
-            LiteDiagnostics.enqueue(report)
+        let outcome = process.terminationReason == .uncaughtSignal
+            ? LauncherExit(code: 0, signal: status) : LauncherExit(code: status)
+        if LiteDiagnostics.sessionAllowsReporting(directory), outcome.isUnexpected(userRequested: stopping),
+           !LiteDiagnostics.vmExitWasHandled(outcome, in: directory) {
+            let stage = LiteDiagnostics.readState(in: directory)?.stage ?? watch.stage
+            LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: "launcher-crashed", stage: stage,
+                elapsed: ProcessInfo.processInfo.systemUptime - started, outcome: outcome))
         }
         try? FileManager.default.removeItem(at: directory)
         Task {
             await LiteDiagnostics.flush()
-            exit(process.terminationReason == .exit ? status : 128 + status)
+            exit(outcome.status)
         }
     }
 }
@@ -135,9 +149,16 @@ child.terminationHandler = { process in
 // queue before Process.run(), not after the runtime's spawn has returned.
 timer.resume()
 events.async { flushSoon() }
-do { try child.run() }
+startupLog.notice("runtime-spawning")
+do {
+    try child.run()
+    startupLog.notice("runtime-spawned")
+}
 catch {
-    LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: "launcher-crashed", stage: "launcher"))
+    startupLog.notice("runtime-spawn-failed")
+    if LiteDiagnostics.sessionAllowsReporting(directory) {
+        LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: "launcher-crashed", stage: "launcher"))
+    }
     try? FileManager.default.removeItem(at: directory)
     Task { await LiteDiagnostics.flush(); exit(127) }
 }

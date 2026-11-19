@@ -338,9 +338,11 @@ enum CrashOffer {
         !o.headless && (o.sentryTestCrash == nil || ProcessInfo.processInfo.environment[dumpEnv] != nil)
     }
 
-    static func run(status: Int32, options: Options, runDir: String) {
-        LiteDiagnostics.checkpoint("shutdown", waiting: true)
-        let summary = CrashReporting.exitSummary(status: status)
+    static func run(outcome: LauncherExit, options: Options, runDir: String) {
+        if let session = LiteDiagnostics.session, let state = LiteDiagnostics.readState(in: session) {
+            LiteDiagnostics.checkpoint(state.stage, waiting: true)
+        }
+        let summary = CrashReporting.exitSummary(outcome)
         log("report: offering a problem report (\(summary))")
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
@@ -352,7 +354,7 @@ enum CrashOffer {
         w.title = "steamac Lite"
         w.isReleasedWhenClosed = false
         w.delegate = delegate
-        let view = OfferView(summary: CrashReporting.localizedExitSummary(status: status), report: {
+        let view = OfferView(summary: CrashReporting.localizedExitSummary(outcome), report: {
             ReportSheet.present(on: w, context: context) { sent in if sent { w.close() } }
         }, close: { w.close() })
         let host = NSHostingView(rootView: view)

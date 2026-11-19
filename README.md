@@ -6,7 +6,11 @@
 
 [Update support](https://r-fallingstar.github.io/steamac-lite/en/support/) covers in-app and DMG updates, microphone access, and troubleshooting.
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.7/SteamAC-Lite-1.9.8-lite.7-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.7) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.8/SteamAC-Lite-1.9.8-lite.8-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.8) · [はじめての導入手順](docs/quick-start.ja.md)
+
+## v1.9.8-lite.8
+
+Automatic diagnostics distinguish VM exits from expected quits and record the last startup stage for actual failures. If the first window never appears, collect the local startup log with the support script. [Release notes](docs/release-notes-1.9.8-lite.8.md)
 
 ## v1.9.8-lite.7
 

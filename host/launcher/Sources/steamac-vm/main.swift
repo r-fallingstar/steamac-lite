@@ -203,11 +203,11 @@ final class Lifecycle: NSObject, NSApplicationDelegate {
     static let gracePeriod: TimeInterval = 180
 
     /// Force quit: no relaunch even if a restart was pending; the status tells the supervisor the
-    /// user asked for it (CrashReporting.forceQuitStatus).
+    /// user asked for it (LauncherExit.forceQuitStatus).
     private func forceQuit() -> Never {
         log("force quit")
         if let dir = Supervisor.runDir { try? FileManager.default.removeItem(atPath: Supervisor.rebootMarker(dir)) }
-        exit(CrashReporting.forceQuitStatus)
+        exit(LauncherExit.forceQuitStatus)
     }
 
     func requestShutdown(force: Bool = false) {
@@ -699,7 +699,7 @@ do {
 } catch let error as DiskLock.InUse {
     log("error: \(error)")
     MainActor.assumeIsolated { AppBundle.alertIfLaunchedFromFinder("SteamOS is already running", error.localizedDescription) }
-    exit(CrashReporting.startupRejectedStatus)
+    exit(LauncherExit.startupRejectedStatus)
 } catch {
     fatal("\(error)")
 }

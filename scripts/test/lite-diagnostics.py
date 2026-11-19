@@ -75,7 +75,15 @@ for i in stride(from: 5.0, through: 600, by: 5) {
 }
 for i in stride(from: 605.0, through: 775, by: 5) { check(w.tick(now: i, state: .init(stage: "ready", uptime: 0, waiting: false, pid: 1), heartbeat: 600) == nil) }
 check(w.tick(now: 780, state: .init(stage: "ready", uptime: 0, waiting: false, pid: 1), heartbeat: 600) == "app-unresponsive")
-try JSONEncoder().encode(LiteDiagnostics.report(kind: "startup-stalled")).write(to: URL(fileURLWithPath: CommandLine.arguments[1]))
+let code137 = LauncherExit(waitStatus: 137 << 8)
+let killed = LauncherExit(waitStatus: SIGKILL)
+check(code137.code == 137 && code137.signal == 0 && code137.status == killed.status)
+check(killed.signal == SIGKILL && killed.isUnexpected(userRequested: false))
+check(!killed.isUnexpected(userRequested: true))
+check(killed.isUnexpected(userRequested: true, killedForMemory: true))
+let vmReport = LiteDiagnostics.report(kind: "vm-killed", stage: "ready", elapsed: 12, outcome: killed)
+check(vmReport.exit_code == nil && vmReport.signal == Int(SIGKILL) && vmReport.elapsed_s == 12)
+try JSONEncoder().encode(vmReport).write(to: URL(fileURLWithPath: CommandLine.arguments[1]))
 print("diagnostics-core: PASS (\(checks) assertions)")
 ''')
     helper = d / 'core-check'
@@ -96,38 +104,95 @@ print("diagnostics-core: PASS (\(checks) assertions)")
         'SteamacLiteBuild': True, 'SteamacGitCommit': 'abcdef1234', 'LSUIElement': True}))
     subprocess.run(['xcrun', 'swiftc', '-swift-version', '5', str(core), str(permissions), str(ROOT / 'host/diagnostics/FirstRunWizard.swift'), str(ROOT / 'host/diagnostics/main.swift'),
                     '-o', str(binary / 'steamac-vm')], env=env, check=True)
-    runtime = d / 'runtime.c'
-    runtime.write_text('''#include <signal.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-int main(int n, char **v) {
- if (n>1 && !strcmp(v[1],"--selftest-fixture")) return 23;
- if (n>1 && !strcmp(v[1],"crash")) { raise(SIGKILL); return 0; }
- if (n>1 && !strcmp(v[1],"hold")) { while(1) pause(); }
- return 0;
+    main.write_text(r'''
+import Darwin
+import Foundation
+
+switch CommandLine.arguments.last {
+case "--selftest-fixture":
+    exit(23)
+case "force-quit":
+    exit(LauncherExit.forceQuitStatus)
+case "startup-refused":
+    exit(LauncherExit.startupRejectedStatus)
+case "requested-shutdown":
+    LiteDiagnostics.checkpoint("shutdown")
+    LiteDiagnostics.markVMExitHandled(status: 128 + SIGKILL)
+    exit(128 + SIGKILL)
+case "vm-killed":
+    LiteDiagnostics.checkpoint("ready")
+    let outcome = LauncherExit(code: 0, signal: SIGKILL)
+    LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: "vm-killed", stage: "ready", elapsed: 12, outcome: outcome))
+    LiteDiagnostics.checkpoint("ready", waiting: true)
+    LiteDiagnostics.markVMExitHandled(status: outcome.status)
+    exit(outcome.status)
+case "launcher-killed":
+    LiteDiagnostics.checkpoint("vm-setup")
+    LiteDiagnostics.markVMExitHandled(status: 128 + SIGKILL)
+    raise(SIGKILL)
+case "launcher-code-137":
+    LiteDiagnostics.checkpoint("options")
+    LiteDiagnostics.markVMExitHandled(status: 1)
+    exit(137)
+case "revoked":
+    LiteDiagnostics.consent(false)
+    LiteDiagnostics.consent(true)
+    exit(1)
+case "hold":
+    LiteDiagnostics.checkpoint("ready")
+    while true { pause() }
+default:
+    break
 }
 ''')
-    subprocess.run(['xcrun', 'clang', str(runtime), '-o', str(binary / 'steamac-runtime')], env=env, check=True)
+    subprocess.run(['xcrun', 'swiftc', '-swift-version', '5', str(core), str(main), '-o', str(binary / 'steamac-runtime')], env=env, check=True)
     wrapper = binary / 'steamac-vm'
     for lang in ['ja', 'en']:
         subprocess.run([str(wrapper), '--selftest-wizard-layout', '--selftest-out', str(d/lang), '-AppleLanguages', '('+lang+')'], env=env, check=True)
     assert subprocess.run([str(wrapper), '--selftest-fixture'], env=env).returncode == 23
     assert subprocess.run([str(wrapper)], env=env).returncode == 0  # opt-out exec path
     subprocess.run([str(helper), 'on'], env=env, check=True)
-    assert subprocess.run([str(wrapper), 'crash'], env=env, timeout=10).returncode == 128 + signal.SIGKILL
     root = Path.home() / 'Library/Application Support' / env['STEAMAC_DEFAULTS_DOMAIN'] / 'diagnostics'
-    reports = [json.loads(p.read_text()) for p in (root / 'pending').glob('*.json')]
-    assert any(r.get('signal') == signal.SIGKILL and r['kind'] == 'launcher-crashed' for r in reports)
+    def run_runtime(mode, status):
+        previous = set((root / 'pending').glob('*.json'))
+        assert subprocess.run([str(wrapper), mode], env=env, timeout=10).returncode == status
+        return [json.loads(p.read_text()) for p in set((root / 'pending').glob('*.json')) - previous]
+
+    killed_status = 128 + signal.SIGKILL
+    assert not run_runtime('force-quit', 3)
+    assert not run_runtime('startup-refused', 4)
+    assert not run_runtime('requested-shutdown', killed_status)
+    report, = run_runtime('vm-killed', killed_status)
+    assert report['kind'] == 'vm-killed' and report['stage'] == 'ready' and report['elapsed_s'] == 12
+    assert report['signal'] == signal.SIGKILL and 'exit_code' not in report
+    report, = run_runtime('launcher-killed', killed_status)
+    assert report['kind'] == 'launcher-crashed' and report['stage'] == 'vm-setup'
+    assert report['signal'] == signal.SIGKILL and 'exit_code' not in report
+    report, = run_runtime('launcher-code-137', 137)
+    assert report['kind'] == 'launcher-crashed' and report['stage'] == 'options'
+    assert report['exit_code'] == 137 and 'signal' not in report
+    assert not run_runtime('revoked', 1)
+    assert not list((root / 'pending').glob('*.json'))
     subprocess.run([str(helper), 'off'], env=env, check=True)
     assert not (root / 'pending').exists()
     subprocess.run([str(helper), 'on'], env=env, check=True)
     process = subprocess.Popen([str(wrapper), 'hold'], env=env)
-    time.sleep(0.5)
-    process.terminate()
-    assert process.wait(timeout=10) == 128 + signal.SIGTERM
+    try:
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            if any(json.loads(p.read_text())['stage'] == 'ready' for p in root.glob('session-*/state.json')):
+                break
+            time.sleep(0.05)
+        else:
+            raise AssertionError('diagnostics runtime did not start')
+        process.terminate()
+        assert process.wait(timeout=10) == 128 + signal.SIGTERM
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=10)
     assert not list((root / 'pending').glob('*.json'))  # requested quit is not a crash
     subprocess.run([str(helper), 'off'], env=env, check=True)
     shutil.rmtree(root.parent)
     subprocess.run(['/usr/bin/defaults', 'delete', env['STEAMAC_DEFAULTS_DOMAIN']], capture_output=True)
-    print('diagnostics-bootstrap: PASS (utility, opt-out, crash capture, user quit, queue deletion)')
+    print('diagnostics-bootstrap: PASS (utility, opt-out, VM exit handoff, launcher exit, user quit, consent revocation)')

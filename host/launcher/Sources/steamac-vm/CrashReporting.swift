@@ -443,33 +443,6 @@ enum CrashReporting {
         FileManager.default.createFile(atPath: dir + "/user-exit", contents: nil)
     }
 
-    /// Exit status of a force quit (a second shutdown request, the app menu's Force Quit). It tells
-    /// the supervisor the user asked for it without the user-exit marker, which is a file: with the
-    /// Mac's disk full it was never written, and a force quit during the guest's shutdown was
-    /// reported as "VM process exited with status 1" with the crash window (STEAMAC-15: libkrun
-    /// logged "No space left on device" flushing the guest disk just before).
-    static let forceQuitStatus: Int32 = 3
-
-    /// An expected startup refusal already explained by the VM process (e.g. a disk lock race).
-    static let startupRejectedStatus: Int32 = 4
-
-    /// Ways to ask a process to end (logout, `kill`, ^C, the terminal closing). The VM process
-    /// handles them (guest power key); one that kills it came before its handlers were installed
-    /// (first-run sheet, startup) and is no crash.
-    static let terminationSignals: Set<Int32> = [SIGTERM, SIGINT, SIGHUP]
-
-    /// The VM process ended in a way the user did not ask for: a crash signal, SIGKILL, or a
-    /// non-zero exit without a user request (window close, menu, signal, restart; a force quit exits
-    /// with forceQuitStatus). SIGPIPE (its output pipe closed; ignored since STEAMAC-10, see
-    /// main.swift) is no crash either.
-    static func unexpectedExit(status: Int32, runDir dir: String) -> Bool {
-        guard status != 0, status != forceQuitStatus, status != startupRejectedStatus else { return false }
-        let signal = status > 128 ? status - 128 : 0
-        if terminationSignals.contains(signal) || signal == SIGPIPE { return false }
-        let userExit = FileManager.default.fileExists(atPath: dir + "/user-exit")
-        return !(userExit && (signal == 0 || signal == SIGKILL))
-    }
-
     private static func isSIGPIPE(_ event: Event) -> Bool {
         event.exceptions?.contains { ($0.mechanism?.meta?.signal?["number"] as? NSNumber)?.int32Value == SIGPIPE } ?? false
     }
@@ -477,16 +450,19 @@ enum CrashReporting {
     static let killedSummary = "VM process killed (SIGKILL — memory pressure or force quit)"
 
     /// "VM process crashed (SIGABRT)" / "VM process killed (SIGKILL …)" / "VM process exited with status 1".
-    static func exitSummary(status: Int32) -> String {
-        guard status > 128 else { return "VM process exited with status \(status)" }
-        let signal = status - 128
+    static func exitSummary(_ outcome: LauncherExit) -> String {
+        let signal = outcome.signal
+        guard signal != 0 else { return "VM process exited with status \(outcome.code)" }
         return signal == SIGKILL ? killedSummary : "VM process crashed (\(signalName(signal)))"
     }
 
     /// UI counterpart; exitSummary stays English in reports and logs.
-    static func localizedExitSummary(status: Int32) -> String {
-        guard status > 128 else { return String(localized: "VM process exited with status \(status)") }
-        let signal = status - 128
+    static func localizedExitSummary(_ outcome: LauncherExit) -> String {
+        let signal = outcome.signal
+        guard signal != 0 else {
+            let status = outcome.code
+            return String(localized: "VM process exited with status \(status)")
+        }
         return signal == SIGKILL
             ? String(localized: "VM process killed (SIGKILL — memory pressure or force quit)")
             : String(localized: "VM process crashed (\(signalName(signal)))")
@@ -494,11 +470,11 @@ enum CrashReporting {
 
     /// Supervisor: the VM process ended. A multi-line message still collecting lines is reported
     /// whatever the exit; besides, non-zero exits the user did not ask for and every crash
-    /// (signal) are. Flushes before the supervisor exits.
-    static func vmExited(_ exit: VMExit) {
-        guard configured, role == .launcher, let dir = runDir else { return }
-        let unexpected = unexpectedExit(status: exit.status, runDir: dir)
+    /// (signal) are. Returns the same classification for the supervisor's UI.
+    static func vmExited(_ exit: VMExit, runDir dir: String, elapsed: Double) -> Bool {
         let userExit = FileManager.default.fileExists(atPath: dir + "/user-exit")
+        let unexpected = exit.outcome.isUnexpected(userRequested: userExit, killedForMemory: exit.killedForMemory)
+        guard configured, role == .launcher else { return unexpected }
         let signal = exit.signal
         followSetting()
         tap?.waitIdle()   // the VM process's last lines are breadcrumbs of this report
@@ -508,7 +484,16 @@ enum CrashReporting {
         for f in pending { report(f.kind, key: f.key, message: f.message, extra: f.extra) }
         guard unexpected else {
             if !pending.isEmpty { flush() }
-            return
+            return false
+        }
+        if LiteDiagnostics.isLite {
+            let stage = LiteDiagnostics.session.flatMap { LiteDiagnostics.readState(in: $0)?.stage } ?? "vm-setup"
+            if signal == SIGKILL {
+                let reason = exit.detail == nil ? "unknown" : exit.killedForMemory ? "jetsam" : "not-jetsam"
+                log("VM process killed (SIGKILL); kernel termination reason: \(reason)")
+            }
+            reportLite(signal == SIGKILL ? .vmKilled : .vmExited, stage: stage, elapsed: elapsed, outcome: exit.outcome)
+            return true
         }
         var exitTags = ["exit_status": String(exit.status), "signal": signal != 0 ? signalName(signal) : "none",
                         "user_exit": userExit ? "yes" : "no"]
@@ -536,7 +521,7 @@ enum CrashReporting {
         } else {
             let lastError = last.map { ": \($0)" } ?? ""
             var key = signal != 0 ? signalName(signal) : "status \(exit.status)"
-            var lines = [exitSummary(status: exit.status) + lastError]
+            var lines = [exitSummary(exit.outcome) + lastError]
             var extra: [String: String] = [:]
             if signal != 0 && !nativeException.isEmpty {
                 lines.append(nativeException.components(separatedBy: "\n")[0])
@@ -551,7 +536,7 @@ enum CrashReporting {
             // mtl_new_compute_pipeline_state, no message).
             if signal != 0, let crash = SystemCrashReport.find(pid: exit.pid, timeout: 8) {
                 if let site = crash.site {
-                    lines[0] = exitSummary(status: exit.status) + " in " + site + lastError
+                    lines[0] = exitSummary(exit.outcome) + " in " + site + lastError
                     key += " " + site
                     exitTags["crash_site"] = String(site.prefix(200))
                 }
@@ -561,6 +546,7 @@ enum CrashReporting {
             report(.vmExited, key: key, message: lines.joined(separator: "\n"), tags: exitTags, extra: extra)
         }
         flush()
+        return true
     }
 
     /// Before a deliberate exit right after a report.
@@ -653,6 +639,13 @@ enum CrashReporting {
 
     // MARK: reports
 
+    private static func reportLite(_ kind: Kind, stage: String, elapsed: Double = 0, outcome: LauncherExit? = nil) {
+        guard runOverride == nil, !test,
+              LiteDiagnostics.session.map(LiteDiagnostics.sessionAllowsReporting) ?? LiteDiagnostics.allowed,
+              ReportedStore.claim("lite|" + kind.rawValue, quietPeriod: kind.quietPeriod) else { return }
+        LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: kind.rawValue, stage: stage, elapsed: elapsed, outcome: outcome))
+    }
+
     /// VM process: publish a bounded snapshot for the supervisor's fatal-line reports.
     /// StallMonitor calls this once per second; no history is persisted when reporting is off.
     static func updateGPUHistory(_ history: String) {
@@ -666,12 +659,9 @@ enum CrashReporting {
                        tags extraTags: [String: String] = [:], extra: [String: String] = [:]) {
         guard configured else { return }
         if LiteDiagnostics.isLite {
-            guard runOverride == nil, !test, LiteDiagnostics.allowed,
-                  ReportedStore.claim("lite|" + kind.rawValue, quietPeriod: kind.quietPeriod) else { return }
             // Messages, keys, tags and extras may contain log text or paths. Only the
             // fixed event kind crosses the automatic-report boundary.
-            LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: kind.rawValue,
-                stage: kind == .notResponding ? "ready" : "vm-setup"))
+            reportLite(kind, stage: kind == .notResponding ? "ready" : "vm-setup")
             return
         }
         guard locked({ running }) else { return }
@@ -826,11 +816,21 @@ enum CrashReporting {
         let dir = NSTemporaryDirectory() + "steamac-exit-check-\(getpid())"
         try? FileManager.default.createDirectory(atPath: dir + "/Apps.app/Contents", withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: dir) }
-        if unexpectedExit(status: forceQuitStatus, runDir: dir) { failures.append("exit: force quit without marker reported") }
-        if !unexpectedExit(status: 1, runDir: dir) { failures.append("exit: status 1 without marker not reported") }
-        if !unexpectedExit(status: 128 + SIGSEGV, runDir: dir) { failures.append("exit: SIGSEGV not reported") }
-        for status in [startupRejectedStatus, 128 + SIGTERM, 128 + SIGINT, 128 + SIGHUP, 128 + SIGPIPE] {
-            if unexpectedExit(status: status, runDir: dir) { failures.append("exit: expected status \(status) reported") }
+        for code in [LauncherExit.forceQuitStatus, LauncherExit.startupRejectedStatus] {
+            if LauncherExit(code: code).isUnexpected(userRequested: false) {
+                failures.append("exit: expected status \(code) reported")
+            }
+        }
+        for signal in LauncherExit.terminationSignals.union([SIGPIPE]) {
+            if LauncherExit(code: 0, signal: signal).isUnexpected(userRequested: false) {
+                failures.append("exit: expected signal \(signal) reported")
+            }
+        }
+        if !LauncherExit(code: 1).isUnexpected(userRequested: false) {
+            failures.append("exit: status 1 without marker not reported")
+        }
+        if !LauncherExit(code: 0, signal: SIGSEGV).isUnexpected(userRequested: true) {
+            failures.append("exit: SIGSEGV during shutdown not reported")
         }
         FileManager.default.createFile(atPath: dir + "/steamos.img", contents: Data(count: 512))
         if AppBundle.isDiskImage(dir + "/Apps.app") { failures.append("disk: an app bundle is a disk image") }
@@ -1339,8 +1339,7 @@ final class StderrTap {
 /// How the VM process ended (Supervisor.spawnAndWait reads the details from the zombie before it
 /// reaps it).
 struct VMExit {
-    /// Exit status, or 128 + the signal that killed it.
-    var status: Int32
+    var outcome = LauncherExit(code: 1)
     /// The VM process (0 when it never started).
     var pid: pid_t = 0
     /// kevent NOTE_EXIT_DETAIL bits, nil when the exit was not observed.
@@ -1348,7 +1347,8 @@ struct VMExit {
     /// Lifetime peak phys_footprint, bytes (a zombie's current footprint is already 0).
     var peakFootprint: UInt64?
 
-    var signal: Int32 { status > 128 ? status - 128 : 0 }
+    var status: Int32 { outcome.status }
+    var signal: Int32 { outcome.signal }
     /// The kernel's memorystatus (jetsam) killed it.
     var killedForMemory: Bool { (detail ?? 0) & UInt32(NOTE_EXIT_MEMORY) != 0 }
 
