@@ -81,8 +81,19 @@ check(code137.code == 137 && code137.signal == 0 && code137.status == killed.sta
 check(killed.signal == SIGKILL && killed.isUnexpected(userRequested: false))
 check(!killed.isUnexpected(userRequested: true))
 check(killed.isUnexpected(userRequested: true, killedForMemory: true))
-let vmReport = LiteDiagnostics.report(kind: "vm-killed", stage: "ready", elapsed: 12, outcome: killed)
+typealias KillReason = LiteDiagnostics.KillReason
+check(KillReason(exitDetail: nil) == .unavailable)
+check(KillReason(exitDetail: 0) == .unspecified)
+check(KillReason(exitDetail: UInt32(NOTE_EXIT_MEMORY)) == .memory)
+check(KillReason(exitDetail: UInt32(NOTE_EXIT_CSERROR)) == .codeSigning)
+check(KillReason(exitDetail: UInt32(NOTE_EXIT_DECRYPTFAIL)) == .decryption)
+check(KillReason(exitDetail: UInt32(NOTE_EXIT_MEMORY) | UInt32(NOTE_EXIT_CSERROR)) == .memory)
+let vmReport = LiteDiagnostics.report(kind: "vm-killed", stage: "ready", elapsed: 12, outcome: killed, killReason: .memory)
 check(vmReport.exit_code == nil && vmReport.signal == Int(SIGKILL) && vmReport.elapsed_s == 12)
+check(vmReport.kill_reason == .memory)
+let legacy = LiteDiagnostics.report(kind: "vm-killed", stage: "ready", outcome: killed)
+let legacyData = try JSONEncoder().encode(legacy)
+check(try JSONDecoder().decode(LiteDiagnostics.Report.self, from: legacyData).kill_reason == nil)
 try JSONEncoder().encode(vmReport).write(to: URL(fileURLWithPath: CommandLine.arguments[1]))
 print("diagnostics-core: PASS (\(checks) assertions)")
 ''')
@@ -92,7 +103,7 @@ print("diagnostics-core: PASS (\(checks) assertions)")
     subprocess.run([str(helper), 'off'], env=env, check=True)
     # Swift's emitted JSON must pass the actual receiver's allowlist.
     subprocess.run(['node', '--input-type=module', '-e',
-        "import {validate} from './services/diagnostics/src/index.js'; import fs from 'node:fs'; validate(JSON.parse(fs.readFileSync(process.argv[1])));", str(d / 'report.json')], cwd=ROOT, check=True)
+        "import assert from 'node:assert/strict'; import {validate} from './services/diagnostics/src/index.js'; import fs from 'node:fs'; assert.equal(validate(JSON.parse(fs.readFileSync(process.argv[1]))).kill_reason, 'memory');", str(d / 'report.json')], cwd=ROOT, check=True)
     test_support = Path.home() / 'Library/Application Support' / env['STEAMAC_DEFAULTS_DOMAIN']
     shutil.rmtree(test_support / 'diagnostics')
     app = d / 'Diagnostic Fixture.app'

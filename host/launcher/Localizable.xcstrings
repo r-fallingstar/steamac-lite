@@ -21366,30 +21366,30 @@
         }
       }
     },
-    "App and macOS versions, Mac model, chip and RAM; startup stage, elapsed time and abnormal exit code or signal.": {
+    "App and macOS versions, Mac model, chip and RAM, startup stage, elapsed time, exit code or signal, and a fixed category for the macOS VM kill reason.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "アプリとmacOSの版、Macの型番・チップ・メモリ、起動段階、経過時間、異常終了のコードまたはシグナル。"
+            "value": "アプリとmacOSの版、Macの型番・チップ・メモリ、起動段階、経過時間、終了コードまたはシグナル、macOSが返したVMの強制終了理由の分類。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "앱·macOS 버전, Mac 모델·칩·메모리, 시작 단계, 경과 시간, 비정상 종료 코드 또는 신호입니다."
+            "value": "앱·macOS 버전, Mac 모델·칩·메모리, 시작 단계, 경과 시간, 종료 코드 또는 신호, macOS가 보고한 VM 강제 종료 사유의 분류입니다."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "应用和 macOS 版本、Mac 型号、芯片和内存、启动阶段、耗时、异常退出代码或信号。"
+            "value": "应用和 macOS 版本、Mac 型号、芯片和内存、启动阶段、耗时、退出代码或信号，以及 macOS 报告的虚拟机强制终止原因类别。"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Версии приложения и macOS, модель Mac, чип и память, этап запуска, время ожидания, код или сигнал завершения."
+            "value": "Версии приложения и macOS, модель Mac, чип и память, этап запуска, прошедшее время, код или сигнал завершения и категория причины принудительной остановки ВМ, сообщённая macOS."
           }
         }
       }

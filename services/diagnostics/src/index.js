@@ -8,6 +8,7 @@ export const STAGES = ['launcher', 'main', 'install', 'language', 'settings', 'o
   'crash-reporting', 'supervisor', 'first-run', 'vm-setup', 'window', 'permission', 'vm-start',
   'vm', 'provision', 'kernel', 'init', 'system', 'systemd', 'graphical', 'session', 'steam', 'steam-check',
   'steam-download', 'steam-install', 'steam-start', 'ready', 'shutdown'];
+const KILL_REASONS = ['memory', 'code-signing', 'decryption', 'unspecified', 'unavailable'];
 class Failure extends Error { constructor(status) { super('Request rejected'); this.status = status; } }
 function check(ok, status = 400) { if (!ok) throw new Failure(status); }
 function text(value, max, pattern) {
@@ -22,7 +23,7 @@ function exact(value, keys) {
 // fields fail rather than accidentally becoming telemetry after a client change.
 export function validate(b) {
   exact(b, ['schema', 'id', 'kind', 'version', 'commit', 'macos', 'model', 'chip', 'ram_gb',
-    'stage', 'elapsed_s', 'exit_code', 'signal', 'feedback']);
+    'stage', 'elapsed_s', 'exit_code', 'signal', 'kill_reason', 'feedback']);
   check(b.schema === 1 && EVENTS.includes(b.kind) && STAGES.includes(b.stage));
   const r = { schema: 1, id: text(b.id, 36, UUID), kind: b.kind,
     version: text(b.version, 48, /^\d+\.\d+\.\d+-lite\.\d+$/),
@@ -34,6 +35,10 @@ export function validate(b) {
     elapsed_s: integer(b.elapsed_s, 0, 604800) };
   if (b.exit_code !== undefined) r.exit_code = integer(b.exit_code, 0, 255);
   if (b.signal !== undefined) r.signal = integer(b.signal, 1, 127);
+  if (b.kill_reason !== undefined) {
+    check(b.kind === 'vm-killed' && r.signal === 9 && r.exit_code === undefined && KILL_REASONS.includes(b.kill_reason));
+    r.kill_reason = b.kill_reason;
+  }
   if (b.kind === 'manual') {
     exact(b.feedback, ['message', 'email', 'launcher_log']);
     r.feedback = { message: text(b.feedback.message, 8000, /^[\s\S]{10,}$/),

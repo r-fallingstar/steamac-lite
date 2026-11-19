@@ -33,7 +33,7 @@ enum CrashReporting {
         ? String(localized: "Optional: send startup stalls and crash diagnostics to the author's private GitHub. Off by default.")
         : String(localized: "Crash reports and rare errors go to the FX Steam Launcher developers (Sentry). No personal data.") }
     static var whatIsSent: [String] { LiteDiagnostics.isLite ? [
-        String(localized: "App and macOS versions, Mac model, chip and RAM; startup stage, elapsed time and abnormal exit code or signal."),
+        String(localized: "App and macOS versions, Mac model, chip and RAM, startup stage, elapsed time, exit code or signal, and a fixed category for the macOS VM kill reason."),
         String(localized: "Sent after 3 minutes without startup progress, an unresponsive app, or an abnormal exit. Waiting for your input does not count as a startup stall."),
         String(localized: "No names, accounts, screenshots, file contents or full logs are sent automatically. Reports use a random report ID, without a persistent device ID."),
         String(localized: "Turn off to stop future automatic sends and delete queued reports. Monitoring starts on the next app launch. Reports already received remain in the author's private repository.")
@@ -488,11 +488,12 @@ enum CrashReporting {
         }
         if LiteDiagnostics.isLite {
             let stage = LiteDiagnostics.session.flatMap { LiteDiagnostics.readState(in: $0)?.stage } ?? "vm-setup"
-            if signal == SIGKILL {
-                let reason = exit.detail == nil ? "unknown" : exit.killedForMemory ? "jetsam" : "not-jetsam"
-                log("VM process killed (SIGKILL); kernel termination reason: \(reason)")
+            let reason = signal == SIGKILL ? exit.killReason : nil
+            if let reason {
+                log("VM process killed (SIGKILL); kernel termination reason: \(reason.rawValue)")
             }
-            reportLite(signal == SIGKILL ? .vmKilled : .vmExited, stage: stage, elapsed: elapsed, outcome: exit.outcome)
+            reportLite(signal == SIGKILL ? .vmKilled : .vmExited, stage: stage, elapsed: elapsed,
+                       outcome: exit.outcome, killReason: reason)
             return true
         }
         var exitTags = ["exit_status": String(exit.status), "signal": signal != 0 ? signalName(signal) : "none",
@@ -639,11 +640,14 @@ enum CrashReporting {
 
     // MARK: reports
 
-    private static func reportLite(_ kind: Kind, stage: String, elapsed: Double = 0, outcome: LauncherExit? = nil) {
+    private static func reportLite(_ kind: Kind, stage: String, elapsed: Double = 0, outcome: LauncherExit? = nil,
+                                   killReason: LiteDiagnostics.KillReason? = nil) {
+        let fingerprint = "lite|" + kind.rawValue + (killReason.map { "|" + $0.rawValue } ?? "")
         guard runOverride == nil, !test,
               LiteDiagnostics.session.map(LiteDiagnostics.sessionAllowsReporting) ?? LiteDiagnostics.allowed,
-              ReportedStore.claim("lite|" + kind.rawValue, quietPeriod: kind.quietPeriod) else { return }
-        LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: kind.rawValue, stage: stage, elapsed: elapsed, outcome: outcome))
+              ReportedStore.claim(fingerprint, quietPeriod: kind.quietPeriod) else { return }
+        LiteDiagnostics.enqueue(LiteDiagnostics.report(kind: kind.rawValue, stage: stage, elapsed: elapsed,
+                                                       outcome: outcome, killReason: killReason))
     }
 
     /// VM process: publish a bounded snapshot for the supervisor's fatal-line reports.
@@ -1349,8 +1353,8 @@ struct VMExit {
 
     var status: Int32 { outcome.status }
     var signal: Int32 { outcome.signal }
-    /// The kernel's memorystatus (jetsam) killed it.
-    var killedForMemory: Bool { (detail ?? 0) & UInt32(NOTE_EXIT_MEMORY) != 0 }
+    var killReason: LiteDiagnostics.KillReason { .init(exitDetail: detail) }
+    var killedForMemory: Bool { killReason == .memory }
 
     /// phys_footprint and its lifetime peak of a running or zombie process, bytes.
     static func footprint(pid: pid_t) -> (current: UInt64, peak: UInt64)? {

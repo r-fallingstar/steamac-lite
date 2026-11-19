@@ -20,6 +20,17 @@ test('manual text requires explicit manual kind and has bounded fields', () => {
   assert.throws(() => validate({ ...b, feedback: { ...b.feedback, screenshot: 'data' } }));
   assert.throws(() => validate({ ...b, feedback: { ...b.feedback, launcher_log: 'x'.repeat(24001) } }));
 });
+test('VM kill reason accepts only fixed values on SIGKILL reports', () => {
+  const killed = { ...report(), kind: 'vm-killed', signal: 9 };
+  assert.deepEqual(validate(killed), killed);
+  for (const reason of ['memory', 'code-signing', 'decryption', 'unspecified', 'unavailable']) {
+    assert.equal(validate({ ...killed, kill_reason: reason }).kill_reason, reason);
+  }
+  for (const extra of [{ kind: 'launcher-crashed' }, { signal: 15 }, { signal: undefined }, { exit_code: 137 },
+    { kill_reason: '/Users/example' }, { kill_reason: null }, { kill_reason: { cause: 'memory' } }]) {
+    assert.throws(() => validate({ ...killed, kill_reason: 'memory', ...extra }));
+  }
+});
 test('unauthorized readers cannot retrieve or acknowledge reports', async () => {
   for (const [path, method] of [['/admin/reports', 'GET'], ['/admin/ack', 'POST']]) {
     const result = await worker.fetch(new Request('https://example.test' + path, { method }), { READER_TOKEN: 'x'.repeat(64) });
@@ -43,11 +54,12 @@ test('intake is idempotent and IP is never included in stored payload', async ()
       async first() { return sql.startsWith('SELECT id') ? stored && { id: report().id } : { n: 0 }; },
       async run() { stored = this.args[1]; } }; }
   } };
+  const killed = { ...report(), kind: 'vm-killed', signal: 9, kill_reason: 'memory' };
   for (let i = 0; i < 2; i++) {
     const response = await worker.fetch(new Request('https://example.test/reports', { method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '192.0.2.7' }, body: JSON.stringify(report()) }), env);
+      headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '192.0.2.7' }, body: JSON.stringify(killed) }), env);
     assert.equal(response.status, 202);
   }
-  assert.equal(stored, JSON.stringify(report()));
+  assert.deepEqual(JSON.parse(stored), validate(killed));
   assert.equal(queries.filter(q => q.startsWith('INSERT')).length, 1);
 });

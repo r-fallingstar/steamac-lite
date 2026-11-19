@@ -122,11 +122,24 @@ enum LiteDiagnostics {
         timer.resume(); heartbeat = timer
     }
     struct Feedback: Codable { var message: String; var email: String; var launcher_log: String }
+    enum KillReason: String, Codable {
+        case memory, decryption, unspecified, unavailable
+        case codeSigning = "code-signing"
+
+        init(exitDetail: UInt32?) {
+            guard let detail = exitDetail else { self = .unavailable; return }
+            if detail & UInt32(NOTE_EXIT_MEMORY) != 0 { self = .memory }
+            else if detail & UInt32(NOTE_EXIT_CSERROR) != 0 { self = .codeSigning }
+            else if detail & UInt32(NOTE_EXIT_DECRYPTFAIL) != 0 { self = .decryption }
+            else { self = .unspecified }
+        }
+    }
     struct Report: Codable {
         var schema = 1; var id = UUID().uuidString.lowercased(); var kind: String
         var version: String; var commit: String; var macos: String; var model: String; var chip: String
         var ram_gb: Int; var stage: String; var elapsed_s: Int
         var exit_code: Int?; var signal: Int?; var feedback: Feedback?
+        var kill_reason: KillReason?
     }
     static func matches(_ text: String, _ pattern: String) -> Bool { text.range(of: pattern, options: .regularExpression) != nil }
     static func sysctlString(_ key: String) -> String {
@@ -137,7 +150,7 @@ enum LiteDiagnostics {
         return String(cString: chars)
     }
     static func report(kind: String, stage: String = "launcher", elapsed: Double = 0,
-                       outcome: LauncherExit? = nil) -> Report {
+                       outcome: LauncherExit? = nil, killReason: KillReason? = nil) -> Report {
         let p = Bundle.main.infoDictionary ?? [:], v = ProcessInfo.processInfo.operatingSystemVersion
         let model = sysctlString("hw.model"), chip = sysctlString("machdep.cpu.brand_string")
         let version = p["CFBundleShortVersionString"] as? String ?? ""
@@ -151,7 +164,8 @@ enum LiteDiagnostics {
             ram_gb: max(1, Int(ProcessInfo.processInfo.physicalMemory >> 30)),
             stage: stages.contains(stage) ? stage : "launcher", elapsed_s: min(604800, max(0, Int(elapsed))),
             exit_code: outcome.flatMap { $0.signal == 0 ? Int($0.code) : nil },
-            signal: outcome.flatMap { $0.signal != 0 ? Int($0.signal) : nil })
+            signal: outcome.flatMap { $0.signal != 0 ? Int($0.signal) : nil },
+            kill_reason: killReason)
     }
     static var queue: URL { root.appendingPathComponent("pending", isDirectory: true) }
     static func clearQueue() { try? FileManager.default.removeItem(at: queue) }

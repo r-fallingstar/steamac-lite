@@ -33,6 +33,11 @@ class ImporterTest(unittest.TestCase):
     def test_delivery(self): self.exercise()
     def test_retry_does_not_duplicate(self): self.exercise(duplicate=True)
     def test_no_ack_on_failure(self): self.exercise(fail=True)
+    def test_vm_kill_reason_in_issue(self):
+        report = {'id': '11111111-1111-4111-8111-111111111111', 'kind': 'vm-killed',
+                  'version': '1.9.8-lite.9', 'stage': 'ready', 'signal': 9, 'kill_reason': 'memory'}
+        self.assertIn('"kill_reason": "memory"', m.issue(report)['body'])
+
     def test_text_cannot_escape_or_ping(self):
         self.assertEqual(m.fenced('``` @test'), "```text\n''' ＠test\n```")
 
