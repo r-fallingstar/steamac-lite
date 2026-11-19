@@ -8,7 +8,7 @@
   const syncTheme = (theme, persist) => {
     const next = theme === 'dark' ? 'dark' : 'light';
     root.setAttribute('data-theme', next);
-    if (themeMeta) themeMeta.setAttribute('content', next === 'dark' ? '#1E152D' : '#FFF8FC');
+    if (themeMeta) themeMeta.setAttribute('content', next === 'dark' ? '#221736' : '#FFF6FB');
     if (moonIcon && sunIcon) {
       moonIcon.style.display = next === 'light' ? 'block' : 'none';
       sunIcon.style.display = next === 'dark' ? 'block' : 'none';
