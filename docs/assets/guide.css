@@ -120,6 +120,10 @@ html[data-theme="dark"] {
 }
 
 /* Locale typography */
+html:lang(ja) body {
+  word-break: auto-phrase;
+  overflow-wrap: break-word;
+}
 html:lang(en) {
   --font: "Fredoka", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -132,6 +136,10 @@ html:lang(zh-Hans) {
 html:lang(ko) body {
   word-break: keep-all;
   overflow-wrap: anywhere;
+}
+
+.nw {
+  white-space: nowrap;
 }
 
 *, *::before, *::after {
@@ -212,9 +220,13 @@ figcaption {
   font-weight: 700;
   line-height: 1.7;
   color: var(--muted);
+  text-wrap: balance;
 }
 p {
   margin: 0 0 16px;
+}
+p, li, dd, summary {
+  text-wrap: pretty;
 }
 h1, h2, h3 {
   margin: 0;
@@ -223,6 +235,7 @@ h1, h2, h3 {
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--ink);
+  text-wrap: balance;
 }
 h2 {
   font-size: clamp(1.38rem, 2.2vw, 1.72rem);
@@ -809,11 +822,27 @@ html[data-theme="dark"] .hero-product {
 }
 
 .release-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   margin: 18px 0 0;
-  font-family: var(--font-mono), var(--font);
+  font-family: var(--font);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--muted);
+}
+
+.release-meta .meta-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 11px;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .hero-photo {
@@ -952,13 +981,14 @@ html[data-theme="dark"] .support-hero h1 {
 }
 
 .zoom-label {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  padding: 6px 13px;
+  position: static;
+  display: block;
+  width: max-content;
+  margin: 10px 4px 2px auto;
+  padding: 5px 12px;
   border: 2px solid var(--border-strong);
   border-radius: var(--radius-pill);
-  background: var(--card);
+  background: var(--card-soft);
   color: var(--ink);
   font-size: 11px;
   font-weight: 700;
@@ -977,8 +1007,8 @@ html[data-theme="dark"] .support-hero h1 {
   border: 2.5px solid var(--border);
   box-shadow: 0 8px 0 var(--ledge);
   display: grid;
-  grid-template-columns: 204px minmax(0, 1fr);
-  gap: 20px 32px;
+  grid-template-columns: 184px minmax(0, 1fr);
+  gap: 18px 24px;
 }
 
 .requirements h2 {
@@ -1442,13 +1472,17 @@ html[data-theme="dark"] .support-hero h1 {
   font-weight: 700;
 }
 
-.settings-photo .zoom-link {
-  aspect-ratio: 1.85;
-}
 .settings-photo img {
-  height: 100%;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.66;
   object-fit: cover;
   object-position: top;
+}
+
+html:lang(ko) .settings-photo img,
+html:lang(zh-Hans) .settings-photo img {
+  aspect-ratio: 1.72;
 }
 
 /* Circular Macaron Setup Flow */
@@ -1542,19 +1576,16 @@ html[data-theme="dark"] .support-hero h1 {
 }
 
 .install-prompt-photo {
-  max-width: 380px;
+  max-width: 430px;
   margin: 20px auto 8px;
+}
+.installer-photo figcaption,
+.install-prompt-photo figcaption {
+  text-align: center;
 }
 .installer-photo .zoom-link,
 .install-prompt-photo .zoom-link {
   background: var(--card-soft);
-}
-.installer-photo .zoom-label,
-.install-prompt-photo .zoom-label {
-  position: static;
-  display: block;
-  width: max-content;
-  margin: 12px 6px 4px auto;
 }
 
 /* Support page lists & permission bento */
@@ -1645,8 +1676,8 @@ html[data-theme="dark"] .support-hero h1 {
   color: var(--ink);
 }
 
-.japanese-layout > div > p {
-  max-width: 42ch;
+.japanese-layout > div:first-child > p {
+  max-width: 38ch;
   font-size: 15px;
   color: var(--ink-secondary);
 }
@@ -1682,6 +1713,13 @@ html[data-theme="dark"] .support-hero h1 {
   color: var(--ink);
 }
 
+.key-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
 kbd {
   padding: 7px 16px;
   border: 2px solid var(--kbd-bd);
@@ -1703,7 +1741,9 @@ kbd {
 
 .key-steps > p {
   display: block;
-  margin: 4px 4px 0;
+  width: 100%;
+  max-width: none;
+  margin: 4px 0 0;
   padding: 14px 18px;
   border-radius: var(--radius-sm);
   background: var(--card);
@@ -1742,7 +1782,6 @@ kbd {
 
 .display-photo .zoom-link {
   padding: 10px;
-  aspect-ratio: 1.04;
   background: var(--lav-bg);
   border: 2.5px solid var(--lav-bd);
   border-radius: var(--radius-lg);
@@ -1750,10 +1789,20 @@ kbd {
 }
 
 .display-photo img {
-  height: 100%;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.56;
   object-fit: cover;
   object-position: top;
   border-radius: 16px;
+}
+
+html:lang(en) .display-photo img {
+  aspect-ratio: 1.51;
+}
+
+html:lang(zh-Hans) .display-photo img {
+  aspect-ratio: 1.60;
 }
 
 /* ---------- FAQ Pillows, Finale Card & Footer ---------- */
@@ -1944,6 +1993,16 @@ kbd {
   padding-top: 18px;
   border-top: 2px dashed var(--border);
   font-size: 11.5px !important;
+}
+
+.footer-meta .meta-item {
+  display: inline-block;
+}
+
+.footer-meta .meta-item + .meta-item::before {
+  content: "·";
+  margin-inline: 6px;
+  opacity: 0.7;
 }
 
 /* ---------- Photo Lightbox Dialog ---------- */
@@ -2287,6 +2346,10 @@ html.js-reveal:not(.no-reveal) .reveal-target.is-visible {
     height: 24px;
     font-size: 12px;
   }
+  .file-name {
+    font-size: 11px;
+    padding: 10px 12px;
+  }
   .disk-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 18px;
@@ -2295,13 +2358,17 @@ html.js-reveal:not(.no-reveal) .reveal-target.is-visible {
     width: min(100%, 400px);
     margin: 8px auto 0;
   }
-  .settings-photo .zoom-link {
-    aspect-ratio: 1.5;
-  }
   .japanese-section {
     margin-top: 36px;
-    padding: 32px 20px;
+    padding: 28px 16px;
     border-radius: 28px;
+  }
+  .key-steps > div {
+    padding: 16px;
+  }
+  .key-steps > p {
+    margin: 4px 0 0;
+    padding: 12px 14px;
   }
   .japanese-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -2359,9 +2426,7 @@ html.js-reveal:not(.no-reveal) .reveal-target.is-visible {
     font-size: 11px;
   }
   .zoom-label {
-    font-size: 10px;
-    right: 12px;
-    bottom: 12px;
+    font-size: 10.5px;
     padding: 5px 10px;
   }
 }

@@ -3,7 +3,7 @@
   "support.description": "How to update the app and check problems after an update.",
   "support.skip": "Skip to update help",
   "support.title": "Update support",
-  "support.meta": "Update instructions for v1.9.8-lite.9 · Updated November 19, 2026",
+  "support.meta": "<span class=\"meta-item\">Update instructions for v1.9.8-lite.9</span> <span class=\"meta-item\">Updated November 19, 2026</span>",
   "support.contents": "On this page",
   "support.nav_app": "Update in the app",
   "support.nav_dmg": "Update with a DMG",
