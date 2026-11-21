@@ -98,6 +98,8 @@ Lite用の組み立てには、`scripts/lite/base-release.json`で固定した`F
 
 先に`guest/vr`をx86_64 LinuxのSteam Runtime sniper環境でビルドし、`make check`を完了してください。`work/out/vr/runtime/bin/linux64/`には`vrclient.so`と`runtime-build.json`が必要です。記録は`source_tree`（`git rev-parse HEAD:guest/vr`）、`sha256`、`unit_tests_passed`、`end_to_end_tests_passed`を含み、実際の成果物と試験結果に対応させます。ソースや試験が不一致の場合、組み立ては停止します。
 
+DXMTのMac側の実行ライブラリ`libwmtr_host.dylib`は、ドナーのものを使わず、組み立てのたびに`scripts/lite/build-wmtr-host.sh`がこのリポジトリの`wmtr/`と固定したDXMTから作り直します。wmtrの試験7件をすべて通ったものだけを`scripts/lite/stage-wmtr-host.py`がアプリへ入れ、`Contents/Resources/steamac-wmtr-build.json`に元のソース・ドナー版・配布物のハッシュを記録します。ソースが記録と一致しない場合、組み立ては停止します。初回はLLVM 15のビルド（約10分）、Homebrewの`meson ninja cmake pkgconf zstd`、Metal Toolchain（`xcodebuild -downloadComponent MetalToolchain`）が必要です。
+
 ```sh
 export BASE_APP="/path/to/FX Steam Launcher.app"
 python3 scripts/test/low-memory-swap.py

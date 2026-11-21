@@ -32,6 +32,8 @@ assert os.environ['REUSE_LAYER'] != '1', 'The 1.9.8 donor layer must receive the
 PY
 
 mkdir -p "$HOST/include" "$HOST/lib" "$WORK/build"
+# The donor's DXMT host executor lacks this fork's host changes: rebuild it from wmtr/ (tests included).
+bash scripts/lite/build-wmtr-host.sh
 # Save the override before copying donor frameworks: it may live in HOST/lib.
 KRUN_OVERRIDE_COPY=
 if [[ -n ${LIBKRUN_OVERRIDE:-} ]]; then
@@ -112,6 +114,7 @@ if [[ -n ${LIBKRUN_OVERRIDE:-} ]]; then
     cp "$HOST/lib/libkrun.1.dylib" "$APP/Contents/Frameworks/libkrun.1.dylib"
     cp "$(dirname "$LIBKRUN_OVERRIDE")/libkrun-lite-build.json" "$APP/Contents/Resources/steamac-audio-fix.json"
 fi
+python3 scripts/lite/stage-wmtr-host.py "$APP"
 cp "$BIN" "$APP/Contents/MacOS/steamac-runtime"
 cp "$PLIST" "$APP/Contents/Info.plist"
 swiftc -O -swift-version 5 -target arm64-apple-macosx15.5 \
@@ -195,6 +198,7 @@ receipt = {'kind':'experimental-local-fork', 'base_release':'v1.9.8-eac.1',
            'donor_layer_sha256':hashlib.sha256((donor/'Contents/Resources/steamac-layer.img').read_bytes()).hexdigest(),
            'layer_sha256':hashlib.sha256((app/'Contents/Resources/steamac-layer.img').read_bytes()).hexdigest()}
 receipt['libkrun_sha256'] = hashlib.sha256((app/'Contents/Frameworks/libkrun.1.dylib').read_bytes()).hexdigest()
+receipt['libwmtr_host_sha256'] = hashlib.sha256((app/'Contents/Frameworks/libwmtr_host.dylib').read_bytes()).hexdigest()
 (app/'Contents/Resources/steamac-lite-provenance.json').write_text(json.dumps(receipt,indent=2)+'\n')
 PY
 codesign --force --sign - --entitlements host/launcher/steamac-vm.entitlements "$EXE"
