@@ -207,7 +207,7 @@ final class Lifecycle: NSObject, NSApplicationDelegate {
     }
 
     func requestShutdown(force: Bool = false) {
-        camera?.stop()
+        camera?.shutdown()
         UpdateChecker.shared.cancelPendingDownload()
         CrashReporting.noteUserExit()
         if let at = requestedAt {
@@ -518,6 +518,7 @@ do {
 
     let app = SteamacApplication.shared as! SteamacApplication
     app.setActivationPolicy(.regular)
+    camera?.followApplicationActivation(app)
     // Keeps the Mac awake while the VM runs (not while it is suspended: SuspendController).
     func beginVMActivity() -> NSObjectProtocol {
         ProcessInfo.processInfo.beginActivity(

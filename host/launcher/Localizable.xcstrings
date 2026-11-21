@@ -21105,31 +21105,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Camera permission alone does not start capture. With automatic capture enabled, the camera runs only while a game uses it. “Allow and start camera” starts a preview; leaving this tab ends the preview."
+            "value": "Camera permission alone does not start capture. With automatic capture enabled, the camera runs only while a game uses it. “Allow and start camera” starts a preview; leaving this tab ends the preview. Switching to another app releases the camera."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "許可だけでは撮影は始まりません。自動起動がオンのときは、ゲームで使う間だけ撮影します。「許可してカメラを使う」でプレビューを開始し、このタブを離れるとプレビューを終了します。"
+            "value": "許可だけでは撮影は始まりません。自動起動がオンのときは、ゲームで使う間だけ撮影します。「許可してカメラを使う」でプレビューを開始し、このタブを離れるとプレビューを終了します。別のアプリに切り替えると、カメラを解放します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "권한 허용만으로 촬영이 시작되지는 않습니다. 자동 촬영이 켜져 있으면 게임에서 사용할 때만 촬영합니다. “허용하고 카메라 사용”을 누르면 미리 보기가 시작되고 이 탭을 벗어나면 미리 보기가 종료됩니다."
+            "value": "권한 허용만으로 촬영이 시작되지는 않습니다. 자동 촬영이 켜져 있으면 게임에서 사용할 때만 촬영합니다. “허용하고 카메라 사용”을 누르면 미리 보기가 시작되고 이 탭을 벗어나면 미리 보기가 종료됩니다. 다른 앱으로 전환하면 카메라를 해제합니다."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "仅授予权限不会开始拍摄。启用自动拍摄后，摄像头仅在游戏使用时运行。点击“允许并启动摄像头”可开始预览；离开此标签页即结束预览。"
+            "value": "仅授予权限不会开始拍摄。启用自动拍摄后，摄像头仅在游戏使用时运行。点击“允许并启动摄像头”可开始预览；离开此标签页即结束预览。切换到其他应用时会释放摄像头。"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Само разрешение доступа не запускает съёмку. При включённом автоматическом захвате камера работает, только пока игра её использует. Кнопка «Разрешить и включить камеру» запускает предпросмотр; переход на другую вкладку завершает его."
+            "value": "Само разрешение доступа не запускает съёмку. При включённом автоматическом захвате камера работает, только пока игра её использует. Кнопка «Разрешить и включить камеру» запускает предпросмотр; переход на другую вкладку завершает его. При переключении в другое приложение камера освобождается."
           }
         }
       }
@@ -21164,6 +21164,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Доступ к камере разрешён. Ожидание запроса от игры."
+          }
+        }
+      }
+    },
+    "Waiting for the other app to release the camera.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the other app to release the camera."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ほかのアプリがカメラの使用を終えるのを待っています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 앱이 카메라 사용을 마칠 때까지 기다리는 중입니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待其他应用释放摄像头。"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ожидание освобождения камеры другим приложением."
           }
         }
       }

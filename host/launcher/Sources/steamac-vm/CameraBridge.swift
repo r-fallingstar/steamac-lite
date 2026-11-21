@@ -116,8 +116,9 @@ private final class CameraFrameSink: NSObject, AVCaptureVideoDataOutputSampleBuf
 }
 
 enum CameraCapturePolicy {
-    static func requested(ready: Bool, preview: Bool, automatic: Bool, demand: Bool, paused: Bool = false) -> Bool {
-        ready && !paused && (preview || (automatic && demand))
+    static func requested(ready: Bool, preview: Bool, automatic: Bool, demand: Bool,
+                          foreground: Bool = true, paused: Bool = false) -> Bool {
+        ready && foreground && !paused && (preview || (automatic && demand))
     }
     /// A game's request (automatic mode) asks macOS once while access is undecided: otherwise a
     /// permission lost or never granted for this version (the startup notice shows once per version,
@@ -151,6 +152,9 @@ enum CameraCapturePolicy {
             if requested(ready: true, preview: preview, automatic: true, demand: true, paused: true) {
                 failures.append("camera captured while VM paused")
             }
+            if requested(ready: true, preview: preview, automatic: true, demand: true, foreground: false) {
+                failures.append("camera captured while another app was active")
+            }
         }
         let asks: [(AVAuthorizationStatus, Bool, Bool, Bool)] = [
             (.notDetermined, false, false, true),   // a game's request asks once
@@ -178,7 +182,10 @@ final class CameraBridge: ObservableObject {
     struct Choice: Identifiable { let id: String; let name: String }
     @Published private(set) var devices: [Choice] = []
     @Published var selectedDeviceID = ""
-    private var configured = false
+    private var appActive = true
+    private var activationObservers: [NSObjectProtocol] = []
+    private var availabilityObserver: NSKeyValueObservation?
+    private var startWork: DispatchWorkItem?
     private var captureGeneration: UInt64 = 0
     private var permissionRequestPending = false
     private var wanted = false
@@ -206,6 +213,7 @@ final class CameraBridge: ObservableObject {
     @Published private(set) var deviceName = ""
     @Published private(set) var received = "0"
     @Published private(set) var message = String(localized: "Waiting for the SteamOS camera bridge.")
+    var canStop: Bool { running || busy || availabilityObserver != nil }
     init(port: CameraPort, diagnostics: Bool = false, syntheticOnly: Bool = false) {
         self.port = port; self.diagnostics = diagnostics; self.syntheticOnly = syntheticOnly
         sink = CameraFrameSink(port: port, diagnostics: diagnostics)
@@ -226,14 +234,35 @@ final class CameraBridge: ObservableObject {
         guard !syntheticOnly else { return }
         automaticCaptureEnabled = CapturePermissionNotice.automaticCaptureDefault(in: LauncherSettings.shared.defaults)
     }
+    func followApplicationActivation(_ app: NSApplication) {
+        guard !syntheticOnly else { return }
+        let center = NotificationCenter.default
+        activationObservers = [
+            center.addObserver(forName: NSApplication.didResignActiveNotification, object: app, queue: .main) { [weak self] _ in
+                self?.setAppActive(false)
+            },
+            center.addObserver(forName: NSApplication.didBecomeActiveNotification, object: app, queue: .main) { [weak self] _ in
+                self?.setAppActive(true)
+            },
+        ]
+        setAppActive(app.isActive)
+    }
+    deinit { activationObservers.forEach(NotificationCenter.default.removeObserver) }
+
+    private func setAppActive(_ active: Bool) {
+        guard appActive != active else { return }
+        appActive = active
+        reconcileCapture()
+    }
+
     private func reconcileCapture() {
         guard !syntheticOnly else { return }
         let requested = CameraCapturePolicy.requested(ready: ready, preview: manualPreview,
-            automatic: automaticCaptureEnabled, demand: guestDemand, paused: paused)
+            automatic: automaticCaptureEnabled, demand: guestDemand, foreground: appActive, paused: paused)
         guard requested else {
             loggedNoAccess = false
             if wanted || running { stopCapture() }
-            if ready && !paused && automaticCaptureEnabled && AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+            if ready && appActive && !paused && automaticCaptureEnabled && AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
                 message = String(localized: "Camera is allowed and waiting for a game.")
             }
             return
@@ -283,7 +312,8 @@ final class CameraBridge: ObservableObject {
         if !devices.contains(where: { $0.id == selectedDeviceID }) { selectedDeviceID = devices.first?.id ?? "" }
     }
     func start() {
-        guard !syntheticOnly, ready, !paused, !busy, !permissionRequestPending, !running else { return }; manualPreview = true; wanted = true
+        guard !syntheticOnly, ready, appActive, !paused, !busy, !permissionRequestPending, !running else { return }
+        manualPreview = true; wanted = true
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: startAuthorized()
         case .notDetermined:
@@ -302,68 +332,98 @@ final class CameraBridge: ObservableObject {
             .devices.filter { !$0.isContinuityCamera }
     }
     private func startAuthorized() {
+        let devices = Self.builtInDevices()
+        guard let device = devices.first(where: { $0.uniqueID == selectedDeviceID }) ?? devices.first else {
+            wanted = false; manualPreview = false
+            message = String(localized: "No built-in camera is available on this Mac.")
+            return
+        }
+        if device.isInUseByAnotherApplication {
+            availabilityObserver = device.observe(\.isInUseByAnotherApplication, options: [.new]) { [weak self] _, change in
+                guard change.newValue == false else { return }
+                DispatchQueue.main.async { [weak self] in self?.reconcileCapture() }
+            }
+            // Recheck after subscribing so a release between the initial check and observation is not lost.
+            if device.isInUseByAnotherApplication {
+                message = String(localized: "Waiting for the other app to release the camera.")
+                return
+            }
+        }
+        availabilityObserver = nil
         captureGeneration &+= 1
         let generation = captureGeneration
         busy = true; message = String(localized: "Starting the built-in camera…")
-        let selected = selectedDeviceID
-        sessionQueue.async { [self] in
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
             do {
-                if !configured {
-                    let devices = Self.builtInDevices()
-                    guard let device = devices.first(where: { $0.uniqueID == selected }) ?? devices.first else {
-                        throw OptionError("No built-in camera", localized: String(localized: "No built-in camera is available on this Mac."))
-                    }
-                    let input = try AVCaptureDeviceInput(device: device)
-                    session.beginConfiguration(); defer {
-                        if !configured { session.inputs.forEach(session.removeInput); session.outputs.forEach(session.removeOutput) }
-                        session.commitConfiguration()
-                    }
-                    guard session.canSetSessionPreset(.vga640x480), session.canAddInput(input) else {
-                        throw OptionError("640x480 camera input is unavailable", localized: String(localized: "The built-in camera cannot provide 640 × 480 video."))
-                    }
-                    session.sessionPreset = .vga640x480; session.addInput(input)
-                    let output = AVCaptureVideoDataOutput(); output.alwaysDiscardsLateVideoFrames = true
-                    output.setSampleBufferDelegate(sink, queue: frameQueue)
-                    guard session.canAddOutput(output) else {
-                        throw OptionError("Camera output is unavailable", localized: String(localized: "The built-in camera output is unavailable."))
-                    }
-                    session.addOutput(output)
-                    // Frame-duration changes can select a different device format on macOS.
-                    // Pin the delivered buffers as well as the session's preview preset.
-                    output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
-                                            kCVPixelBufferWidthKey as String: CameraWire.width,
-                                            kCVPixelBufferHeightKey as String: CameraWire.height]
-                    try device.lockForConfiguration()
-                    if device.activeFormat.videoSupportedFrameRateRanges.contains(where: { $0.minFrameRate <= 15 && $0.maxFrameRate >= 15 }) {
-                        device.activeVideoMinFrameDuration = CMTime(value: 1, timescale: 15)
-                        device.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: 15)
-                    }
-                    device.unlockForConfiguration(); configured = true
-                    DispatchQueue.main.async { self.deviceName = device.localizedName }
-                }
-                session.startRunning()
-                guard session.isRunning else { throw OptionError("Camera session did not start") }
+                try self.configureCapture(device)
+                self.session.startRunning()
+                guard self.session.isRunning else { throw OptionError("Camera session did not start") }
                 DispatchQueue.main.async { [self] in
-                    guard captureGeneration == generation else { return }
-                    busy = false
-                    if wanted {
-                        port.enable(); running = true
-                        if automaticCaptureEnabled { LauncherSettings.shared.defaults.set(true, forKey: CapturePermissionNotice.cameraGrantedKey) }
-                        message = String(localized: "Sending the built-in camera to SteamOS.")
+                    guard self.captureGeneration == generation else { return }
+                    self.startWork = nil; self.busy = false
+                    if self.wanted {
+                        self.deviceName = device.localizedName
+                        self.port.enable(); self.running = true
+                        if self.automaticCaptureEnabled {
+                            LauncherSettings.shared.defaults.set(true, forKey: CapturePermissionNotice.cameraGrantedKey)
+                        }
+                        self.message = String(localized: "Sending the built-in camera to SteamOS.")
                     }
-                    else { stopCapture() }
+                    else { self.stopCapture() }
                 }
             } catch {
                 log("camera: \(error)")
-                port.stop()
+                self.releaseCaptureHardware()
+                self.port.stop()
                 DispatchQueue.main.async { [self] in
-                    guard captureGeneration == generation else { return }
-                    busy = false; wanted = false; manualPreview = false
-                    message = (error as? OptionError)?.localized
+                    guard self.captureGeneration == generation else { return }
+                    self.startWork = nil; self.busy = false
+                    if device.isInUseByAnotherApplication {
+                        self.reconcileCapture()
+                        return
+                    }
+                    self.wanted = false; self.manualPreview = false
+                    self.message = (error as? OptionError)?.localized
                         ?? String(localized: "The built-in camera could not start. Check camera access and try again.")
                 }
             }
         }
+        startWork = work
+        sessionQueue.async(execute: work)
+    }
+    private func configureCapture(_ device: AVCaptureDevice) throws {
+        let input = try AVCaptureDeviceInput(device: device)
+        session.beginConfiguration()
+        defer { session.commitConfiguration() }
+        guard session.canSetSessionPreset(.vga640x480), session.canAddInput(input) else {
+            throw OptionError("640x480 camera input is unavailable", localized: String(localized: "The built-in camera cannot provide 640 × 480 video."))
+        }
+        session.sessionPreset = .vga640x480; session.addInput(input)
+        let output = AVCaptureVideoDataOutput(); output.alwaysDiscardsLateVideoFrames = true
+        output.setSampleBufferDelegate(sink, queue: frameQueue)
+        guard session.canAddOutput(output) else {
+            throw OptionError("Camera output is unavailable", localized: String(localized: "The built-in camera output is unavailable."))
+        }
+        session.addOutput(output)
+        // Pin the delivered buffers as well as the preset: changing the frame rate can select another format.
+        output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
+                                kCVPixelBufferWidthKey as String: CameraWire.width,
+                                kCVPixelBufferHeightKey as String: CameraWire.height]
+        try device.lockForConfiguration()
+        defer { device.unlockForConfiguration() }
+        if device.activeFormat.videoSupportedFrameRateRanges.contains(where: { $0.minFrameRate <= 15 && $0.maxFrameRate >= 15 }) {
+            device.activeVideoMinFrameDuration = CMTime(value: 1, timescale: 15)
+            device.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: 15)
+        }
+    }
+    private func releaseCaptureHardware() {
+        if session.isRunning { session.stopRunning() }
+        session.beginConfiguration()
+        session.outputs.forEach(session.removeOutput)
+        session.inputs.forEach(session.removeInput)
+        session.commitConfiguration()
+        frameQueue.sync {}
     }
     func vmPaused(_ paused: Bool) {
         self.paused = paused
@@ -373,6 +433,12 @@ final class CameraBridge: ObservableObject {
     func stop() {
         manualPreview = false; patternWanted = false; patternTimer?.cancel(); patternTimer = nil
         stopCapture()
+    }
+    func shutdown() {
+        activationObservers.forEach(NotificationCenter.default.removeObserver)
+        activationObservers.removeAll()
+        appActive = false
+        stop()
     }
     func stopByUser() {
         manualPreview = false
@@ -384,13 +450,15 @@ final class CameraBridge: ObservableObject {
         reconcileCapture()
     }
     private func stopCapture() {
+        availabilityObserver = nil
+        startWork?.cancel(); startWork = nil
         captureGeneration &+= 1
         let generation = captureGeneration
         wanted = false
         port.stop(); running = false; busy = true
         message = String(localized: "Camera is off. SteamOS receives a black picture.")
         sessionQueue.async { [self] in
-            if session.isRunning { session.stopRunning() }
+            releaseCaptureHardware()
             DispatchQueue.main.async { [self] in
                 guard captureGeneration == generation else { return }
                 busy = permissionRequestPending
@@ -483,7 +551,7 @@ struct CameraSettingsView: View {
             }
             HStack {
                 Button("Allow and start camera") { bridge.start() }.disabled(!bridge.ready || bridge.running || bridge.busy)
-                Button("Stop camera") { bridge.stopByUser() }.disabled(!bridge.running && !bridge.busy)
+                Button("Stop camera") { bridge.stopByUser() }.disabled(!bridge.canStop)
             }
             Button("Open Camera privacy settings…") { NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")!) }
             Text("Camera permission alone does not start capture. Games start and stop it automatically. Start can be used for a preview.").font(.caption).foregroundStyle(.secondary)
