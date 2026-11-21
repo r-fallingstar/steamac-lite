@@ -20,11 +20,11 @@ final class LauncherSettings: ObservableObject {
     /// Preference keys. `nextStart` keys are read once per boot (see Options.applySettings).
     enum Key: String, CaseIterable {
         // General
-        case applicationLanguage, vrchatSetup, showOverlay, showStallIndicator, openFullscreen, perfStats, sendCrashReports, muteInBackground, pauseInBackground,
+        case applicationLanguage, vrchatSetup, showOverlay, showStallIndicator, openFullscreen, perfStats, sendCrashReports, muteInBackground, pauseInBackground, backgroundFrameLimit,
              closeAction, checkForUpdates, followMacTime, followMacKeyboard, shareClipboard, shareConcealedClipboard, shareGameStats
         // Display
         case performanceMode, dpiSource, fixedDPI, fixedWidthMM, fixedHeightMM, refreshRate, followWindowSize, windowWidth, windowHeight,
-             windowSizePreset, retinaResolution, metalHUD, superResolution, renderScale, renderResolutionPreset, renderWidth, renderHeight, upscaleLowerResolutions
+             windowSizePreset, retinaResolution, gameFrameLimit, metalHUD, superResolution, renderScale, renderResolutionPreset, renderWidth, renderHeight, upscaleLowerResolutions
         // Mouse
         case autoCaptureGames, gameNames
         // Controller
@@ -381,6 +381,10 @@ final class LauncherSettings: ObservableObject {
     /// While the app is not active: mute the guest's sound / freeze the focused game.
     @Published var muteInBackground = true { didSet { save(.muteInBackground, muteInBackground) } }
     @Published var pauseInBackground = false { didSet { save(.pauseInBackground, pauseInBackground) } }
+    /// Frame cap while another app is active (GameFrameCap; 0 = off). Lower still while the window is hidden.
+    @Published var backgroundFrameLimit = 30 { didSet { save(.backgroundFrameLimit, backgroundFrameLimit) } }
+    /// Settings > Display "Game frame rate limit" for DXMT games (GameFrameCap; 0 = off).
+    @Published var gameFrameLimit = 0 { didSet { save(.gameFrameLimit, gameFrameLimit) } }
     /// The Mac's clipboard ↔ SteamOS's (ClipboardSync); concealed (password manager) items only
     /// with the second switch. Both apply now.
     @Published var shareClipboard = true { didSet { save(.shareClipboard, shareClipboard) } }
@@ -601,6 +605,8 @@ final class LauncherSettings: ObservableObject {
         bool(.sendCrashReports, &sendCrashReports)
         bool(.muteInBackground, &muteInBackground)
         bool(.pauseInBackground, &pauseInBackground)
+        int(.backgroundFrameLimit, &backgroundFrameLimit)
+        int(.gameFrameLimit, &gameFrameLimit)
         bool(.shareClipboard, &shareClipboard)
         bool(.shareConcealedClipboard, &shareConcealedClipboard)
         if let s = d.string(forKey: Key.closeAction.rawValue).flatMap(CloseAction.init(rawValue:)) { closeAction = s }
@@ -755,6 +761,8 @@ final class LauncherSettings: ObservableObject {
         case .sendCrashReports: guard let b else { return false }; sendCrashReports = b
         case .muteInBackground: guard let b else { return false }; muteInBackground = b
         case .pauseInBackground: guard let b else { return false }; pauseInBackground = b
+        case .backgroundFrameLimit: guard let i, GameFrameCap.backgroundChoices.contains(i) else { return false }; backgroundFrameLimit = i
+        case .gameFrameLimit: guard let i, GameFrameCap.gameChoices.contains(i) else { return false }; gameFrameLimit = i
         case .shareClipboard: guard let b else { return false }; shareClipboard = b
         case .shareConcealedClipboard: guard let b else { return false }; shareConcealedClipboard = b
         case .closeAction: guard let v = CloseAction(rawValue: text) else { return false }; closeAction = v
@@ -846,6 +854,7 @@ final class LauncherSettings: ObservableObject {
         showOverlay = fresh.showOverlay; showStallIndicator = fresh.showStallIndicator
         openFullscreen = fresh.openFullscreen; perfStats = fresh.perfStats; sendCrashReports = fresh.sendCrashReports
         muteInBackground = fresh.muteInBackground; pauseInBackground = fresh.pauseInBackground
+        backgroundFrameLimit = fresh.backgroundFrameLimit; gameFrameLimit = fresh.gameFrameLimit
         shareClipboard = fresh.shareClipboard; shareConcealedClipboard = fresh.shareConcealedClipboard
         closeAction = fresh.closeAction; checkForUpdates = fresh.checkForUpdates; shareGameStats = fresh.shareGameStats
         followMacTime = fresh.followMacTime

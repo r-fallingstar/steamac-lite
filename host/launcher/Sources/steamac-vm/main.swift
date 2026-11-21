@@ -573,6 +573,8 @@ do {
     // Settings > General "Pause the game" in the background; no GPU-idle card while frozen.
     let gamePause = GamePause(settings: settings, progress: progress) { progressPort.send($0) }
     gamePause.onChange = { stall.paused = $0 }
+    // Settings > Display "Game frame rate limit" and General "Lower the game's frame rate" (DXMT presents).
+    let frameCap = GameFrameCap(settings: settings, window: wc.window)
     // Game statistics (Settings > Games): one report per game run, frames counted while it has focus.
     let gameStats = GameSessionTracker(options: options, progress: progress) { [weak wc] in wc?.window }
     DebugControl.gameStats = gameStats
@@ -692,7 +694,7 @@ do {
             }
         }
     }
-    withExtendedLifetime((presenter, gamepad, progressPort, keyboardLayouts, supervisorWatch, perfSubscription, gamePause, suspender, clipboard,
+    withExtendedLifetime((presenter, gamepad, progressPort, keyboardLayouts, supervisorWatch, perfSubscription, gamePause, frameCap, suspender, clipboard,
                           gameStats, vrRelay)) {
         app.run()
     }

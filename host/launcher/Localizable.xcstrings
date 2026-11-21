@@ -21617,6 +21617,146 @@
           }
         }
       }
+    },
+    "%lld fps": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld кадр/с"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld fps"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld fps"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld fps"
+          }
+        }
+      }
+    },
+    "Game frame rate limit": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ограничение частоты кадров игры"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "游戏帧率上限"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ゲームのフレームレート上限"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "게임 프레임 레이트 제한"
+          }
+        }
+      }
+    },
+    "DXMT games draw at most this many frames per second, on top of any limit in the game. Fewer frames use less GPU power and heat, which can make a fanless Mac slow down less. Not applied in VR or on the Vulkan path.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Игры DXMT рисуют не больше этого числа кадров в секунду, вдобавок к ограничению в самой игре. Меньше кадров — меньше нагрузка на GPU и нагрев, и Mac без вентилятора меньше замедляется. Не действует в VR и на пути Vulkan."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DXMT 游戏每秒最多绘制这么多帧，与游戏自身的限制叠加生效。帧数越少，GPU 功耗和发热越低，无风扇的 Mac 越不容易降速。不适用于 VR 和 Vulkan 路径。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DXMTのゲームが1秒間に描画するフレーム数の上限です。ゲーム側の上限とは別に適用されます。フレーム数を抑えるとGPUの電力と発熱が減り、ファンのないMacでは速度低下が起きにくくなります。VRとVulkan経路には適用されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DXMT 게임이 1초에 그리는 프레임 수의 상한입니다. 게임 자체의 제한과 별도로 적용됩니다. 프레임 수를 줄이면 GPU 전력과 발열이 줄어 팬이 없는 Mac에서 속도 저하가 덜 생깁니다. VR과 Vulkan 경로에는 적용되지 않습니다."
+          }
+        }
+      }
+    },
+    "Lower the game's frame rate": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Снижать частоту кадров игры"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "降低游戏帧率"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ゲームのフレームレートを下げる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "게임 프레임 레이트 낮추기"
+          }
+        }
+      }
+    },
+    "DXMT games draw at most this many frames while another app is active, and %lld fps while the window is covered or minimized. The game keeps running (online sessions stay connected). Not applied in VR.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока активно другое приложение, игры DXMT рисуют не больше этого числа кадров, а пока окно закрыто другими или свёрнуто — %lld кадр/с. Игра продолжает работать (онлайн-сеансы не разрываются). Не действует в VR."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当其他应用处于活动状态时，DXMT 游戏最多以此帧率绘制；窗口被完全遮挡或最小化时为 %lld fps。游戏不会暂停（在线会话保持连接）。不适用于 VR。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ほかのアプリを操作している間、DXMTのゲームはこのフレームレートまでに抑えられます。ウインドウが完全に隠れているか最小化されている間は%lld fpsになります。ゲームは止まらないので、オンラインの接続は続きます。VRには適用されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 앱을 사용하는 동안 DXMT 게임은 이 프레임 레이트까지로 제한됩니다. 창이 완전히 가려지거나 최소화된 동안에는 %lld fps가 됩니다. 게임은 멈추지 않으므로 온라인 연결이 유지됩니다. VR에는 적용되지 않습니다."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

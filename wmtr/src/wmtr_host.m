@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc/malloc.h>
+#include <dlfcn.h>
 
 #define WINEMETAL_API
 #include "winemetal_thunks.h"
@@ -451,6 +452,40 @@ layer_policy_due(CALayer *layer) {
   if (c > 60) return 0;
   objc_setAssociatedObject(layer, &policy_frames_key, @(c), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
   return c == 1 || c == 10 || c == 60;
+}
+
+/* Minimum seconds between a game layer's presents that the embedding launcher asks for (0 = none), read on
+ * each present from its exported `steamac_game_present_interval` (a plain atomic load there). A launcher
+ * without that symbol (wmtr-server, tests, older launchers) gets no cap. The pacing is Metal's own
+ * presentDrawable:afterMinimumDuration:, as DXMT uses for SyncInterval; with at most 2 drawables in flight
+ * the game then waits in nextDrawable instead of rendering frames that are never shown. */
+static double
+present_floor(void) {
+  static double (*_Atomic fn)(void);
+  static atomic_int resolved;
+  if (!atomic_load_explicit(&resolved, memory_order_acquire)) {
+    atomic_store(&fn, (double (*)(void))dlsym(RTLD_DEFAULT, "steamac_game_present_interval"));
+    atomic_store_explicit(&resolved, 1, memory_order_release);
+  }
+  double (*f)(void) = atomic_load(&fn);
+  double v = f ? f() : 0;
+  return v > 0 && v <= 1 ? v : 0;
+}
+
+/* Presents `drawable` after at least the launcher's cap when that is longer than the game's own `duration`
+ * and returns the duration used; 0 = not paced (the caller presents as the game asked). */
+static double
+present_paced(id<MTLCommandBuffer> cb, id drawable, double duration, int vr) {
+  double floor = vr || !drawable ? 0 : present_floor();
+  if (floor <= duration) return 0;
+  [cb presentDrawable:(id<MTLDrawable>)drawable afterMinimumDuration:floor];
+  return floor;
+}
+
+/* test hook: present_paced on `cb` (a real command buffer) and `drawable` */
+__attribute__((visibility("default"))) double
+wmtr_debug_present_paced(void *cb, void *drawable, double duration, int vr) {
+  return present_paced((__bridge id<MTLCommandBuffer>)cb, (__bridge id)drawable, duration, vr);
 }
 
 static void
@@ -1072,10 +1107,18 @@ host_call(struct wmtr_host *h, uint16_t call, uint8_t *params, const struct wmtr
   }
   if (call == 47 || call == 48) { /* presentDrawable (both param structs start with buffer, drawable) */
     id<MTLCommandBuffer> cb = (id<MTLCommandBuffer>)((struct unixcall_generic_obj_obj_noret *)params)->handle;
+    id drawable = (id)((struct unixcall_generic_obj_obj_noret *)params)->arg;
     if (frames_out()) frame_record_on_completion(cb); /* record when the frame is done */
-    layer_policy_on_present(cb, (id)((struct unixcall_generic_obj_obj_noret *)params)->arg);
+    layer_policy_on_present(cb, drawable);
     double duration = call == 48 ? ((struct unixcall_generic_obj_obj_double_noret *)params)->arg1 : 0;
-    trace_drawable_present((id)((struct unixcall_generic_obj_obj_noret *)params)->arg, duration);
+    /* The launcher's frame cap (Settings > Display, and the lower one while the app is in the background).
+     * Not with a VR link: the headset's pacing comes from the VR exporter, not this window. */
+    double paced = present_paced(cb, drawable, duration, atomic_load(&h->vr) != NULL);
+    trace_drawable_present(drawable, paced > 0 ? paced : duration);
+    if (paced > 0) {
+      keep_autoreleased(h, r->h.slot, call, params);
+      return STATUS_SUCCESS;
+    }
   }
   NTSTATUS st = f(params);
   keep_autoreleased(h, r->h.slot, call, params);

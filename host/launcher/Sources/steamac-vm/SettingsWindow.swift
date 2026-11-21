@@ -439,6 +439,14 @@ private struct GeneralTab: View {
                            detail: String(localized: "Freezes the focused game (Steam, downloads and updates keep running). Online games may disconnect while paused."),
                            now: true)
                 }
+                Picker(selection: $settings.backgroundFrameLimit) {
+                    Text("Off").tag(0)
+                    ForEach(GameFrameCap.backgroundChoices.filter { $0 > 0 }, id: \.self) { Text("\($0) fps").tag($0) }
+                } label: {
+                    Label2(title: "Lower the game's frame rate",
+                           detail: String(localized: "DXMT games draw at most this many frames while another app is active, and \(GameFrameCap.hiddenFPS) fps while the window is covered or minimized. The game keeps running (online sessions stay connected). Not applied in VR."),
+                           now: true)
+                }
             } header: {
                 Text("When steamac Lite is in the background")
             }
@@ -573,6 +581,14 @@ private struct DisplayTab: View {
                     }
                 } label: {
                     Label2(title: "Refresh rate", now: false, key: .refreshRate)
+                }
+                Picker(selection: $settings.gameFrameLimit) {
+                    Text("Off").tag(0)
+                    ForEach(GameFrameCap.gameChoices.filter { $0 > 0 }, id: \.self) { Text("\($0) fps").tag($0) }
+                } label: {
+                    Label2(title: "Game frame rate limit",
+                           detail: String(localized: "DXMT games draw at most this many frames per second, on top of any limit in the game. Fewer frames use less GPU power and heat, which can make a fanless Mac slow down less. Not applied in VR or on the Vulkan path."),
+                           now: true)
                 }
             }
             Section {

@@ -166,6 +166,8 @@ enum GameLayerSelfTest {
         check(!deferView.scanoutHidden, "translucent game layer treated as hiding the scanout")
         guestFrame(50, rect: nil)
         check(presenter.framesShown == 3, "frame under a translucent game layer not shown")
+        for f in GameFrameCap.selfTest() { check(false, f) }
+        check(steamacGamePresentInterval() == 0, "frame cap set without a GameFrameCap")
         log(failures == 0 ? "selftest-game-layers: PASS" : "selftest-game-layers: \(failures) FAILED")
         exit(failures == 0 ? 0 : 1)
     }
