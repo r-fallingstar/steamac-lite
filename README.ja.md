@@ -8,15 +8,19 @@
 
 Apple Silicon・RAM 8 GBのMac向けに、[StonkGuy/steamac](https://github.com/StonkGuy/steamac)の`v1.9.8-eac.1`から作成した実験版です。Mac上の仮想マシンでSteamOSを動かし、FEX・Proton・DXMTを利用します。
 
-**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.9/SteamAC-Lite-1.9.8-lite.9-macos-arm64.dmg)**
+**[アプリをダウンロード（M1以降のMac用DMG）](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.10/SteamAC-Lite-1.9.8-lite.10-macos-arm64.dmg)**
 
 初回の案内ではマイクとカメラの許可を確認します。許可が残っていれば聞き直さず、更新などで以前の許可が外れた場合は再案内します。自動使用をオフにした選択や許可しなかった機能も聞き直しません。Lite.6の録音処理の修正も含みます。[原因と確認内容](docs/microphone-fix.md)。
 
-DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.9)
+DMG内の **SteamAC Lite.app** を開き、**「インストールして開く」** を押すと、アプリケーションフォルダへ自動でコピーして起動します。ビルドは不要です。[はじめての導入手順](docs/quick-start.ja.md) · [Releaseと更新内容](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.10)
 
 macOS 15.5以降・Apple Silicon向けです。この実験版はApple未公証で、初回起動時の案内は導入手順に記載しています。SteamOS・ゲームは別途ダウンロードします。初回の「VRChat向け設定」で、FEXの導入・Protonの選択・起動オプションを自動で設定できます。Steamへのログインと、Steamに表示されるダウンロード確認は本人が操作します。[設定の流れ](docs/vrchat-setup.ja.md)を参照してください。
 
 Lite.9以降は新しいReleaseをアプリ内で通知します。「アップデート」で取得し、「更新して開き直す」で反映します。SteamOSのディスクと設定は引き継ぎます。Lite.8以前は最初の1回だけ手動でLite.9以降へ更新してください。[更新のしくみ](docs/in-app-updates.md)。
+
+## v1.9.8-lite.10
+
+DXMTのゲームにフレームレート上限（設定の「画面」）を追加し、ほかのアプリを使っている間は既定で30 fpsに抑えるようにしました（設定の「一般」で変更可）。ゲームは止まらず、オンラインの接続は続きます。 [更新内容](docs/release-notes-1.9.8-lite.10.md)
 
 ## v1.9.8-lite.9
 

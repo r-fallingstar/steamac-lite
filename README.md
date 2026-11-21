@@ -6,7 +6,11 @@
 
 [Update support](https://r-fallingstar.github.io/steamac-lite/en/support/) covers in-app and DMG updates, microphone access, and troubleshooting.
 
-**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.9/SteamAC-Lite-1.9.8-lite.9-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.9) · [はじめての導入手順](docs/quick-start.ja.md)
+**[Download the Mac app (.dmg, Apple Silicon)](https://github.com/r-fallingstar/steamac-lite/releases/download/v1.9.8-lite.10/SteamAC-Lite-1.9.8-lite.10-macos-arm64.dmg)** · [Release notes](https://github.com/r-fallingstar/steamac-lite/releases/tag/v1.9.8-lite.10) · [はじめての導入手順](docs/quick-start.ja.md)
+
+## v1.9.8-lite.10
+
+DXMT games get a frame-rate limit (Settings > Display) and, by default, run at most 30 fps while another app is active (Settings > General). The game keeps running and stays online. [Release notes](docs/release-notes-1.9.8-lite.10.md)
 
 ## v1.9.8-lite.9
 
