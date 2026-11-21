@@ -15,6 +15,10 @@ func execRuntime() -> Never {
     _ = "steamac Lite: cannot start runtime (errno \(errno))\n".withCString { write(STDERR_FILENO, $0, strlen($0)) }
     exit(127)
 }
+if arguments.contains("--selftest-dmg-install") {
+    MainActor.assumeIsolated { DmgInstall.runIfNeeded(review: true) }
+    exit(2)
+}
 if arguments.contains("--selftest-wizard-layout") {
     _ = NSApplication.shared
     let wizard = FirstRunWizard(arguments: [])
@@ -41,6 +45,9 @@ startupLog.notice("bootstrap-entered")
 // Preserve Finder-launch error dialogs when the real runtime's parent is now
 // this bootstrap rather than launchd. Command-line utilities keep terminal errors.
 if getppid() == 1 { setenv("STEAMAC_GUI_LAUNCH", "1", 1) }
+
+// The installer runs before the wizard, which relaunches the bundle after saving its settings.
+MainActor.assumeIsolated { DmgInstall.runIfNeeded() }
 
 let needsWizard = LiteDiagnostics.defaults.integer(forKey: LiteDiagnostics.consentKey) != LiteDiagnostics.consentVersion
     || LiteDiagnostics.defaults.integer(forKey: FirstRunWizard.versionKey) != 1

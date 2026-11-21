@@ -114,6 +114,7 @@ print("diagnostics-core: PASS (\(checks) assertions)")
         'CFBundlePackageType': 'APPL', 'CFBundleShortVersionString': '1.9.8-lite.7',
         'SteamacLiteBuild': True, 'SteamacGitCommit': 'abcdef1234', 'LSUIElement': True}))
     subprocess.run(['xcrun', 'swiftc', '-swift-version', '5', str(core), str(permissions), str(ROOT / 'host/diagnostics/FirstRunWizard.swift'), str(ROOT / 'host/diagnostics/main.swift'),
+                    *(str(core.parent / name) for name in ('DmgInstall.swift', 'InstallerCore.swift', 'UpdateInstallSupport.swift')),
                     '-o', str(binary / 'steamac-vm')], env=env, check=True)
     main.write_text(r'''
 import Darwin

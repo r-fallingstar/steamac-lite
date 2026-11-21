@@ -35,15 +35,18 @@ with tempfile.TemporaryDirectory(prefix='dmg-install-test-', dir=ROOT/'work') as
     main = root/'main.swift'
     main.write_text(r'''import AppKit
 import Foundation
-// Only satisfy the interactive launch entry point; no test calls it.
-enum Supervisor { static let isChild = false }
-enum AppBundle { static let resources: String? = nil }
 func require(_ value: Bool, _ message: String) { if !value { fatalError(message) };print(message+": PASS") }
 let root=URL(fileURLWithPath:CommandLine.arguments[1],isDirectory:true)
 let source=root.appendingPathComponent("source/SteamAC Lite.app")
+let translocated=URL(fileURLWithPath:"/private/var/folders/x/AppTranslocation/id/d/SteamAC Lite.app")
+let installed=URL(fileURLWithPath:"/Applications/SteamAC Lite.app")
 require(DmgInstall.needsInstallation(source,readOnly:true),"read-only mount detected outside /Volumes")
-require(DmgInstall.needsInstallation(URL(fileURLWithPath:"/private/var/folders/x/AppTranslocation/id/d/SteamAC Lite.app"),readOnly:false),"translocation detected")
-require(!DmgInstall.needsInstallation(URL(fileURLWithPath:"/Applications/SteamAC Lite.app"),readOnly:false),"installed app not prompted")
+require(DmgInstall.needsInstallation(translocated,readOnly:false),"translocation detected")
+require(!DmgInstall.needsInstallation(installed,readOnly:false),"installed app not prompted")
+require(DmgInstall.matchesInstallTarget(installed,target:installed,readOnly:false),"installed handoff accepted")
+require(!DmgInstall.matchesInstallTarget(installed,target:installed,readOnly:true),"read-only handoff rejected")
+require(!DmgInstall.matchesInstallTarget(translocated,target:translocated,readOnly:false),"translocated handoff rejected")
+require(!DmgInstall.matchesInstallTarget(source,target:installed,readOnly:false),"another copy cannot restart the installer")
 for (name,expected) in [("fresh","1.9.4-lite.12"),("upgrade","1.9.4-lite.12"),("same","1.9.4-lite.12"),("newer","1.9.4-lite.13")] {
  let target=root.appendingPathComponent(name+"/SteamAC Lite.app")
  require(try DmgInstall.prepare(source:source,target:target)==target,name+" destination")
@@ -62,6 +65,6 @@ require(stages.isEmpty,"temporary stages cleaned")
     binary = root/'test'
     sources = ROOT/'host/launcher/Sources/steamac-vm'
     subprocess.run(['swiftc', '-swift-version', '5',
-                    *[str(sources/name) for name in ['UpdateInstallSupport.swift', 'InstallerCore.swift', 'DmgInstall.swift']],
+                    *[str(sources/name) for name in ['UpdateInstallSupport.swift', 'InstallerCore.swift', 'DmgInstall.swift', 'LiteDiagnostics.swift']],
                     str(main), '-o', str(binary)], env=ENV, check=True)
     subprocess.run([str(binary), str(root)], env=ENV, check=True)

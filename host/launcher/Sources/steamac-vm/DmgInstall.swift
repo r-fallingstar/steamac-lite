@@ -5,19 +5,29 @@ import Foundation
 /// same-volume replacement transaction; no download, administrator prompt, or disk reset.
 @MainActor
 enum DmgInstall {
+    private static let handoffKey = "STEAMAC_DMG_INSTALL_TARGET"
+
     nonisolated static func needsInstallation(_ app: URL, readOnly: Bool) -> Bool {
         readOnly || app.path.contains("/AppTranslocation/")
     }
 
-    static func runIfNeeded(_ argv: [String]) {
-        let review = argv.contains("--selftest-dmg-install")
-        guard !Supervisor.isChild, AppBundle.resources != nil,
-              review || !argv.dropFirst().contains(where: {
-                  $0.hasPrefix("--selftest") || ["--preview-update", "--headless", "--ssh-password",
-                  "--create-disk", "--grow-disk", "--help", "-h"].contains($0)
-              }) else { return }
+    nonisolated static func matchesInstallTarget(_ source: URL, target: URL, readOnly: Bool) -> Bool {
+        !needsInstallation(source, readOnly: readOnly)
+            && source.resolvingSymlinksInPath().path == target.resolvingSymlinksInPath().path
+    }
+
+    static func runIfNeeded(review: Bool = false) {
         let source = Bundle.main.bundleURL.standardizedFileURL
+        guard source.pathExtension == "app" else { return }
         let readOnly = (try? source.resourceValues(forKeys: [.volumeIsReadOnlyKey]))?.volumeIsReadOnly == true
+        if let path = ProcessInfo.processInfo.environment[handoffKey] {
+            unsetenv(handoffKey)
+            let target = URL(fileURLWithPath: path, isDirectory: true)
+            if !matchesInstallTarget(source, target: target, readOnly: readOnly) {
+                runInstaller { showInstalledCopy(target) }
+            }
+            return
+        }
         guard review || needsInstallation(source, readOnly: readOnly) else { return }
         LiteDiagnostics.checkpoint("install", waiting: true)
 
@@ -29,6 +39,10 @@ enum DmgInstall {
             print("dmg-install-review-target: " + target.path)
             fflush(stdout)
         } else { target = InstallerCore.defaultDestination() }
+        runInstaller { present(source: source, target: target, review: review) }
+    }
+
+    private static func runInstaller(_ action: @escaping @MainActor @Sendable () -> Void) -> Never {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         // Retain only our own Quit menu, so the DMG instance cannot start a VM from a menu.
@@ -40,7 +54,7 @@ enum DmgInstall {
         item.submenu = applicationMenu
         menu.addItem(item)
         app.mainMenu = menu
-        DispatchQueue.main.async { present(source: source, target: target, review: review) }
+        DispatchQueue.main.async(execute: action)
         app.run()
         exit(0)
     }
@@ -136,26 +150,35 @@ enum DmgInstall {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true
         configuration.activates = true
+        var environment = [handoffKey: target.path]
         if review {
-            configuration.arguments = ["--selftest-settings", "-AppleLanguages", "(" + (Locale.preferredLanguages.first ?? "en") + ")"]
-            configuration.environment = ["STEAMAC_SENTRY": "0", "STEAMAC_SETTINGS_REVIEW": "1",
-                "STEAMAC_DEFAULTS_DOMAIN": "steamac.dmg-install-review." + UUID().uuidString]
+            environment["STEAMAC_SENTRY"] = "0"
+            environment["STEAMAC_DEFAULTS_DOMAIN"] = "steamac.dmg-install-review." + UUID().uuidString
+            environment["CFFIXED_USER_HOME"] = target.deletingLastPathComponent().deletingLastPathComponent().path
         }
-        NSWorkspace.shared.openApplication(at: target, configuration: configuration) { _, error in
+        configuration.environment = environment
+        NSWorkspace.shared.openApplication(at: target, configuration: configuration) { application, error in
             DispatchQueue.main.async {
-                if error != nil {
-                    let alert = NSAlert()
-                    alert.messageText = String(localized: "Installed. Open steamac Lite from Applications.")
-                    alert.informativeText = String(localized: "The app was copied successfully. Open it from Finder to continue.")
-                    alert.addButton(withTitle: String(localized: "Show in Finder"))
-                    alert.addButton(withTitle: String(localized: "Quit"))
-                    if alert.runModal() == .alertFirstButtonReturn {
-                        NSWorkspace.shared.activateFileViewerSelecting([target])
-                    }
+                if error != nil || application == nil {
+                    showInstalledCopy(target)
+                } else {
+                    NSApp.terminate(nil)
                 }
-                NSApp.terminate(nil)
             }
         }
+    }
+
+    private static func showInstalledCopy(_ target: URL) {
+        NSApp.activate()
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Installed. Open steamac Lite from Applications.")
+        alert.informativeText = String(localized: "The app was copied successfully. Open it from Finder to continue.")
+        alert.addButton(withTitle: String(localized: "Show in Finder"))
+        alert.addButton(withTitle: String(localized: "Quit"))
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.activateFileViewerSelecting([target])
+        }
+        NSApp.terminate(nil)
     }
 
     private static func showFailure(_ error: Error, source: URL, target: URL, review: Bool) {

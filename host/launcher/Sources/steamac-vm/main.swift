@@ -22,10 +22,6 @@ if CommandLine.arguments.contains(where: { $0.hasPrefix("--selftest-") }), geten
     setenv("STEAMAC_GAME_STATS_FILE", NSTemporaryDirectory() + "steamac-selftest-stats-\(getpid()).json", 1)
 }
 
-// Offer installation before language selection, disk setup, or any VM process starts.
-LiteDiagnostics.checkpoint("install")
-MainActor.assumeIsolated { DmgInstall.runIfNeeded(CommandLine.arguments) }
-
 // Finder / `open` launch of the .app: console + launcher log go to ~/Library/Logs/es.fxgam.steamac.
 if !Supervisor.isChild { AppBundle.redirectOutputIfLaunchedFromFinder() }
 
